@@ -1,0 +1,30 @@
+HTTP/1.1 200 OK
+content-type: text/html; charset=utf-8
+cache-control: no-cache, no-store, must-revalidate
+content-length: 23028
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 1; mode=block
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=63072000; includeSubDomains; preload
+content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self'; font-src 'self' https://fonts.gstatic.com; object-src 'none'; media-src 'self'; frame-src 'none'; upgrade-insecure-requests; block-all-mixed-content
+x-powered-by: Nucleus
+date: Sat, 27 Dec 2025 20:48:18 GMT
+
+Server Software:        
+Server Hostname:        127.0.0.1
+Server Port:            3000
+
+Document Path:          /
+Document Length:        23028 bytes
+
+Concurrency Level:      100
+Time taken for tests:   0.557 seconds
+Complete requests:      10000
+Failed requests:        0
+Total transferred:      238010000 bytes
+HTML transferred:       230280000 bytes
+Requests per second:    17969.16 [#/sec] (mean)
+Time per request:       5.565 [ms] (mean)
+Time per request:       0.056 [ms] (mean, across all concurrent requests)
+Transfer rate:          417660.16 [Kbytes/sec] received

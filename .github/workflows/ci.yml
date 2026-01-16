@@ -1,0 +1,122 @@
+name: Nucleus CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+        with:
+          components: rustfmt, clippy
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Run tests
+        run: cargo test --workspace --all-features
+      
+      - name: Run clippy
+        run: cargo clippy --workspace -- -D warnings
+
+  benchmark:
+    name: Benchmark Regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+      
+      - name: Install wrk
+        run: sudo apt-get update && sudo apt-get install -y wrk
+      
+      - name: Build release
+        run: cargo build --release -p nucleus_bench
+      
+      - name: Run benchmark server
+        run: |
+          ./target/release/server &
+          sleep 2
+      
+      - name: Run wrk benchmark
+        id: benchmark
+        run: |
+          RESULT=$(wrk -t4 -c256 -d10s http://127.0.0.1:3000/plaintext)
+          echo "$RESULT"
+          RPS=$(echo "$RESULT" | grep "Requests/sec" | awk '{print $2}')
+          echo "rps=$RPS" >> $GITHUB_OUTPUT
+      
+      - name: Check regression
+        run: |
+          RPS=${{ steps.benchmark.outputs.rps }}
+          THRESHOLD=18000
+          if (( $(echo "$RPS < $THRESHOLD" | bc -l) )); then
+            echo "❌ Performance regression! RPS: $RPS (threshold: $THRESHOLD)"
+            exit 1
+          fi
+          echo "✅ Benchmark passed! RPS: $RPS"
+      
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark_results.txt
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+      
+      - name: Install tarpaulin
+        run: cargo install cargo-tarpaulin
+      
+      - name: Run coverage
+        run: cargo tarpaulin --workspace --out Xml --output-dir coverage
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage/cobertura.xml
+          fail_ci_if_error: false
+
+  fuzz:
+    name: Fuzz Testing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust nightly
+        uses: dtolnay/rust-action@nightly
+      
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz
+      
+      - name: Run fuzz tests (10 seconds)
+        run: |
+          cd crates/ncc
+          cargo +nightly fuzz run fuzz_parser -- -max_total_time=10 || true

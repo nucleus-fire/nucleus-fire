@@ -1,0 +1,16 @@
+[package]
+name = "neutron-demo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+nucleus-std = { path = "../../../crates/nucleus-std" }
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+tower-http = { version = "0.5", features = ["fs"] }
+fastrand = "2.0"
+
+[[bin]]
+name = "server"
+path = "src/main.rs"

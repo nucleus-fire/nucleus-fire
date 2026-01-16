@@ -1,0 +1,8 @@
+
+            body { font-family: system-ui; background: #111; color: #eee; }
+            .container { max-width: 800px; margin: 2rem auto; }
+            .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 2rem; }
+            .card { display: block; padding: 1.5rem; background: #222; border-radius: 8px; text-decoration: none; color: inherit; border: 1px solid #333; transition: transform 0.2s; }
+            .card:hover { transform: translateY(-3px); border-color: #555; }
+            h2 { margin: 0 0 0.5rem 0; color: #4facfe; }
+        

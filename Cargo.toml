@@ -1,0 +1,30 @@
+[workspace]
+members = [
+    "crates/nucleus-std",
+    "crates/nucleus-cli",
+    "crates/atom",
+    "crates/ncc",
+    "crates/nucleus-lsp",
+    "crates/nucleus-macros",
+    "benchmarks/nucleus",
+    "benchmarks/competitors/actix",
+    "benchmarks/competitors/axum",
+    "examples/integrations/neutron-demo",
+    "examples/integrations/tailwind-integration",
+    "examples/apps/dashboard",
+    "examples/apps/chat",
+    "examples/apps/shop",
+    "examples/apps/music",
+    "examples/apps/demo-app",
+    "examples/apps/dating",
+    "examples/recipes",
+    "projects/site",
+]
+resolver = "2"
+
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = true
+panic = "abort"

@@ -1,0 +1,191 @@
+{
+  "name": "nucleus-lang",
+  "displayName": "Nucleus Framework",
+  "description": "Full-featured language support for Nucleus Framework (.ncl files) - syntax highlighting, snippets, IntelliSense, and CLI integration",
+  "version": "1.0.0",
+  "publisher": "nucleus-framework",
+
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nucleus-lang/nucleus-lang"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Linters",
+    "Formatters"
+  ],
+  "keywords": [
+    "nucleus",
+    "ncl",
+    "rust",
+    "web framework",
+    "full-stack"
+  ],
+  "activationEvents": [
+    "onLanguage:ncl",
+    "workspaceContains:**/*.ncl",
+    "workspaceContains:nucleus.config"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "ncl",
+        "aliases": [
+          "Nucleus Component Language",
+          "NCL",
+          "ncl"
+        ],
+        "extensions": [
+          ".ncl"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/file_type_ncl.svg",
+          "dark": "./icons/file_type_ncl.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "ncl",
+        "scopeName": "source.ncl",
+        "path": "./syntaxes/ncl.tmLanguage.json",
+        "embeddedLanguages": {
+          "source.css": "css",
+          "source.js": "javascript",
+          "source.rust": "rust"
+        }
+      }
+    ],
+    "snippets": [
+      {
+        "language": "ncl",
+        "path": "./snippets/snippets.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "nucleus.dev",
+        "title": "Nucleus: Start Dev Server",
+        "icon": "$(play)"
+      },
+      {
+        "command": "nucleus.run",
+        "title": "Nucleus: Run Server"
+      },
+      {
+        "command": "nucleus.build",
+        "title": "Nucleus: Build for Production",
+        "icon": "$(package)"
+      },
+      {
+        "command": "nucleus.new",
+        "title": "Nucleus: Create New Project"
+      },
+      {
+        "command": "nucleus.test",
+        "title": "Nucleus: Run Tests"
+      },
+      {
+        "command": "nucleus.generate.scaffold",
+        "title": "Nucleus: Generate Scaffold"
+      },
+      {
+        "command": "nucleus.generate.model",
+        "title": "Nucleus: Generate Model"
+      },
+      {
+        "command": "nucleus.generate.migration",
+        "title": "Nucleus: Generate Migration"
+      },
+      {
+        "command": "nucleus.db.new",
+        "title": "Nucleus: Create Migration"
+      },
+      {
+        "command": "nucleus.db.up",
+        "title": "Nucleus: Run Migrations"
+      },
+      {
+        "command": "nucleus.db.down",
+        "title": "Nucleus: Rollback Migration"
+      },
+      {
+        "command": "nucleus.db.status",
+        "title": "Nucleus: Migration Status"
+      },
+      {
+        "command": "nucleus.deploy",
+        "title": "Nucleus: Deploy",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "nucleus.export",
+        "title": "Nucleus: Static Export"
+      },
+      {
+        "command": "nucleus.restartLsp",
+        "title": "Nucleus: Restart Language Server"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "nucleus.dev",
+          "when": "resourceExtname == .ncl",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Nucleus",
+      "properties": {
+        "nucleus.lsp.path": {
+          "type": "string",
+          "default": "nucleus-lsp",
+          "description": "Path to the nucleus-lsp binary"
+        },
+        "nucleus.lsp.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable the Nucleus Language Server"
+        },
+        "nucleus.cli.path": {
+          "type": "string",
+          "default": "nucleus",
+          "description": "Path to the nucleus CLI binary"
+        },
+        "nucleus.dev.port": {
+          "type": "number",
+          "default": 3000,
+          "description": "Default port for development server"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-electron": "^2.3.8",
+    "@vscode/vsce": "^2.19.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "undici": "^5.28.4",
+    "vscode-languageclient": "^9.0.1"
+  }
+}

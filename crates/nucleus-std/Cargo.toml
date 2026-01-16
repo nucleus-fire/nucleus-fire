@@ -1,0 +1,64 @@
+[package]
+name = "nucleus-std"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/nucleus-fire/nucleus-fire"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rust_decimal = "1.33"
+rust_decimal_macros = "1.33"
+tokio = { version = "1", features = ["full"] }
+argon2 = "0.4"
+uuid = { version = "1.3", features = ["v4", "serde"] }
+base64ct = "=1.6.0"
+hmac = "0.12"
+sha2 = "0.10"
+sha3 = "0.10"
+k256 = { version = "0.13", features = ["ecdsa", "std"] }
+keccak = "0.1.5"
+rand = "0.8"
+hex = "0.4"
+async-trait = "0.1"
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "postgres", "mysql", "tls-native-tls", "chrono"] }
+chrono = { version = "0.4", features = ["serde"] }
+home = "=0.5.9" # Temporary fix for Edition 2024 requirement in 0.5.12
+reqwest = { version = "0.11", features = ["json"] }
+headless_chrome = { version = "=0.9.0", default-features = false, features = ["fetch"] }
+axum = "0.7"
+axum-extra = { version = "0.9", features = ["cookie"] }
+lazy_static = "1.5.0"
+toml = "0.8"
+regex = "1"
+thiserror = "1.0"
+nucleus-macros = { path = "../nucleus-macros" }
+urlencoding = "2.1.3"
+lettre = { version = "0.11", default-features = false, features = ["smtp-transport", "tokio1-rustls-tls", "builder"] }
+image = "0.25"
+multer = "3.1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+mime_guess = "2.0"
+futures-util = "0.3"
+redis = { version = "1.0", features = ["tokio-comp"] }
+async-graphql = { version = "7", features = ["chrono"] }
+tokio-util = { version = "0.7.18", features = ["codec", "io"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+console_error_panic_hook = "0.1"
+web-sys = { version = "0.3", features = [
+    "Window", "Document", "Element", "HtmlElement", "Node", "Text", "Event", "MouseEvent", "HtmlInputElement", "HtmlButtonElement", "console" 
+] }
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["async_tokio"] }
+tower = { version = "0.4", features = ["util"] }
+
+[lib]
+path = "src/lib.rs"
+
+[[bench]]
+name = "core_bench"
+harness = false

@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nucleus Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-app: #09090b;
+            --bg-sidebar: #121214;
+            --bg-surface: #1c1c1f;
+            --bg-surface-hover: #27272a;
+            --border: #27272a;
+            --text-primary: #ededed;
+            --text-secondary: #a1a1aa;
+            --text-placeholder: #52525b;
+            --accent: #8b5cf6; /* Violet */
+            --accent-hover: #7c3aed;
+            --accent-dim: rgba(139, 92, 246, 0.15);
+            --success: #10b981;
+            --success-dim: rgba(16, 185, 129, 0.15);
+            --error: #ef4444;
+            --error-dim: rgba(239, 68, 68, 0.15);
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-app);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Sidebar */
+        aside {
+            width: 260px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border);
+            gap: 10px;
+        }
+        
+        .brand-icon { font-size: 20px; }
+
+        .db-status {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .db-path {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--accent);
+            background: var(--accent-dim);
+            padding: 4px 8px;
+            border-radius: 4px;
+            word-break: break-all;
+            display: inline-block;
+        }
+
+        .nav-section {
+            padding: 20px 0;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .nav-label {
+            padding: 0 20px 8px;
+            text-transform: uppercase;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-surface-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--bg-surface-hover);
+            color: var(--text-primary);
+        }
+        
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: var(--accent);
+        }
+
+        .table-name { display: flex; align-items: center; gap: 8px; }
+        .table-icon { font-size: 14px; opacity: 0.7; }
+        .row-count { font-size: 11px; opacity: 0.5; font-family: var(--font-mono); }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0; /* Prevent flex blowout */
+        }
+
+        header.top-bar {
+            height: 60px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            background: var(--bg-app);
+        }
+
+        .breadcrumb {
+            font-weight: 500;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .breadcrumb-sep { color: var(--text-secondary); }
+        .breadcrumb-active { color: var(--text-secondary); }
+
+        /* Workspace */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 0;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-app);
+            padding: 0 24px;
+        }
+
+        .tab {
+            padding: 12px 0;
+            margin-right: 24px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab:hover { color: var(--text-primary); }
+        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+        /* Content Views */
+        .view-panel {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+            display: none;
+        }
+        
+        .view-panel.active { display: flex; flex-direction: column; }
+
+        /* Data Grid */
+        .data-grid-container {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        
+        th {
+            background: var(--bg-surface);
+            position: sticky;
+            top: 0;
+            text-align: left;
+            padding: 12px 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            z-index: 10;
+        }
+        
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+        
+        tr:hover td { background: var(--bg-surface-hover); }
+
+        .type-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--bg-surface-hover);
+            color: var(--text-secondary);
+            margin-left: 8px;
+            font-family: var(--font-mono);
+        }
+
+        .cell-null { color: var(--text-placeholder); font-style: italic; }
+        .cell-number { font-family: var(--font-mono); color: #60a5fa; }
+        .cell-bool { 
+            display: inline-flex; height: 16px; width: 16px; 
+            align-items: center; justify-content: center; 
+            border-radius: 4px; 
+        }
+        .bool-true { background: var(--success-dim); color: var(--success); }
+        .bool-false { background: var(--error-dim); color: var(--error); }
+
+        /* Toolbar */
+        .toolbar {
+            padding: 12px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-app);
+        }
+        
+        .pagination { display: flex; gap: 8px; align-items: center; }
+        
+        .btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn:hover:not(:disabled) { background: var(--bg-surface-hover); border-color: #52525b; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+        }
+
+        /* Editor */
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        
+        .sql-editor-wrapper {
+            padding: 20px 24px 0;
+        }
+        
+        .sql-editor {
+            width: 100%;
+            height: 160px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            color: var(--text-primary);
+            resize: vertical;
+            line-height: 1.5;
+        }
+        
+        .sql-editor:focus { border-color: var(--accent); }
+
+        .query-actions {
+            padding: 12px 24px;
+            display: flex;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .query-results {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+        }
+
+        /* Empty States */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            gap: 16px;
+        }
+        
+        .empty-icon { font-size: 48px; opacity: 0.5; }
+        .empty-text { font-size: 15px; }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(100px);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 100;
+        }
+        
+        .toast.show { transform: translateY(0); }
+        .toast-success { border-left: 3px solid var(--success); }
+        .toast-error { border-left: 3px solid var(--error); }
+    </style>
+</head>
+<body>
+    <aside>
+        <div class="brand">
+            <span class="brand-icon">⚛️</span>
+            Nucleus Studio
+        </div>
+        <div class="db-status">
+            <div class="db-path" id="dbPath">Connecting...</div>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-label">Tables</div>
+            <div id="tableList">
+                <!-- Tables injected here -->
+            </div>
+        </div>
+    </aside>
+
+    <main>
+        <header class="top-bar">
+            <div class="breadcrumb" id="breadcrumb">
+                <span class="breadcrumb-active">All Tables</span>
+            </div>
+            <div class="actions">
+                <!-- Global actions -->
+            </div>
+        </header>
+
+        <div class="workspace">
+            <div class="tabs">
+                <div class="tab" data-tab="data" onclick="switchTab('data')">Data</div>
+                <div class="tab" data-tab="schema" onclick="switchTab('schema')">Schema</div>
+                <div class="tab" data-tab="query" onclick="switchTab('query')">SQL Console</div>
+            </div>
+
+            <!-- TAB: DATA -->
+            <div id="view-data" class="view-panel active">
+                <div class="toolbar">
+                    <div class="pagination">
+                        <button class="btn" onclick="prevPage()" id="btnPrev">← Prev</button>
+                        <span id="pageInfo" style="color: var(--text-secondary); font-size: 13px;">Loading...</span>
+                        <button class="btn" onclick="nextPage()" id="btnNext">Next →</button>
+                    </div>
+                    <div class="actions">
+                        <button class="btn" onclick="loadData(true)">↻ Refresh</button>
+                    </div>
+                </div>
+                <div class="data-grid-container" id="dataGrid">
+                    <!-- Table Grid -->
+                </div>
+            </div>
+
+            <!-- TAB: SCHEMA -->
+            <div id="view-schema" class="view-panel">
+                 <div class="data-grid-container" id="schemaGrid"></div>
+            </div>
+
+            <!-- TAB: QUERY -->
+            <div id="view-query" class="view-panel">
+                 <div class="editor-container">
+                     <div class="sql-editor-wrapper">
+                         <textarea id="sqlInput" class="sql-editor" placeholder="-- Enter SQL Query here...
+SELECT * FROM users LIMIT 10;"></textarea>
+                     </div>
+                     <div class="query-actions">
+                         <button class="btn btn-primary" onclick="runQuery()">▶ Run Query</button>
+                         <button class="btn" onclick="document.getElementById('sqlInput').value = ''">Clear</button>
+                     </div>
+                     <div class="query-results" id="queryResult">
+                         <div class="empty-state">
+                             <span class="empty-icon">⌨️</span>
+                             <span class="empty-text">Run a query to see results</span>
+                         </div>
+                     </div>
+                 </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // State
+        const state = {
+            tables: [],
+            currentTable: null,
+            currentTab: 'data', // data, schema, query
+            offset: 0,
+            limit: 50,
+            totalRows: 0
+        };
+
+        // Init
+        document.addEventListener('DOMContentLoaded', async () => {
+             await loadInfo();
+             await loadTables();
+             
+             // Setup shortcuts
+             document.addEventListener('keydown', (e) => {
+                 if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                     if (state.currentTab === 'query') runQuery();
+                 }
+             });
+        });
+
+        // --- API ---
+
+        async function loadInfo() {
+            try {
+                const res = await fetch('/api/info');
+                const info = await res.json();
+                document.getElementById('dbPath').textContent = info.path;
+            } catch (e) {
+                showToast('Failed to connect to backend', 'error');
+            }
+        }
+
+        async function loadTables() {
+            try {
+                const res = await fetch('/api/tables');
+                state.tables = await res.json();
+                renderTableList();
+                
+                // If tables exist and none selected, select first
+                if (state.tables.length > 0 && !state.currentTable) {
+                    selectTable(state.tables[0].name);
+                } else if (state.tables.length === 0) {
+                    document.getElementById('dataGrid').innerHTML = `
+                         <div class="empty-state">
+                             <span class="empty-icon">📂</span>
+                             <span class="empty-text">Database is empty</span>
+                         </div>
+                    `;
+                }
+            } catch (e) {
+                showToast('Failed to load tables', 'error');
+            }
+        }
+
+        async function loadData(force = false) {
+            if (!state.currentTable) return;
+            
+            const grid = document.getElementById('dataGrid');
+            if (force) grid.innerHTML = '<div style="padding:20px; color:var(--text-secondary)">Loading...</div>';
+
+            try {
+                const res = await fetch(`/api/tables/${state.currentTable}/data?offset=${state.offset}&limit=${state.limit}`);
+                const data = await res.json();
+                state.totalRows = data.total;
+                
+                renderDataGrid(data, 'dataGrid');
+                updatePagination();
+            } catch (e) {
+                showToast('Failed to load data', 'error');
+            }
+        }
+        
+        async function loadSchema() {
+            if (!state.currentTable) return;
+            try {
+                const res = await fetch(`/api/tables/${state.currentTable}/schema`);
+                const cols = await res.json();
+                
+                // Transform to grid format
+                const data = {
+                    columns: ['Column', 'Type', 'Nullable', 'Primary Key'],
+                    rows: cols.map(c => [
+                        c.name,
+                        `TYPE_${c.type}`, 
+                        c.nullable, 
+                        c.primary_key
+                    ])
+                };
+                renderDataGrid(data, 'schemaGrid', true);
+            } catch (e) {
+                showToast('Failed to load schema', 'error');
+            }
+        }
+
+        async function runQuery() {
+            const sql = document.getElementById('sqlInput').value.trim();
+            if (!sql) return;
+
+            const resDiv = document.getElementById('queryResult');
+            resDiv.innerHTML = '<div style="padding:20px; color:var(--text-secondary)">Running...</div>';
+
+            try {
+                const res = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sql })
+                });
+                const result = await res.json();
+
+                if (result.error) {
+                    resDiv.innerHTML = `
+                        <div style="padding: 20px;">
+                            <div style="background: var(--error-dim); color: var(--error); padding: 12px; border-radius: 6px; font-family: var(--font-mono);">
+                                ${result.error}
+                            </div>
+                        </div>
+                    `;
+                    showToast('Query failed', 'error');
+                } else if (result.affected !== null) {
+                    resDiv.innerHTML = `
+                        <div style="padding: 20px;">
+                            <div style="background: var(--success-dim); color: var(--success); padding: 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 18px">✓</span>
+                                <span>Success: ${result.affected} row(s) affected</span>
+                            </div>
+                        </div>
+                    `;
+                    // Refresh tables in case DDL changed
+                    if (sql.toUpperCase().includes('CREATE') || sql.toUpperCase().includes('DROP')) {
+                        loadTables();
+                    }
+                } else {
+                    renderDataGrid(result, 'queryResult');
+                    showToast(`Returned ${result.rows.length} rows`, 'success');
+                }
+            } catch (e) {
+                showToast('Query execution error', 'error');
+            }
+        }
+
+        // --- RENDERERS ---
+
+        function renderTableList() {
+            const list = document.getElementById('tableList');
+            list.innerHTML = state.tables.map(t => `
+                <div class="nav-item ${state.currentTable === t.name ? 'active' : ''}" onclick="selectTable('${t.name}')">
+                    <div class="table-name">
+                        <span class="table-icon">📄</span>
+                        ${t.name}
+                    </div>
+                    <span class="row-count">${t.row_count}</span>
+                </div>
+            `).join('');
+        }
+        
+        function renderDataGrid(data, targetId, isSchema = false) {
+            const container = document.getElementById(targetId);
+            
+            if (data.rows.length === 0) {
+                 container.innerHTML = `
+                     <div class="empty-state">
+                         <span class="empty-icon">∅</span>
+                         <span class="empty-text">No data found</span>
+                     </div>
+                 `;
+                 return;
+            }
+
+            let html = '<table><thead><tr>';
+            
+            // Header
+            data.columns.forEach(col => {
+                html += `<th>${col}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            // Rows
+            data.rows.forEach(row => {
+                html += '<tr>';
+                row.forEach((cell, idx) => {
+                    html += `<td>${formatCell(cell, isSchema, idx)}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            
+            // Add Row count footer for Query Results
+            if (targetId === 'queryResult') {
+                html = `<div style="padding: 8px 16px; background: var(--bg-surface); border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 12px;">Result: ${data.rows.length} rows</div>` + html;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function formatCell(val, isSchema, colIdx) {
+            if (val === 'NULL' || val === null) return '<span class="cell-null">NULL</span>';
+            
+            // Schema-specific formatting
+            if (isSchema) {
+                if (colIdx === 1) return `<span class="type-badge">${val.replace('TYPE_', '')}</span>`; // Type
+                if (colIdx === 2 || colIdx === 3) { // Nullable / PK
+                    const boolVal = val === true || val === 'true' || val === 1;
+                    if (boolVal) return '<span class="cell-bool bool-true">✓</span>';
+                    return '<span class="cell-bool bool-false">×</span>';
+                }
+            }
+            
+            // Heuristic for types
+            if (!isNaN(parseFloat(val)) && isFinite(val)) return `<span class="cell-number">${val}</span>`;
+            if (val === 'true') return '<span class="cell-bool bool-true">T</span>';
+            if (val === 'false') return '<span class="cell-bool bool-false">F</span>';
+            
+            // Limit long text
+            if (val.length > 100) return val.substring(0, 100) + '...';
+            
+            return val;
+        }
+
+        // --- ACTIONS ---
+
+        function selectTable(name) {
+            state.currentTable = name;
+            state.offset = 0;
+            
+            // Update UI
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active');
+                if (el.innerText.includes(name) && !el.innerText.includes('\nCopy')) { // simple check
+                    // Ideally check data-name, but we rebuild list anyway
+                }
+            });
+            renderTableList(); // lazy way to update active class accurately
+            
+            updateBreadcrumb();
+            
+            // If in query tab, we don't switch unless user switches
+            // If in schema, load schema. If data, load data.
+            if (state.currentTab === 'data') loadData();
+            else if (state.currentTab === 'schema') loadSchema();
+             // Pre-fill query editor if in query tab? Maybe not.
+        }
+        
+        function switchTab(tab) {
+            state.currentTab = tab;
+            
+            // Update Tab UI
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+            
+            // Toggle Panels
+            document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(`view-${tab}`).classList.add('active');
+            
+            // Load content
+            if (tab === 'data') loadData();
+            else if (tab === 'schema') loadSchema();
+            else if (tab === 'query') {
+                // Focus editor
+                setTimeout(() => document.getElementById('sqlInput').focus(), 50);
+            }
+        }
+        
+        function updateBreadcrumb() {
+            const table = state.currentTable || 'Select Table';
+            document.getElementById('breadcrumb').innerHTML = `
+                <span class="breadcrumb-sep">Tables</span>
+                <span class="breadcrumb-sep">/</span>
+                <span class="breadcrumb-active">${table}</span>
+            `;
+        }
+        
+        function updatePagination() {
+            const start = state.offset + 1;
+            const end = Math.min(state.offset + state.limit, state.totalRows);
+            const total = state.totalRows;
+            
+            if (total === 0) {
+                document.getElementById('pageInfo').innerText = '0 rows';
+                document.getElementById('btnPrev').disabled = true;
+                document.getElementById('btnNext').disabled = true;
+                return;
+            }
+            
+            document.getElementById('pageInfo').innerText = `${start}-${end} of ${total}`;
+            document.getElementById('btnPrev').disabled = state.offset === 0;
+            document.getElementById('btnNext').disabled = end >= total;
+        }
+
+        function prevPage() {
+            state.offset = Math.max(0, state.offset - state.limit);
+            loadData();
+        }
+
+        function nextPage() {
+            state.offset += state.limit;
+            loadData();
+        }
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = `toast toast-${type} show`;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

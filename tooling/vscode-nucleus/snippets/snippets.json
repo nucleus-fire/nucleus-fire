@@ -1,0 +1,94 @@
+{
+    "Nucleus View": {
+        "prefix": "nview",
+        "body": [
+            "<n:view title=\"${1:Page Title}\">",
+            "    <n:layout name=\"${2:layout}\">",
+            "        $0",
+            "    </n:layout>",
+            "</n:view>"
+        ],
+        "description": "Create a new Nucleus view"
+    },
+    "Nucleus Component": {
+        "prefix": "ncomp",
+        "body": [
+            "<n:component name=\"${1:ComponentName}\">",
+            "    <div class=\"${2:component-class}\">",
+            "        <n:slot />",
+            "    </div>",
+            "</n:component>"
+        ],
+        "description": "Create a reusable component"
+    },
+    "Nucleus Form": {
+        "prefix": "nform",
+        "body": [
+            "<n:form name=\"${1:contact_form}\" action=\"${2:/api/submit}\" method=\"POST\">",
+            "    <n:field name=\"email\" type=\"email\" label=\"Email Address\" required />",
+            "    <n:field name=\"message\" type=\"textarea\" label=\"Message\" required />",
+            "</n:form>"
+        ],
+        "description": "Create a standard form"
+    },
+    "Nucleus Island": {
+        "prefix": "nisland",
+        "body": [
+            "<n:island src=\"${1:components/Counter}\" client:load />"
+        ],
+        "description": "Client-side interactive island"
+    },
+    "Nucleus Neutron Signal": {
+        "prefix": "nsignal",
+        "body": [
+            "let ${1:state} = Signal::new(${2:initial_value});",
+            "let set_${1:state} = ${1:state}.clone();"
+        ],
+        "description": "New Neutron Signal"
+    },
+    "Nucleus Link": {
+        "prefix": "nlink",
+        "body": [
+            "<n:link href=\"${1:/path}\" class=\"${2:btn}\">$3</n:link>"
+        ],
+        "description": "Client-side navigation link"
+    },
+    "Nucleus Action": {
+        "prefix": "naction",
+        "body": [
+            "<n:action>",
+            "    use nucleus_std::prelude::*;",
+            "    ",
+            "    $0",
+            "</n:action>"
+        ],
+        "description": "Server-side action block"
+    },
+    "Photon Query": {
+        "prefix": "nquery",
+        "body": [
+            "let results = query(\"${1:table_name}\")",
+            "    .select()",
+            "    .w(\"${2:column}\", \"${3:value}\")",
+            "    .execute()",
+            "    .await?;"
+        ],
+        "description": "Database query with Photon"
+    },
+    "Nucleus Config": {
+        "prefix": "nconfig",
+        "body": [
+            "[app]",
+            "name = \"${1:My App}\"",
+            "port = 3000",
+            "env = \"development\"",
+            "",
+            "[database]",
+            "url = \"sqlite://data.db\"",
+            "",
+            "[security]",
+            "csrf = true"
+        ],
+        "description": "Basic nucleus.toml configuration"
+    }
+}

@@ -1,0 +1,37 @@
+[package]
+name = "atom"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/nucleus-fire/nucleus-fire"
+
+[features]
+default = ["middleware-fortress", "middleware-arena", "hot-reload"]
+middleware-fortress = []
+middleware-arena = []
+hot-reload = ["dep:notify"]
+
+[dev-dependencies]
+tokio-test = "0.4"
+reqwest = { version = "0.11", features = ["json"] }
+futures = "0.3"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+axum = { version = "0.7", features = ["ws"] }
+serde = { version = "1.0", features = ["derive"] }
+bumpalo = { version = "3.14", features = ["collections"] }
+hyper = "1.0"
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5", features = ["compression-full"] }
+nucleus-std = { path = "../nucleus-std" }
+futures = "0.3"
+notify = { version = "6.1", optional = true }
+ncc = { path = "../ncc" }
+arc-swap = "1.7"
+parking_lot = "0.12"
+ahash = "0.8"
+chrono = "0.4.42"
+uuid = { version = "1.0", features = ["v4"] }
+
+[lib]
+path = "src/lib.rs"

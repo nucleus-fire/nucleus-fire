@@ -1,0 +1,3 @@
+[[bench]]
+name = "core_bench"
+harness = false

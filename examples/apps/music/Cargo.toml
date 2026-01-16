@@ -1,0 +1,39 @@
+[package]
+name = "nucleus-music"
+version = "0.1.0"
+edition = "2021"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = [
+    "Window", "Document", "Element", "HtmlElement", "Node", "Text", 
+    "Storage", "WebSocket", "MessageEvent", "Location", "console",
+    "NodeList"
+] }
+getrandom = { version = "0.2", features = ["js"] }
+console_error_panic_hook = "0.1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+nucleus-std = { path = "../../../crates/nucleus-std" }
+atom = { path = "../../../crates/atom" }
+tokio = { version = "1", features = ["full"] }
+axum = "0.7"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite"] }
+lofty = "0.15" 
+walkdir = "2.4" 
+mime_guess = "2.0" 
+tower-http = { version = "0.5", features = ["fs"] }
+tower = { version = "0.4", features = ["util"] }
+mimalloc = "0.1"
+
+[lib]
+crate-type = ["cdylib", "rlib"]

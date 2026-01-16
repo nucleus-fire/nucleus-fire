@@ -1,0 +1,65 @@
+    Checking site v0.1.0 (/Users/dev/Desktop/Development/nucleus-lang/projects/site)
+error[E0433]: failed to resolve: could not find `sqlx` in the list of imported crates
+  --> projects/site/src/controllers/newsletter.rs:13:41
+   |
+13 | #[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+   |                                         ^^^^^^^ could not find `sqlx` in the list of imported crates
+   |
+   = note: this error originates in the derive macro `FromRow` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider importing this crate
+   |
+ 1 + use nucleus_std::sqlx;
+   |
+
+error[E0433]: failed to resolve: could not find `sqlx` in the list of imported crates
+  --> projects/site/src/controllers/newsletter.rs:13:41
+   |
+13 | #[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+   |                                         ^^^^^^^ could not find `sqlx` in the list of imported crates
+   |
+   = note: this error originates in the derive macro `FromRow` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider importing this module
+   |
+ 1 + use crate::controllers::newsletter::sqlx::decode;
+   |
+
+error[E0433]: failed to resolve: could not find `sqlx` in the list of imported crates
+  --> projects/site/src/controllers/newsletter.rs:13:41
+   |
+13 | #[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+   |                                         ^^^^^^^ could not find `sqlx` in the list of imported crates
+   |
+   = note: this error originates in the derive macro `FromRow` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider importing this module
+   |
+ 1 + use crate::controllers::newsletter::sqlx::types;
+   |
+
+warning: unused imports: `Form`, `Response`, and `State`
+ --> projects/site/src/controllers/newsletter.rs:2:15
+  |
+2 |     extract::{Form, State, Json},
+  |               ^^^^  ^^^^^
+3 |     response::{Html, IntoResponse, Response},
+  |                                    ^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `Op`
+ --> projects/site/src/controllers/newsletter.rs:8:40
+  |
+8 | use nucleus_std::photon::{self, Model, Op};
+  |                                        ^^
+
+warning: unused import: `self`
+  --> projects/site/src/controllers/newsletter.rs:10:25
+   |
+10 | use nucleus_std::sqlx::{self, FromRow, Executor}; // Used nucleus_std::sqlx to match versions
+   |                         ^^^^
+
+For more information about this error, try `rustc --explain E0433`.
+warning: `site` (bin "site") generated 3 warnings (1 duplicate)
+error: could not compile `site` (bin "site") due to 3 previous errors; 3 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `site` (bin "site" test) generated 3 warnings (2 duplicates)
+error: could not compile `site` (bin "site" test) due to 3 previous errors; 3 warnings emitted

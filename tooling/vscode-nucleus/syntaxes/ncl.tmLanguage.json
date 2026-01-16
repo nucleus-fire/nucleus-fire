@@ -1,0 +1,495 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Nucleus Component Language",
+  "scopeName": "source.ncl",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#nucleus-tags" },
+    { "include": "#jinja-blocks" },
+    { "include": "#interpolation" },
+    { "include": "#html-tags" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.html.ncl",
+          "begin": "<!--",
+          "end": "-->",
+          "captures": {
+            "0": { "name": "punctuation.definition.comment.ncl" }
+          }
+        }
+      ]
+    },
+    "nucleus-tags": {
+      "patterns": [
+        { "include": "#nucleus-structural-tags" },
+        { "include": "#nucleus-control-tags" },
+        { "include": "#nucleus-data-tags" },
+        { "include": "#nucleus-client-tags" },
+        { "include": "#nucleus-element-tags" },
+        { "include": "#nucleus-component-tags" },
+        { "include": "#nucleus-style-block" }
+      ]
+    },
+    "nucleus-structural-tags": {
+      "patterns": [
+        {
+          "name": "meta.tag.nucleus.structural.ncl",
+          "begin": "(<)(n:view|n:layout|n:slot|n:outlet|n:include)\\b",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.nucleus.structural.ncl" }
+          },
+          "end": "(/?>)",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.tag.end.ncl" }
+          },
+          "patterns": [
+            { "include": "#tag-attributes" }
+          ]
+        },
+        {
+          "name": "meta.tag.nucleus.structural.close.ncl",
+          "match": "(</)(n:view|n:layout|n:slot)(>)",
+          "captures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.nucleus.structural.ncl" },
+            "3": { "name": "punctuation.definition.tag.end.ncl" }
+          }
+        }
+      ]
+    },
+    "nucleus-control-tags": {
+      "patterns": [
+        {
+          "name": "meta.tag.nucleus.control.ncl",
+          "begin": "(<)(n:for|n:if|n:else)\\b",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "keyword.control.nucleus.ncl" }
+          },
+          "end": "(/?>)",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.tag.end.ncl" }
+          },
+          "patterns": [
+            { "include": "#tag-attributes" }
+          ]
+        },
+        {
+          "name": "meta.tag.nucleus.control.close.ncl",
+          "match": "(</)(n:for|n:if|n:else)(>)",
+          "captures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "keyword.control.nucleus.ncl" },
+            "3": { "name": "punctuation.definition.tag.end.ncl" }
+          }
+        }
+      ]
+    },
+    "nucleus-data-tags": {
+      "patterns": [
+        {
+          "name": "meta.tag.nucleus.data.ncl",
+          "begin": "(<)(n:model|n:action|n:load)\\b",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.nucleus.data.ncl" }
+          },
+          "end": "(>)",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.tag.end.ncl" }
+          },
+          "patterns": [
+            { "include": "#tag-attributes" }
+          ]
+        },
+        {
+          "name": "meta.tag.nucleus.data.content.ncl",
+          "begin": "(?<=<n:model[^>]*>|<n:action>|<n:load>)",
+          "end": "(?=</n:model>|</n:action>|</n:load>)",
+          "patterns": [
+            { "include": "source.rust" }
+          ]
+        },
+        {
+          "name": "meta.tag.nucleus.data.close.ncl",
+          "match": "(</)(n:model|n:action|n:load)(>)",
+          "captures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.nucleus.data.ncl" },
+            "3": { "name": "punctuation.definition.tag.end.ncl" }
+          }
+        }
+      ]
+    },
+    "nucleus-client-tags": {
+      "patterns": [
+        {
+          "name": "meta.tag.nucleus.client.ncl",
+          "begin": "(<)(n:hydrate|n:island|n:client|n:script)\\b",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.nucleus.client.ncl" }
+          },
+          "end": "(/?>)",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.tag.end.ncl" }
+          },
+          "patterns": [
+            { "include": "#hydration-directives" },
+            { "include": "#tag-attributes" }
+          ]
+        },
+        {
+          "name": "meta.tag.nucleus.client.content.ncl",
+          "begin": "(?<=<n:client>|<n:hydrate>)",
+          "end": "(?=</n:client>|</n:hydrate>)",
+          "patterns": [
+            { "include": "source.rust" }
+          ]
+        },
+        {
+          "name": "meta.tag.nucleus.script.content.ncl",
+          "begin": "(?<=<n:script>)",
+          "end": "(?=</n:script>)",
+          "patterns": [
+            { "include": "source.js" }
+          ]
+        },
+        {
+          "name": "meta.tag.nucleus.client.close.ncl",
+          "match": "(</)(n:hydrate|n:island|n:client|n:script)(>)",
+          "captures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.nucleus.client.ncl" },
+            "3": { "name": "punctuation.definition.tag.end.ncl" }
+          }
+        }
+      ]
+    },
+    "nucleus-element-tags": {
+      "patterns": [
+        {
+          "name": "meta.tag.nucleus.element.ncl",
+          "begin": "(<)(n:form|n:image|n:link|n:text)\\b",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.nucleus.element.ncl" }
+          },
+          "end": "(/?>)",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.tag.end.ncl" }
+          },
+          "patterns": [
+            { "include": "#tag-attributes" }
+          ]
+        },
+        {
+          "name": "meta.tag.nucleus.element.close.ncl",
+          "match": "(</)(n:form|n:image|n:link|n:text)(>)",
+          "captures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.nucleus.element.ncl" },
+            "3": { "name": "punctuation.definition.tag.end.ncl" }
+          }
+        }
+      ]
+    },
+    "nucleus-component-tags": {
+      "patterns": [
+        {
+          "name": "meta.tag.nucleus.component.ncl",
+          "begin": "(<)(n:component|n:props)\\b",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.nucleus.component.ncl" }
+          },
+          "end": "(/?>)",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.tag.end.ncl" }
+          },
+          "patterns": [
+            { "include": "#tag-attributes" }
+          ]
+        },
+        {
+          "name": "meta.tag.nucleus.props.content.ncl",
+          "begin": "(?<=<n:props>)",
+          "end": "(?=</n:props>)",
+          "patterns": [
+            {
+              "name": "variable.other.property.ncl",
+              "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*:"
+            },
+            {
+              "name": "storage.type.ncl",
+              "match": "\\b(String|i32|i64|f64|bool)\\b"
+            },
+            {
+              "name": "keyword.operator.assignment.ncl",
+              "match": "="
+            },
+            {
+              "name": "string.quoted.double.ncl",
+              "match": "\"[^\"]*\""
+            },
+            {
+              "name": "constant.numeric.ncl",
+              "match": "\\b\\d+(\\.\\d+)?\\b"
+            },
+            {
+              "name": "constant.language.boolean.ncl",
+              "match": "\\b(true|false)\\b"
+            }
+          ]
+        },
+        {
+          "name": "meta.tag.nucleus.component.close.ncl",
+          "match": "(</)(n:component|n:props)(>)",
+          "captures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.nucleus.component.ncl" },
+            "3": { "name": "punctuation.definition.tag.end.ncl" }
+          }
+        },
+        {
+          "comment": "PascalCase custom components",
+          "name": "meta.tag.custom-component.ncl",
+          "begin": "(<)([A-Z][a-zA-Z0-9]*)\\b",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.component.ncl support.class.component.ncl" }
+          },
+          "end": "(/?>)",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.tag.end.ncl" }
+          },
+          "patterns": [
+            { "include": "#tag-attributes" }
+          ]
+        },
+        {
+          "name": "meta.tag.custom-component.close.ncl",
+          "match": "(</)([A-Z][a-zA-Z0-9]*)(>)",
+          "captures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.component.ncl support.class.component.ncl" },
+            "3": { "name": "punctuation.definition.tag.end.ncl" }
+          }
+        }
+      ]
+    },
+    "nucleus-style-block": {
+      "patterns": [
+        {
+          "name": "meta.embedded.block.css.ncl",
+          "begin": "(<)(style)(\\s+scoped)?\\s*(>)",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.style.ncl" },
+            "3": { "name": "entity.other.attribute-name.ncl" },
+            "4": { "name": "punctuation.definition.tag.end.ncl" }
+          },
+          "end": "(</)(style)(>)",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.style.ncl" },
+            "3": { "name": "punctuation.definition.tag.end.ncl" }
+          },
+          "patterns": [
+            { "include": "source.css" }
+          ]
+        }
+      ]
+    },
+    "hydration-directives": {
+      "patterns": [
+        {
+          "name": "entity.other.attribute-name.directive.ncl",
+          "match": "\\b(client:load|client:visible|client:idle|client:media)\\b"
+        }
+      ]
+    },
+    "jinja-blocks": {
+      "patterns": [
+        {
+          "name": "meta.embedded.block.jinja.ncl",
+          "begin": "(\\{%)\\s*(if|for|endif|endfor|else|elif)\\b",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.tag.begin.jinja.ncl" },
+            "2": { "name": "keyword.control.jinja.ncl" }
+          },
+          "end": "(%\\})",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.tag.end.jinja.ncl" }
+          },
+          "patterns": [
+            { "include": "#jinja-expressions" }
+          ]
+        },
+        {
+          "name": "meta.embedded.expression.jinja.ncl",
+          "begin": "(\\{\\{)",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.expression.begin.jinja.ncl" }
+          },
+          "end": "(\\}\\})",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.expression.end.jinja.ncl" }
+          },
+          "patterns": [
+            { "include": "#jinja-expressions" }
+          ]
+        }
+      ]
+    },
+    "jinja-expressions": {
+      "patterns": [
+        {
+          "name": "variable.other.jinja.ncl",
+          "match": "[a-zA-Z_][a-zA-Z0-9_]*"
+        },
+        {
+          "name": "keyword.operator.jinja.ncl",
+          "match": "\\b(in|and|or|not|is)\\b"
+        },
+        {
+          "name": "string.quoted.double.jinja.ncl",
+          "match": "\"[^\"]*\""
+        },
+        {
+          "name": "string.quoted.single.jinja.ncl",
+          "match": "'[^']*'"
+        },
+        {
+          "name": "constant.numeric.jinja.ncl",
+          "match": "\\b\\d+(\\.\\d+)?\\b"
+        },
+        {
+          "name": "constant.language.boolean.jinja.ncl",
+          "match": "\\b(true|false)\\b"
+        }
+      ]
+    },
+    "interpolation": {
+      "patterns": [
+        {
+          "name": "meta.embedded.expression.ncl",
+          "begin": "(\\{)(?!\\{|%)",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.expression.begin.ncl" }
+          },
+          "end": "(\\})",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.expression.end.ncl" }
+          },
+          "patterns": [
+            {
+              "name": "variable.other.expression.ncl",
+              "match": "[a-zA-Z_][a-zA-Z0-9_]*"
+            },
+            {
+              "name": "punctuation.accessor.ncl",
+              "match": "\\."
+            },
+            {
+              "name": "keyword.operator.ncl",
+              "match": "[+\\-*/<>=!&|]+"
+            },
+            {
+              "name": "constant.numeric.ncl",
+              "match": "\\b\\d+(\\.\\d+)?\\b"
+            },
+            {
+              "name": "string.quoted.double.ncl",
+              "match": "\"[^\"]*\""
+            }
+          ]
+        }
+      ]
+    },
+    "html-tags": {
+      "patterns": [
+        {
+          "name": "meta.tag.html.ncl",
+          "begin": "(<)(/?)(\\w+)",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.tag.begin.html.ncl" },
+            "2": { "name": "punctuation.definition.tag.close.html.ncl" },
+            "3": { "name": "entity.name.tag.html.ncl" }
+          },
+          "end": "(/?>)",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.tag.end.html.ncl" }
+          },
+          "patterns": [
+            { "include": "#tag-attributes" }
+          ]
+        }
+      ]
+    },
+    "tag-attributes": {
+      "patterns": [
+        {
+          "name": "meta.attribute.ncl",
+          "match": "\\b([a-zA-Z_:][a-zA-Z0-9_:-]*)\\s*(=)\\s*",
+          "captures": {
+            "1": { "name": "entity.other.attribute-name.ncl" },
+            "2": { "name": "punctuation.separator.key-value.ncl" }
+          }
+        },
+        {
+          "name": "string.quoted.double.ncl",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            { "include": "#interpolation" },
+            { "include": "#jinja-blocks" }
+          ]
+        },
+        {
+          "name": "string.quoted.single.ncl",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            { "include": "#interpolation" }
+          ]
+        },
+        {
+          "comment": "Boolean attribute (standalone)",
+          "name": "entity.other.attribute-name.boolean.ncl",
+          "match": "\\b(required|disabled|checked|readonly|autofocus|multiple|selected|scoped|async|defer|priority|prefetch|lazy)\\b"
+        },
+        {
+          "name": "meta.attribute.expression.ncl",
+          "begin": "(=)\\s*(\\{)",
+          "beginCaptures": {
+            "1": { "name": "punctuation.separator.key-value.ncl" },
+            "2": { "name": "punctuation.definition.expression.begin.ncl" }
+          },
+          "end": "(\\})",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.expression.end.ncl" }
+          },
+          "patterns": [
+            {
+              "name": "variable.other.expression.ncl",
+              "match": "[a-zA-Z_][a-zA-Z0-9_]*"
+            },
+            {
+              "name": "constant.language.boolean.ncl",
+              "match": "\\b(true|false)\\b"
+            },
+            {
+              "name": "constant.numeric.ncl",
+              "match": "\\b\\d+(\\.\\d+)?\\b"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

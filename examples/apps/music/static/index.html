@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nucleus Media Center</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style critical>
+        /* Example Critical CSS (Above-the-Fold Optimization) */
+        :root { --bg: #141414; --primary: #e50914; }
+        body { background-color: var(--bg); margin: 0; padding: 0; min-height: 100vh; }
+        .hero { min-height: 85vh; background: #000; }
+    </style>
+</head>
+<body>
+    <div class="navbar" id="navbar">
+        <div class="logo">NUCLEUS</div>
+        <div class="nav-links">
+            <div class="nav-link active">Home</div>
+            <div class="nav-link">Series</div>
+            <div class="nav-link">Films</div>
+            <div class="nav-link">New & Popular</div>
+            <div class="nav-link">My List</div>
+        </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero" id="hero">
+        <div class="hero-content">
+            <h1 class="hero-title" id="hero-title">Loading...</h1>
+            <div class="hero-meta">
+                <span class="match-score">98% Match</span>
+                <span id="hero-year">2024</span>
+                <span style="border: 1px solid #fff; padding: 0 5px; font-size: 0.8rem;">HD</span>
+            </div>
+            <p class="hero-desc" id="hero-desc">Discover the amazing world of Nucleus media.</p>
+            <div style="display: flex;">
+                <button class="btn-hero btn-play" onclick="playHero()">▶ Play</button>
+                <button class="btn-hero btn-info" onclick="openModalHero()">ℹ More Info</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-container" id="rows-container">
+        <!-- Rows injected by JS -->
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay" id="detail-modal" onclick="closeModal(event)">
+        <div class="modal" id="modal-box">
+            <button class="modal-close" onclick="closeModalForce()">✕</button>
+            <div class="modal-hero" id="modal-hero-img"></div>
+            <div class="modal-content">
+                <h2 id="modal-title" style="font-size: 2rem; margin-bottom: 0.5rem;">Title</h2>
+                <div class="hero-meta" style="margin-bottom: 1rem;">
+                    <span class="match-score">New</span>
+                    <span id="modal-year">2024</span>
+                    <span id="modal-duration">2h 10m</span>
+                </div>
+                <p id="modal-plot" style="font-size: 1.1rem; line-height: 1.5; color: #ccc;">Plot details...</p>
+                <button class="btn-hero btn-play" style="margin-top: 2rem;" onclick="playModal()">▶ Play</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Video -->
+    <div id="video-fs">
+        <div class="close-fs" onclick="closeVideo()">✕</div>
+        <video id="fs-player" controls></video>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

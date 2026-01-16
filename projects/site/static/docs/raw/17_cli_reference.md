@@ -1,0 +1,726 @@
+# CLI Reference
+
+Complete reference for all Nucleus CLI commands, options, and usage examples.
+
+---
+
+## Installation
+
+```bash
+cargo install nucleus-cli
+```
+
+Verify:
+```bash
+nucleus --version
+```
+
+---
+
+## Commands Overview
+
+| Command | Description |
+|---------|-------------|
+| [`nucleus new`](#nucleus-new) | Create a new project |
+| [`nucleus dev`](#nucleus-dev) | Development server with hot reload |
+| [`nucleus run`](#nucleus-run) | Start development server (interpreter mode) |
+| [`nucleus build`](#nucleus-build) | Build for production |
+| [`nucleus export`](#nucleus-export) | Export as static site |
+| [`nucleus publish`](#nucleus-publish) | Deploy to hosting platforms |
+| [`nucleus deploy`](#nucleus-deploy) | Deploy to any platform |
+| [`nucleus test`](#nucleus-test) | Run tests |
+| [`nucleus db`](#nucleus-db) | Database operations |
+| [`nucleus generate`](#nucleus-generate) | Code generators |
+| [`nucleus install`](#nucleus-install) | Install dependencies |
+
+---
+
+## nucleus new
+
+Create a new Nucleus project.
+
+### Usage
+
+```bash
+nucleus new <name> [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `name` | Yes | Project name (also directory name) |
+
+### Options
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--template` | `-t` | Template to use (`default`, `api`, `minimal`) |
+| `--database` | `-d` | Database type (`postgres`, `mysql`, `sqlite`) |
+| `--no-git` | | Skip git initialization |
+
+### Examples
+
+```bash
+# Basic project
+nucleus new my-app
+
+# API-only project (no views)
+nucleus new my-api --template api
+
+# With SQLite database
+nucleus new my-app --database sqlite
+
+# Minimal (no examples)
+nucleus new my-app --template minimal
+```
+
+### Generated Structure
+
+```
+my-app/
+├── Cargo.toml
+├── nucleus.config
+├── src/
+│   ├── main.rs
+│   ├── views/
+│   │   ├── layout.ncl
+│   │   └── index.ncl
+│   └── logic/
+│       └── mod.rs
+├── static/
+│   └── assets/
+└── migrations/
+```
+
+---
+
+## nucleus dev
+
+**Recommended for development.** Starts a development server with automatic file watching and hot reload.
+
+### Usage
+
+```bash
+nucleus dev
+```
+
+Or with Make:
+```bash
+make dev
+```
+
+### What It Does
+
+1. Runs initial `nucleus build` to generate code
+2. Starts `cargo run --bin site` in the background
+3. Watches for file changes in:
+   - `src/views/*.ncl`
+   - `src/components/*.ncl`
+   - `src/assets/*.css`
+   - `static/assets/*`
+4. Automatically rebuilds and restarts the server on changes
+5. 500ms debounce to prevent rapid rebuilds
+
+### Example
+
+```bash
+cd my-project
+nucleus dev
+
+# Output:
+# ⚛️  Starting Nucleus Dev Server with HMR...
+# 📦 Initial build...
+# ✅ Build Complete.
+# 🚀 Server started. Watching for changes...
+#    Press Ctrl+C to stop.
+```
+
+When you edit a `.ncl` file:
+```
+🔄 Change detected, rebuilding...
+✅ Rebuild complete!
+🚀 Server restarted.
+```
+
+### Installing the CLI
+
+To use `nucleus dev` directly (instead of `cargo run -p nucleus-cli -- dev`):
+
+```bash
+# From the nucleus-lang directory
+cargo install --path crates/nucleus-cli
+
+# Now you can run from any project
+nucleus dev
+```
+
+---
+
+## nucleus run
+
+Start the development server in interpreter mode (reads .ncl files at runtime).
+
+> **Note:** For most development, use [`nucleus dev`](#nucleus-dev) instead, which provides file watching and automatic rebuilds.
+
+### Usage
+
+```bash
+nucleus run [options]
+```
+
+### Options
+
+| Option | Short | Default | Description |
+|--------|-------|---------|-------------|
+| `--port` | `-p` | 3000 | Port to listen on |
+| `--host` | `-h` | 0.0.0.0 | Host to bind to |
+| `--release` | `-r` | false | Run in release mode |
+| `--no-reload` | | false | Disable hot reload |
+
+### Examples
+
+```bash
+# Default (port 3000)
+nucleus run
+
+# Custom port
+nucleus run --port 8080
+
+# Production mode (no hot reload)
+nucleus run --release
+
+# Localhost only
+nucleus run --host 127.0.0.1
+```
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `RUST_LOG` | Log level (`trace`, `debug`, `info`, `warn`, `error`) |
+| `NUCLEUS_ENV` | Environment (`development`, `production`) |
+
+```bash
+RUST_LOG=debug nucleus run
+```
+
+---
+
+## nucleus build
+
+Build the application for production.
+
+### Usage
+
+```bash
+nucleus build [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--target` | Compilation target (e.g., `x86_64-unknown-linux-musl`) |
+| `--features` | Cargo features to enable |
+
+### Examples
+
+```bash
+# Standard build
+nucleus build
+
+# Static Linux binary
+nucleus build --target x86_64-unknown-linux-musl
+
+# With specific features
+nucleus build --features "postgres,redis"
+```
+
+### Output
+
+Binary is generated at `target/release/<project-name>`.
+
+---
+
+## nucleus export
+
+Export your Nucleus application as a static site.
+
+### Usage
+
+```bash
+nucleus export [options]
+```
+
+### Options
+
+| Option | Short | Default | Description |
+|--------|-------|---------|-------------|
+| `--output` | `-o` | `dist` | Output directory |
+| `--incremental` | `-i` | false | Only rebuild changed pages |
+| `--optimize-images` | | true | Convert images to WebP |
+| `--minify` | | true | Minify HTML, CSS, JS |
+| `--base-url` | | `/` | Base URL for the site |
+
+### Examples
+
+```bash
+# Basic export
+nucleus export
+
+# Custom output directory
+nucleus export --output build
+
+# Incremental build (faster)
+nucleus export --incremental
+
+# For subdirectory hosting
+nucleus export --base-url /my-app/
+```
+
+### What Gets Generated
+
+```
+dist/
+├── index.html
+├── about/
+│   └── index.html
+├── blog/
+│   ├── index.html
+│   └── my-post/
+│       └── index.html
+├── assets/
+│   ├── output.css
+│   ├── app.js
+│   └── images/
+│       └── hero.webp
+└── _redirects         # For Netlify/Cloudflare
+```
+
+### Features
+
+- 🖼️ **Auto WebP conversion** - Images optimized automatically
+- 📦 **Asset fingerprinting** - Cache-busting hashes
+- 🗜️ **Minification** - HTML, CSS, JS compressed
+- ⚡ **Incremental builds** - Only rebuild changed pages
+- 🔗 **Prerendered routes** - All dynamic routes static
+
+---
+
+## nucleus publish
+
+One-command publishing to popular hosting platforms.
+
+### Usage
+
+```bash
+nucleus publish [platform] [options]
+```
+
+### Platforms
+
+| Platform | Command | Description |
+|----------|---------|-------------|
+| Netlify | `nucleus publish netlify` | Deploy to Netlify |
+| Vercel | `nucleus publish vercel` | Deploy to Vercel |
+| Cloudflare | `nucleus publish cloudflare` | Deploy to Cloudflare Pages |
+| GitHub Pages | `nucleus publish github` | Deploy to GitHub Pages |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--prod` | Deploy to production (not preview) |
+| `--token` | Auth token (or use env var) |
+| `--project` | Project name on platform |
+
+### Examples
+
+```bash
+# Interactive mode (prompts for platform)
+nucleus publish
+
+# Deploy to Netlify
+nucleus publish netlify
+
+# Production deployment to Vercel
+nucleus publish vercel --prod
+
+# GitHub Pages
+nucleus publish github
+```
+
+### Environment Variables
+
+| Variable | Platform | Description |
+|----------|----------|-------------|
+| `NETLIFY_AUTH_TOKEN` | Netlify | Auth token |
+| `VERCEL_TOKEN` | Vercel | Auth token |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare | API token |
+| `GITHUB_TOKEN` | GitHub | Personal access token |
+
+### Workflow
+
+1. Run `nucleus export` first (or it runs automatically)
+2. Authenticate with platform (token or interactive)
+3. Upload static files
+4. Get live URL
+
+```bash
+# Full workflow
+nucleus export
+nucleus publish netlify --prod
+
+# Output:
+# ✅ Site deployed!
+# 🌐 https://my-app.netlify.app
+```
+
+---
+
+## nucleus deploy
+
+Interactive deployment wizard with multi-platform support.
+
+### Usage
+
+```bash
+nucleus deploy [options]
+```
+
+### Options
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--target` | `-t` | Target platform: `docker`, `fly`, `railway`, `render`, `manual` |
+
+### Supported Platforms
+
+| Platform | Description |
+|----------|-------------|
+| **Docker** | Generate Dockerfile for self-hosting |
+| **Fly.io** | Generate fly.toml for global edge deployment |
+| **Railway** | Generate railway.json for simple PaaS |
+| **Render** | Generate render.yaml for managed hosting |
+| **Manual** | Generate all config files at once |
+
+### Examples
+
+```bash
+# Interactive mode (prompts for platform)
+nucleus deploy
+
+# Direct Docker deployment
+nucleus deploy --target docker
+
+# Fly.io deployment
+nucleus deploy --target fly
+
+# Generate all platform configs
+nucleus deploy --target manual
+```
+
+### What Gets Generated
+
+| Platform | Files Generated |
+|----------|-----------------|
+| Docker | `Dockerfile`, `.dockerignore` |
+| Fly.io | `fly.toml`, `Dockerfile` |
+| Railway | `railway.json`, `Dockerfile` |
+| Render | `render.yaml`, `Dockerfile` |
+| Manual | All of the above |
+
+### Features
+
+- ✨ **Interactive wizard** with beautiful terminal UI
+- 🎯 **Platform detection** (detects existing fly/railway CLIs)
+- 🔔 **Desktop notifications** when deployment prep completes
+- 📦 **Auto-generation** of optimized multi-stage Dockerfile
+
+### Next Steps After Deploy
+
+```bash
+# Docker
+docker build -t my-app .
+docker run -p 3000:3000 my-app
+
+# Fly.io
+fly launch && fly deploy
+
+# Railway
+railway up
+
+# Render
+# Push to GitHub, Render auto-deploys from render.yaml
+```
+
+---
+
+## nucleus test
+
+Run tests using the Guardian test runner.
+
+### Usage
+
+```bash
+nucleus test [options] [filter]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `filter` | No | Only run tests matching this pattern |
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--unit` | Run unit tests only |
+| `--integration` | Run integration tests only |
+| `--coverage` | Generate coverage report |
+
+### Examples
+
+```bash
+# Run all tests
+nucleus test
+
+# Run specific test
+nucleus test user_creation
+
+# With coverage
+nucleus test --coverage
+```
+
+---
+
+## nucleus db
+
+Database migration commands.
+
+### Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `nucleus db new <name>` | Create a new migration file |
+| `nucleus db up` | Run all pending migrations |
+| `nucleus db down` | Rollback the last migration |
+| `nucleus db status` | Show migration status |
+| `nucleus db reset` | Drop and recreate database |
+
+### nucleus db new
+
+```bash
+nucleus db new <name>
+```
+
+Creates a migration file in `migrations/`:
+
+```
+migrations/
+└── 20241224120000_create_users.sql
+```
+
+Example:
+```bash
+nucleus db new create_users
+nucleus db new add_email_to_users
+```
+
+### nucleus db up
+
+```bash
+nucleus db up [options]
+```
+
+Options:
+| Option | Description |
+|--------|-------------|
+| `--step <n>` | Run only n migrations |
+| `--dry-run` | Show SQL without executing |
+
+### nucleus db down
+
+```bash
+nucleus db down [options]
+```
+
+Options:
+| Option | Description |
+|--------|-------------|
+| `--step <n>` | Rollback n migrations |
+| `--all` | Rollback all migrations |
+
+### nucleus db status
+
+```bash
+nucleus db status
+```
+
+Output:
+```
+✅ 001_create_users        (applied 2024-12-24)
+✅ 002_create_posts        (applied 2024-12-24)
+⏳ 003_add_comments        (pending)
+```
+
+---
+
+## nucleus generate
+
+Code generation commands.
+
+### Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `generate scaffold` | Full CRUD scaffold |
+| `generate model` | Model struct only |
+| `generate migration` | Migration file only |
+| `generate payments` | Payment components |
+
+### nucleus generate scaffold
+
+Generate a complete CRUD scaffold with model, views, and logic.
+
+```bash
+nucleus generate scaffold <name> [fields...]
+```
+
+#### Field Format
+
+```
+field_name:type
+```
+
+#### Supported Types
+
+| Type | Rust | SQL | Example |
+|------|------|-----|---------|
+| `string` | `String` | `TEXT NOT NULL` | `name:string` |
+| `text` | `String` | `TEXT` | `bio:text` |
+| `int` | `i32` | `INTEGER NOT NULL` | `count:int` |
+| `bigint` | `i64` | `BIGINT` | `views:bigint` |
+| `float` | `f64` | `REAL` | `price:float` |
+| `bool` | `bool` | `BOOLEAN NOT NULL` | `active:bool` |
+| `datetime` | `DateTime<Utc>` | `TIMESTAMP` | `published_at:datetime` |
+| `uuid` | `Uuid` | `UUID` | `external_id:uuid` |
+
+#### Example
+
+```bash
+nucleus generate scaffold Post title:string body:text views:int published:bool
+```
+
+Generates:
+```
+src/logic/post.rs          # Model + CRUD functions
+src/views/posts/index.ncl  # List view
+src/views/posts/show.ncl   # Detail view
+src/views/posts/new.ncl    # Create form
+src/views/posts/edit.ncl   # Edit form
+migrations/xxx_create_posts.sql  # Migration
+```
+
+### nucleus generate model
+
+Generate only the model struct without views.
+
+```bash
+nucleus generate model <name> [fields...]
+```
+
+Example:
+```bash
+nucleus generate model Comment body:text post_id:int user_id:int
+```
+
+### nucleus generate payments
+
+Generate payment integration (Stripe + Crypto).
+
+```bash
+nucleus generate payments [options]
+```
+
+Options:
+| Option | Description |
+|--------|-------------|
+| `--subscription` | Include subscription pricing table |
+| `--crypto` | Include crypto payment support |
+
+---
+
+## nucleus install
+
+Install Nucleus modules and Rust crates.
+
+### Usage
+
+```bash
+nucleus install <package>
+```
+
+### Examples
+
+```bash
+# Install a Rust crate
+nucleus install serde
+
+# Install a Nucleus module from registry
+nucleus install @nucleus/auth
+
+# Install from URL
+nucleus install https://github.com/user/module
+```
+
+---
+
+## Configuration File
+
+The `nucleus.config` file supports all CLI defaults:
+
+```toml
+# Server
+port = 3000
+host = "0.0.0.0"
+mode = "development"
+
+# Database
+database = "${DATABASE_URL}"
+
+# Security
+secret_key = "${SECRET_KEY}"
+omit_signature = false
+
+# Features
+hot_reload = true
+
+# Build
+[build]
+target = "x86_64-unknown-linux-gnu"
+features = ["postgres"]
+```
+
+---
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | General error |
+| 2 | Invalid arguments |
+| 3 | Configuration error |
+| 4 | Build error |
+| 5 | Database error |
+
+---
+
+## See Also
+
+- [Getting Started](#01_getting_started)
+- [Configuration](#configuration)
+- [Deployment Guide](#23_deployment_guide)

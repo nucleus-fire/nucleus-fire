@@ -1,0 +1,19 @@
+[package]
+name = "nucleus_bench"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full", "rt-multi-thread"] }
+axum = "0.7"
+mimalloc = "0.1"
+nucleus-std = { path = "../../crates/nucleus-std" }
+# Production mode: includes security middleware
+atom = { path = "../../crates/atom", default-features = false, features = ["middleware-fortress", "middleware-arena"] }
+
+# [profile.release]
+# lto = false
+
+[[bin]]
+name = "server"
+path = "src/bin/server.rs"

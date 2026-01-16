@@ -1,0 +1,18 @@
+
+        .like-button button {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .like-button button:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.05);
+        }
+    
