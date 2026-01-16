@@ -182,6 +182,7 @@ pub struct GraphQL;
 
 impl GraphQL {
     /// Create an axum handler for GraphQL queries
+    #[allow(clippy::type_complexity)]
     pub fn handler<Q, M, S>(
         schema: Schema<Q, M, S>,
     ) -> impl Fn(
@@ -360,7 +361,7 @@ where
             let loaded = loader(missing_keys).await;
             let mut cache = self.cache.write().await;
 
-            for (_i, idx) in missing_indices.into_iter().enumerate() {
+            for idx in missing_indices.into_iter() {
                 let key = keys[idx].clone();
                 if let Some(value) = loaded.get(&key) {
                     results[idx] = Some(value.clone());
