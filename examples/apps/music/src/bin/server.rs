@@ -299,7 +299,7 @@ html_body.push_str("</body></html>");
         
 
         // Logic Module Support
-        #[path = "../logic/mod.rs"] pub mod logic;
+        #[path = "../services/mod.rs"] pub mod services;
 
         // Models Module Support
         #[path = "../models/mod.rs"] pub mod models;
@@ -322,7 +322,7 @@ html_body.push_str("</body></html>");
             let app = Router::new()
                 .route("/", get(handle_index)).route("/navbar", get(handle_navbar)).route("/LikeButton", get(handle_LikeButton))
                 .nest_service("/pkg", ServeDir::new("static/pkg"))
-                .merge(logic::api::routes());
+                .merge(services::api::routes());
                 
             // Auto-Inject Middleware if `src/middleware.rs` exists
             let app = app;

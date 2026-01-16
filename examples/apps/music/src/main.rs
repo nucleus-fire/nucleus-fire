@@ -1,5 +1,5 @@
 mod models;
-mod logic;
+mod services;
 
 #[cfg(test)]
 mod tests;
@@ -42,14 +42,14 @@ async fn main() {
     tokio::spawn(async {
         // scan in background after startup
         tokio::time::sleep(Duration::from_secs(2)).await;
-        logic::scanner::scan_library("static/music").await;
+        services::scanner::scan_library("static/music").await;
     });
 
     // 4. Setup Router
     let app = Router::new()
         .nest_service("/static", ServeDir::new("static"))
         .route_service("/", ServeFile::new("static/index.html"))
-        .merge(logic::api::routes());
+        .merge(services::api::routes());
 
     // 5. Start Server
     let addr = SocketAddr::from(([0, 0, 0, 0], 3001));

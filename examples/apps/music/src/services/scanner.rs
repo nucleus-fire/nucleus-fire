@@ -1,5 +1,5 @@
 use crate::models::{Artist, Album, Track, Video}; 
-use crate::logic::metadata::MetadataService; 
+use crate::services::metadata::MetadataService; 
 use nucleus_std::photon::{Model, Op};
 use lofty::{Probe, TaggedFileExt, Accessor, AudioFile};
 use walkdir::WalkDir;

@@ -1,6 +1,7 @@
 use atom::NucleusRuntime;
 
-mod store;
+mod models;
+use models::store;
 
 #[tokio::main]
 async fn main() {

@@ -84,7 +84,7 @@ async fn test_api_endpoints() {
         .value("duration", 120)
         .execute().await.ok();
     
-    let app = Router::new().merge(logic::api::routes());
+    let app = Router::new().merge(services::api::routes());
 
     // Test GET /api/artists
     let response = app.clone()

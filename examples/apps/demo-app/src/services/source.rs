@@ -41,8 +41,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_valid_source_read() {
-        // We know src/logic/source.rs exists because we are in it!
-        let content = get_source("src/logic/source.rs".to_string()).await.unwrap();
+        // We know src/services/source.rs exists because we are in it!
+        let content = get_source("src/services/source.rs".to_string()).await.unwrap();
         assert!(content.contains("pub async fn get_source"));
     }
 }

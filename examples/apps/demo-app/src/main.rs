@@ -1,7 +1,7 @@
 use axum::{Router, routing::get};
 use nucleus_std::config::Config;
 
-mod logic;
+mod services;
 use mimalloc::MiMalloc;
 
 #[global_allocator]
