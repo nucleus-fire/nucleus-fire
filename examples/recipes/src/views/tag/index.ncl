@@ -1,4 +1,4 @@
-<n:model list="crate::logic::tag::Tag::query().all().await.unwrap_or_default()">
+<n:model list="crate::services::tag::Tag::query().all().await.unwrap_or_default()">
 <div class="container">
     <h1>All Tags</h1>
     <ul>

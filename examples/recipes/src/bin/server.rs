@@ -814,7 +814,7 @@ html_body.push_str("</body></html>");
         
 
         // Logic Module Support
-        #[path = "../logic/mod.rs"] pub mod logic;
+        #[path = "../services/mod.rs"] pub mod services;
 
         // Models Module Support
         

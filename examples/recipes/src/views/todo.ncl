@@ -1,10 +1,10 @@
 <n:view title="Todo Recipes" protected="true">
     <!-- Server Side Model Loading -->
-    <n:model todos="crate::logic::todo::list_todos().await" />
+    <n:model todos="crate::services::todo::list_todos().await" />
     
     <!-- V3: Server Action Handler -->
     <n:action>
-        use crate::logic::todo::add_todo;
+        use crate::services::todo::add_todo;
 
         let text = params.get("text").unwrap_or(&"".to_string()).clone();
         if !text.is_empty() {

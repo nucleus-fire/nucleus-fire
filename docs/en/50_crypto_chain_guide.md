@@ -32,7 +32,7 @@ println!("Balance: {} ETH", balance);
 
 ## Configuration
 
-To use RPC features (like `get_native_balance`), configure your RPC URL in `nucleus.config.toml` or environment variables:
+To use RPC features (like `get_native_balance`), configure your RPC URL in `nucleus.config` or environment variables:
 
 ```toml
 [chain]

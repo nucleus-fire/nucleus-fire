@@ -2,7 +2,7 @@
     <n:script>
         // Check for login attempt
         if let Some(user) = params.get("user") {
-            if crate::logic::auth::login(user).await {
+            if crate::services::auth::login(user).await {
                 // Success: Set Cookie and Redirect
                 let cookie = format!("session={}; Path=/; HttpOnly", user);
                 let mut headers = axum::http::HeaderMap::new();

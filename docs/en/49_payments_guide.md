@@ -6,7 +6,7 @@ Nucleus Payments provides a simplified wrapper around the Stripe API for common 
 
 ### 1. Configuration
 
-Add your Stripe secret key to `nucleus.config.toml`:
+Add your Stripe secret key to `nucleus.config`:
 
 ```toml
 [payments]
