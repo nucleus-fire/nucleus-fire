@@ -1,5 +1,6 @@
 # Nucleus Framework 🚀
 
+No description, website, or topics provided.
 > **The Fastest, Most Feature-Rich Web Framework.**
 
 Nucleus V3 replaces React, Node.js, Webpack, Postgres, and Redis with a single, high-performance binary.
@@ -26,11 +27,11 @@ Don't just read about it. Run it.
 
 | Demo | Description | Tech Stack |
 | :--- | :--- | :--- |
-| **[Amour (Dating)](examples/dating)** | 💘 **Flagship Benchmark** | **125k RPS**, Islands, Real-time Chat |
-| **[Dashboard](examples/dashboard)** | 📊 **Real-time Analytics UI** | Dark Mode, Glassmorphism, Signals |
-| **[Chat](examples/chat)** | 💬 **Messaging App** | Optimistic UI, Slack-like Layout |
-| **[Shop](examples/shop)** | 🛒 **E-Commerce** | **Store Pattern**, Derived State |
-| **[Neutron Todo](examples/neutron-demo)** | ✅ **Todo App** | Full-stack Reactive Signals |
+| **[Amour (Dating)](examples/apps/dating)** | 💘 **Flagship Benchmark** | **125k RPS**, Islands, Real-time Chat |
+| **[Dashboard](examples/apps/dashboard)** | 📊 **Real-time Analytics UI** | Dark Mode, Glassmorphism, Signals |
+| **[Chat](examples/apps/chat)** | 💬 **Messaging App** | Optimistic UI, Slack-like Layout |
+| **[Shop](examples/apps/shop)** | 🛒 **E-Commerce** | **Store Pattern**, Derived State |
+| **[Neutron Todo](examples/apps/demo-app)** | ✅ **Todo App** | Full-stack Reactive Signals |
 
 ## 🛠️ Getting Started
 
