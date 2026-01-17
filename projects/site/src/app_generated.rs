@@ -1,4 +1,4 @@
-#![allow(unused_imports)]
+#![allow(unused_imports, clippy::single_char_add_str)]
         use axum::{response::{Html, IntoResponse}, routing::get, extract::{Query, Form}, Router};
         use tower_http::services::ServeDir;
         use tower_http::compression::CompressionLayer;
