@@ -832,7 +832,6 @@ pub fn build_project() -> miette::Result<()> {
                 {};
                 
             // Auto-Inject Middleware if `src/middleware.rs` exists
-            let app = app;
             {}
 
             app

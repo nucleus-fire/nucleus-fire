@@ -179,7 +179,7 @@ pub async fn export_subscribers() -> impl IntoResponse {
     let mut wtr = csv::Writer::from_writer(vec![]);
     
     // Header
-    let _ = wtr.write_record(&["ID", "Email", "Joined At"]);
+    let _ = wtr.write_record(["ID", "Email", "Joined At"]);
     
     for sub in subscribers {
         let _ = wtr.write_record(&[

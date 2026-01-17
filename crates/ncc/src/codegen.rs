@@ -565,8 +565,8 @@ fn render_node_to_body(node: &Node, body: &mut String) {
     match node {
          Node::Element(e) => generate_element_html(e, body),
          Node::Interpolation(expr) => {
-             // Generate: html_body.push_str(&format!("{}", expr));
-             body.push_str(&format!("html_body.push_str(&format!(\"{{}}\", {}));\n", expr));
+             // Generate: html_body.push_str(&(expr).to_string());
+             body.push_str(&format!("html_body.push_str(&({}).to_string());\n", expr));
          },
          Node::Text(t) => {
              // Use Debug formatting to generate a valid Rust string literal with correct escaping
