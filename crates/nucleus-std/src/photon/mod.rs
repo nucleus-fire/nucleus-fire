@@ -41,6 +41,7 @@ pub mod relations;
 
 // Re-export main types
 pub use db::{DatabasePool, DatabaseType, QueryValue, init_db, db, is_db_initialized};
+#[allow(deprecated)]
 pub use query::{Builder, Model, Op, transaction, transaction_sqlite, transaction_postgres, transaction_mysql};
 pub use migrations::{run_migrations, rollback, migration_status, create_migration, MigrationInfo, MigrationError};
 pub use relations::{HasMany, BelongsTo, HasOne};

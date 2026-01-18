@@ -26,7 +26,6 @@
 //! ```
 
 use axum::{
-    extract::Request,
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
 };
