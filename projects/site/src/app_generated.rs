@@ -7693,7 +7693,7 @@ html_body.push_str("</div>");
 html_body.push_str("</nav>");
 html_body.push_str("<!-- External CSS for docs -->");
 html_body.push_str("<link");
-html_body.push_str(" href=\"/assets/docs.css?v=8\"");
+html_body.push_str(" href=\"/assets/docs.css?v=10\"");
 html_body.push_str(" rel=\"stylesheet\"");
 html_body.push_str(">");
 html_body.push_str("</link>");

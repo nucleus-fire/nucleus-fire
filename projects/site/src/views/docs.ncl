@@ -26,7 +26,7 @@
 </nav>
 
 <!-- External CSS for docs -->
-<link href="/assets/docs.css?v=8" rel="stylesheet">
+<link href="/assets/docs.css?v=10" rel="stylesheet">
 
 <div class="docs-layout">
     <!-- Sidebar -->
