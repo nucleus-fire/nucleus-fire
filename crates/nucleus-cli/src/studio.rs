@@ -309,7 +309,7 @@ fn extract_row_values(row: &rusqlite::Row, col_count: usize) -> Vec<String> {
             n.to_string()
         } else if let Ok(f) = row.get::<_, f64>(i) {
             f.to_string()
-        } else if let Ok(_) = row.get::<_, Option<String>>(i) {
+        } else if row.get::<_, Option<String>>(i).is_ok() {
              "NULL".to_string()
         } else {
              // Fallback for blobs or other types
