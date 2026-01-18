@@ -29,7 +29,7 @@ cargo install nucleus-cli
 Verify the installation:
 
 ```bash
-nucleus --version
+nucleus -v
 # nucleus 0.1.0
 ```
 
@@ -50,14 +50,18 @@ This creates the following structure:
 my-app/
 ├── Cargo.toml           # Rust dependencies
 ├── nucleus.config       # Framework configuration
+├── content.deck         # i18n Content Deck
 ├── src/
 │   ├── main.rs          # Application entry point
-│   ├── views/           # NCL templates
-│   │   ├── layout.ncl   # Shared layout
-│   │   └── index.ncl    # Home page
-│   └── logic/           # Business logic
-│       └── mod.rs       # Logic module
-├── static/              # Static assets (CSS, JS, images)
+│   ├── assets/          # Source assets (processed by pipeline)
+│   ├── logic/           # Business logic & Models
+│   │   └── mod.rs
+│   ├── models/          # Database structs
+│   ├── vendor/          # Vendor modules
+│   └── views/           # NCL templates
+│       ├── layout.ncl   # Shared layout
+│       └── index.ncl    # Home page
+├── static/              # Optimized static assets (output)
 └── migrations/          # Database migrations
 ```
 
@@ -67,19 +71,12 @@ my-app/
 nucleus dev
 ```
 
-Or if the CLI isn't installed globally:
-```bash
-make dev
-# or: cargo run -p nucleus-cli -- dev
-```
-
 Output:
 ```
-⚛️  Starting Nucleus Dev Server with HMR...
-📦 Initial build...
+⚛️  Starting Nucleus Reactor...
+...
 ✅ Build Complete.
 🚀 Server started. Watching for changes...
-   Press Ctrl+C to stop.
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to see your app.
@@ -106,22 +103,24 @@ The page updates automatically — the dev server watches for file changes, rebu
 The `nucleus.config` file controls your application:
 
 ```toml
-# Server Configuration
+version = "1.0.0"
+
+[server]
 port = 3000
 host = "0.0.0.0"
-mode = "development"  # or "production"
+# environment = "development"
 
-# Database (optional)
-database = "postgres://user:pass@localhost/mydb"
-# Or use environment variables:
-# database = "${DATABASE_URL}"
+[database]
+url = "sqlite:nucleus.db"
+# url = "${DATABASE_URL}"
 
-# Security
+[app]
+name = "my-app"
 secret_key = "${SECRET_KEY}"
 
-# Features
-hot_reload = true
-omit_signature = false  # Set true to hide X-Powered-By header
+[performance]
+compression = true
+inline_critical_css = true
 ```
 
 ### Environment Variables
@@ -129,7 +128,10 @@ omit_signature = false  # Set true to hide X-Powered-By header
 Nucleus supports `${VAR}` syntax for environment variables:
 
 ```toml
-database = "${DATABASE_URL}"
+[database]
+url = "${DATABASE_URL}"
+
+[app]
 secret_key = "${SECRET_KEY:-default_dev_key}"
 ```
 
@@ -227,8 +229,8 @@ Use `[param]` syntax for dynamic segments:
 ```
 views/
 ├── users/
-│   ├── [id].ncl        → /users/:id
-│   └── [id]/edit.ncl   → /users/:id/edit
+├── [id].ncl        → /users/:id
+└── [id]/edit.ncl   → /users/:id/edit
 ```
 
 Access parameters in your logic:
@@ -274,7 +276,8 @@ async fn create_post(title: String, content: String) -> Result<Post> {
 
 ```toml
 # nucleus.config
-database = "postgres://user:pass@localhost/mydb"
+[database]
+url = "postgres://user:pass@localhost/mydb"
 ```
 
 Supported databases:
@@ -459,7 +462,7 @@ Field format: `name:type`
 | `int` | `i32` | `INTEGER` |
 | `float` | `f64` | `REAL` |
 | `bool` | `bool` | `BOOLEAN` |
-| `datetime` | `DateTime` | `TIMESTAMP` |
+| `bigint` | `i64` | `BIGINT` |
 
 Example:
 

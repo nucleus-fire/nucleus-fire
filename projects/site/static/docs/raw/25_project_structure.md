@@ -23,7 +23,7 @@ my-app/
 │   │       ├── index.ncl   # → /blog
 │   │       └── [id].ncl    # → /blog/:id
 │   │
-│   ├── logic/              # Business logic (Rust)
+│   ├── services/           # Business logic (Rust)
 │   │   ├── mod.rs
 │   │   ├── db.rs
 │   │   └── auth.rs
@@ -84,13 +84,13 @@ NCL template files that map directly to routes.
 
 ---
 
-### `src/logic/` - Business Logic
+### `src/services/` - Business Logic
 
 Rust modules containing your application logic.
 
 **Structure:**
 ```rust
-// src/logic/mod.rs
+// src/services/mod.rs
 pub mod db;
 pub mod auth;
 pub mod email;
@@ -307,7 +307,7 @@ welcome:es = ¡Bienvenido a nuestro sitio!
 ```
 src/
 ├── views/          # All pages
-├── logic/
+├── services/
 │   └── mod.rs      # All logic in one file
 └── models/
     └── mod.rs      # All models in one file
@@ -317,7 +317,7 @@ src/
 ```
 src/
 ├── views/
-├── logic/
+├── services/
 │   ├── mod.rs
 │   ├── db.rs
 │   ├── auth.rs
@@ -335,7 +335,7 @@ src/
 │   ├── admin/
 │   ├── api/
 │   └── public/
-├── logic/
+├── services/
 │   ├── admin/
 │   ├── auth/
 │   └── core/
@@ -352,7 +352,7 @@ src/
 | Type of Code | Location |
 |--------------|----------|
 | Page rendering | `src/views/` |
-| Database queries | `src/logic/` |
+| Database queries | `src/services/` |
 | Data structures | `src/models/` |
 | UI components | `src/components/` |
 | Page wrappers | `src/layouts/` |

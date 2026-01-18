@@ -13,7 +13,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/example/nucleus-lang.git
+git clone https://github.com/nucleus-fire/nucleus-fire.git
 cd nucleus-lang
 
 # Build and install the CLI

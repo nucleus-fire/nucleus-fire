@@ -35,13 +35,19 @@ Nucleus V3 introduces a robust HMR system designed for productivity without data
 
 ```html
 <!-- src/views/counter.ncl -->
+<!-- src/views/counter.ncl -->
 <n:view>
-    <n:state name="count" default="0" />
-    
-    <div class="counter">
-        <p>Count: {count}</p>
-        <button n:click="count += 1">Increment</button>
-    </div>
+    <!-- State is preserved in Neutron Signals -->
+    <n:island client:load>
+        <n:script>
+             let count = Signal::new(0);
+        </n:script>
+        
+        <div class="counter">
+            <p>Count: {count}</p>
+            <button onclick={count.update(|c| *c += 1)}>Increment</button>
+        </div>
+    </n:island>
 </n:view>
 ```
 

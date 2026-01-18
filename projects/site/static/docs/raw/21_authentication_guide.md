@@ -11,7 +11,7 @@ Nucleus provides the **Fortress** module for:
 - Password hashing (Argon2id)
 - JWT token generation and verification
 - Role-based access control (RBAC)
-- Session management
+- Rate limiting
 - Security headers
 
 ---
@@ -26,20 +26,12 @@ use nucleus_std::fortress::*;
 
 ### Configuration
 
+The primary configuration is the `secret_key` which is used for HMAC operations and token signing.
+
 ```toml
 # nucleus.config
-
-# Required for JWT signing
+[app]
 secret_key = "${SECRET_KEY}"
-
-# Optional: Session settings
-[session]
-duration = 86400        # 24 hours in seconds
-refresh_threshold = 3600  # Refresh if < 1 hour left
-cookie_name = "session"
-secure = true           # HTTPS only
-http_only = true
-same_site = "strict"    # "strict", "lax", or "none"
 ```
 
 Generate a secure secret key:
@@ -131,7 +123,7 @@ async fn login(email: String, password: String) -> Result<LoginResponse> {
 
 ---
 
-## JWT Tokens
+## JWT / HMAC Tokens
 
 ### Generate Token
 
@@ -142,6 +134,7 @@ use nucleus_std::fortress::Fortress;
 let secret = std::env::var("SECRET_KEY").expect("SECRET_KEY must be set");
 
 // Generate HMAC token (use with user_id)
+// token consists of hex(user_id) . signature
 let token = Fortress::generate_token(&user_id.to_string(), &secret);
 ```
 
@@ -160,291 +153,101 @@ if Fortress::verify_token(&token, &user_id.to_string(), &secret) {
 }
 ```
 
-### Token Notes
+### Token Validation (Extract ID)
 
-This helper generates a simple HMAC-SHA256 signature of the user ID using your secret key. It is **not** a full JWT implementation and does not store expiration or custom claims within the token string itself.
-
-If you need full JWT support with claims, consider using the `jsonwebtoken` crate directly or check for updates to Fortress.
-
-### Token Refresh Flow
-
-For production apps, use short-lived access tokens with longer-lived refresh tokens:
+You can also validate a token and extract the user ID if the signature is valid.
 
 ```rust
-use nucleus_std::fortress::Fortress;
-
-#[server]
-async fn refresh_token(refresh_token: String) -> Result<TokenPair> {
-    let secret = std::env::var("SECRET_KEY")?;
-    
-    // Verify the refresh token is valid
-    let user_id = Fortress::extract_user_id(&refresh_token, &secret)
-        .ok_or(NucleusError::Auth("Invalid refresh token".into()))?;
-    
-    // Check if refresh token is in database (not revoked)
-    let stored = RefreshToken::find_by_token(&refresh_token).await?
-        .ok_or(NucleusError::Auth("Token revoked".into()))?;
-    
-    // Revoke old refresh token (rotate)
-    stored.revoke().await?;
-    
-    // Generate new token pair
-    let access = Fortress::generate_token(&user_id, &secret);
-    let refresh = Fortress::generate_token(&format!("ref:{}", user_id), &secret);
-    
-    // Store new refresh token
-    RefreshToken::create(&user_id, &refresh).await?;
-    
-    Ok(TokenPair { access, refresh })
-}
-```
-
-**Recommended Expiration Times:**
-- Access Token: 15 minutes
-- Refresh Token: 7 days
-
----
-
-## Middleware Authentication
-
-### Protecting Routes
-
-### Protecting Routes
-
-To protect routes, use the `require_auth` middleware. This ensures a valid Bearer token is present.
-
-```rust
-use nucleus_std::fortress::require_auth;
-use axum::middleware;
-
-// In your router setup
-let protected_routes = Router::new()
-    .route("/dashboard", get(dashboard))
-    .route("/profile", get(profile))
-    .route_layer(middleware::from_fn(require_auth));
-```
-
-### Extracting User from Request
-
-Use the `AuthUser` extractor to get the authenticated user ID.
-
-```rust
-use nucleus_std::fortress::AuthUser;
-
-async fn dashboard(auth: AuthUser) -> impl IntoResponse {
-    // auth.user_id is available (validated from token)
-    let user_id = auth.user_id;
-    let user = User::find(user_id.parse().unwrap()).await?;
-    
-    // Render dashboard with user context
-}
-```
-
-### Optional Authentication
-
-Use `OptionalAuth` for routes that work for both guests and logged-in users.
-
-```rust
-use nucleus_std::fortress::OptionalAuth;
-
-async fn public_page(auth: OptionalAuth) -> impl IntoResponse {
-    if let Some(user_id) = auth.user_id {
-        // Logged in - show personalized content
-    } else {
-        // Guest - show public content
-    }
+match Fortress::validate_token(&token, &secret) {
+    Ok(user_id) => println!("Token valid for user {}", user_id),
+    Err(e) => println!("Token invalid: {}", e),
 }
 ```
 
 ---
 
-## Role-Based Access Control (RBAC)
+## Authorization
+
+Nucleus supports Role-Based Access Control (RBAC) via the `Permission` and `Role` structs.
 
 ### Define Roles
 
 ```rust
 use nucleus_std::fortress::{Role, Permission};
+use std::collections::HashSet;
 
-let admin = Role::new("admin")
-    .with_permission(Permission::Read)
-    .with_permission(Permission::Write)
-    .with_permission(Permission::Delete)
-    .with_permission(Permission::Admin);
+let mut permissions = HashSet::new();
+permissions.insert(Permission::Read);
+permissions.insert(Permission::Write);
 
-let moderator = Role::new("moderator")
-    .with_permission(Permission::Read)
-    .with_permission(Permission::Write)
-    .with_permission(Permission::Custom("moderate".into()));
-
-let user = Role::new("user")
-    .with_permission(Permission::Read);
+let admin_role = Role {
+    name: "admin".to_string(),
+    permissions,
+};
 ```
 
 ### Check Permissions
 
 ```rust
-use nucleus_std::fortress::check_permission;
+use nucleus_std::fortress::{Fortress, User, Permission};
 
-#[server]
-async fn delete_post(auth: AuthUser, post_id: i64) -> Result<()> {
-    let user = User::find(auth.user_id.parse()?).await?;
-    
-    // Check permission
-    if !check_permission(&user, Permission::Delete) {
-        return Err(NucleusError::Auth("Insufficient permissions".into()));
-    }
-    
-    Post::delete(post_id).await?;
-    Ok(())
+// Example check
+if Fortress::check_permission(&user, &Permission::Delete) {
+    // delete resource
 }
-```
-
-### Role-Based Middleware
-
-```rust
-use nucleus_std::fortress::RequireRole;
-
-let admin_routes = Router::new()
-    .route("/admin/users", get(list_users))
-    .route("/admin/settings", get(settings))
-    .layer(RequireRole::new("admin"));
-```
-
-### Storing Roles in Database
-
-```rust
-// User model with role
-#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
-pub struct User {
-    pub id: i64,
-    pub email: String,
-    pub password_hash: String,
-    pub role: String,  // "admin", "moderator", "user"
-}
-
-// Check role
-impl User {
-    pub fn has_role(&self, role: &str) -> bool {
-        self.role == role
-    }
-    
-    pub fn is_admin(&self) -> bool {
-        self.role == "admin"
-    }
-}
-```
-
----
-
-## Sessions
-
-### Cookie-Based Sessions
-
-```rust
-use nucleus_std::fortress::{Session, SessionStore};
-
-// Create session
-let session = Session::create(&user_id.to_string()).await?;
-
-// Set cookie in response
-response.headers_mut().insert(
-    "Set-Cookie",
-    format!("session={}; HttpOnly; Secure; SameSite=Strict", session.id)
-        .parse()
-        .unwrap()
-);
-```
-
-### Session Middleware
-
-```rust
-use nucleus_std::fortress::SessionMiddleware;
-
-let app = Router::new()
-    .route("/", get(home))
-    .layer(SessionMiddleware::new());
-```
-
-### Access Session in Handlers
-
-```rust
-use nucleus_std::fortress::CurrentSession;
-
-async fn profile(session: CurrentSession) -> impl IntoResponse {
-    if let Some(user_id) = session.get::<String>("user_id") {
-        let user = User::find(user_id.parse().unwrap()).await?;
-        // Show profile
-    } else {
-        // Redirect to login
-    }
-}
-```
-
-### Session Operations
-
-```rust
-// Store value
-session.set("user_id", &user.id.to_string()).await?;
-session.set("theme", "dark").await?;
-
-// Get value
-let user_id: Option<String> = session.get("user_id");
-
-// Remove value
-session.remove("temp_data").await?;
-
-// Destroy session (logout)
-session.destroy().await?;
 ```
 
 ---
 
 ## OAuth / Social Login
 
-### Configuration
+OAuth is configured via environment variables and the `OAuthConfig` struct.
 
-```toml
-# nucleus.config
+### Configuration (Environment Variables)
 
-[oauth.google]
-client_id = "${GOOGLE_CLIENT_ID}"
-client_secret = "${GOOGLE_CLIENT_SECRET}"
-redirect_uri = "https://myapp.com/auth/google/callback"
+Set these in your `.env` or environment:
 
-[oauth.github]
-client_id = "${GITHUB_CLIENT_ID}"
-client_secret = "${GITHUB_CLIENT_SECRET}"
-redirect_uri = "https://myapp.com/auth/github/callback"
+```bash
+OAUTH_REDIRECT_URI=http://localhost:3000/auth/callback
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
 ```
 
-### OAuth Routes
+### Code Example
 
 ```rust
-use nucleus_std::fortress::oauth::{GoogleAuth, GitHubAuth};
+use nucleus_std::oauth::{OAuthConfig, OAuthProvider, OAuth};
 
-// Redirect to provider
 #[server]
-async fn google_login() -> Redirect {
-    let url = GoogleAuth::authorization_url(&["email", "profile"]);
+async fn login_with_google() -> Redirect {
+    let config = OAuthConfig::from_env();
+    let oauth = OAuth::new(config);
+    
+    // Generate URL
+    let (url, state) = oauth.authorize_url(OAuthProvider::Google).unwrap();
+    
+    // TODO: Store state in session/cookie to verify callback
+    
     Redirect::to(&url)
 }
 
-// Handle callback
 #[server]
-async fn google_callback(code: String) -> Result<LoginResponse> {
-    let google_user = GoogleAuth::exchange_code(&code).await?;
+async fn google_callback(code: String, state: String) -> Result<LoginResponse> {
+    let config = OAuthConfig::from_env();
+    let oauth = OAuth::new(config);
     
-    // Find or create user
-    let user = User::find_or_create_by_oauth(
-        "google",
-        &google_user.id,
-        &google_user.email,
-        &google_user.name,
-    ).await?;
+    // Exchange code for user info
+    let user = oauth.exchange_code(
+        OAuthProvider::Google, 
+        &code, 
+        &state, 
+        "expected_state_from_session"
+    ).await.map_err(|e| NucleusError::Auth(e))?;
     
-    let token = generate_token(&user.id.to_string(), Duration::from_secs(86400))?;
-    
-    Ok(LoginResponse { token, user })
+    // Find or create user via email/provider_id
+    // ...
 }
 ```
 
@@ -452,49 +255,48 @@ async fn google_callback(code: String) -> Result<LoginResponse> {
 
 ## Security Headers
 
-Fortress automatically adds these headers:
+To enable standard security headers (CSP, HSTS, XSS protection), use the middleware helper.
 
-| Header | Value | Purpose |
-|--------|-------|---------|
-| `Content-Security-Policy` | Configurable | Prevent XSS |
-| `X-Content-Type-Options` | `nosniff` | Prevent MIME sniffing |
-| `X-Frame-Options` | `DENY` | Prevent clickjacking |
-| `X-XSS-Protection` | `1; mode=block` | XSS filter |
-| `Strict-Transport-Security` | `max-age=31536000` | Force HTTPS |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` | Control referrer |
+```rust
+use nucleus_std::middleware::security_headers_middleware;
 
-### Custom CSP
-
-```toml
-[csp]
-default_src = ["'self'"]
-script_src = ["'self'", "https://trusted-cdn.com"]
-style_src = ["'self'", "https://fonts.googleapis.com"]
-img_src = ["'self'", "data:", "https:"]
-font_src = ["'self'", "https://fonts.gstatic.com"]
-connect_src = ["'self'", "https://api.example.com"]
+let app = Router::new()
+    .route("/", get(home))
+    .layer(middleware::from_fn(security_headers_middleware));
 ```
+
+This adds:
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `X-XSS-Protection: 1; mode=block`
+- `Strict-Transport-Security`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Content-Security-Policy` (default strict)
 
 ---
 
 ## Rate Limiting
 
-```toml
-[rate_limit]
-enabled = true
-requests = 100      # Max requests
-window = 60         # Per window (seconds)
-by = "ip"           # "ip" or "user"
-whitelist = ["127.0.0.1"]
+Rate limiting is applied via middleware using `RateLimiter` and `RateLimitConfig`.
 
-# Different limits per endpoint
-[rate_limit.api]
-requests = 1000
-window = 60
+```rust
+use nucleus_std::fortress::{RateLimiter, RateLimitConfig};
+use nucleus_std::middleware::rate_limit_middleware;
 
-[rate_limit.auth]
-requests = 5
-window = 300        # 5 attempts per 5 minutes
+// Create a limiter (e.g., 100 requests per minute)
+let config = RateLimitConfig {
+    max_requests: 100,
+    window: std::time::Duration::from_secs(60),
+    key_type: nucleus_std::fortress::RateLimitKey::Ip,
+};
+let limiter = RateLimiter::new(config);
+
+// Apply to routes
+let app = Router::new()
+    .route("/api/sensitive", get(handler))
+    .layer(middleware::from_fn(move |req, next| {
+        rate_limit_middleware(limiter.clone())(req, next)
+    }));
 ```
 
 ---
@@ -502,50 +304,16 @@ window = 300        # 5 attempts per 5 minutes
 ## Best Practices
 
 ### 1. Never Store Plain Passwords
-
-```rust
-// ✅ Always hash
-let hash = hash_password(&password)?;
-
-// ❌ Never store raw password
-user.password = password; // WRONG!
-```
+Always use `Fortress::hash_password`.
 
 ### 2. Use HTTPS in Production
+Set `[app] secret_key` securely and ensure your reverse proxy handles SSL.
 
-```toml
-[session]
-secure = true  # Cookie only sent over HTTPS
-```
-
-### 3. Short-Lived Access Tokens
-
-```rust
-// Access token: 15 minutes
-let access = generate_token(&id, Duration::from_secs(900))?;
-
-// Refresh token: 7 days
-let refresh = generate_token(&id, Duration::from_secs(604800))?;
-```
+### 3. Rotate Secrets
+Use environment variables for all secrets (`SECRET_KEY`, `GOOGLE_CLIENT_SECRET`, etc.) and never commit them to git.
 
 ### 4. Validate All Input
-
-```rust
-#[server]
-async fn register(email: String, password: String) -> Result<User> {
-    // Validate email format
-    if !email.contains('@') {
-        return Err(NucleusError::Validation("Invalid email".into()));
-    }
-    
-    // Validate password strength
-    if password.len() < 8 {
-        return Err(NucleusError::Validation("Password too short".into()));
-    }
-    
-    // ...
-}
-```
+Always validate input lengths, formats, and types before processing authentication logic.
 
 ---
 

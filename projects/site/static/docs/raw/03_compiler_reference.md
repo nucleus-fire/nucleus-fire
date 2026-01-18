@@ -161,27 +161,26 @@ Server-side Rust code for form handling.
 
 ## Client-Side Interactivity
 
-### `<n:state>` - Reactive State
+### `<n:island>` - Reactive Islands (Neutron)
+
+Nucleus V3 uses "Neutron" for client-side interactivity, allowing fine-grained reactivity using Rust-like Signals within island components.
 
 ```html
-<n:state name="count" default="0" />
-<n:state name="items" default="[]" />
+<!-- components/Counter.ncl -->
+<n:island client:load>
+    <n:script>
+        let count = Signal::new(0);
+        
+        // Derived state
+        let double = computed(count.clone(), |c| c * 2);
+    </n:script>
 
-<button n:click="count += 1">Count: {count}</button>
-```
-
-### `<n:script>` - Client-Side Logic
-
-```html
-<n:script>
-    function handleClick() {
-        count.set(count.get() + 1);
-    }
-    
-    function addItem(item) {
-        items.update(list => [...list, item]);
-    }
-</n:script>
+    <div class="counter">
+        <p>Count: {count}</p>
+        <p>Double: {double}</p>
+        <button onclick={count.update(|c| *c += 1)}>Increment</button>
+    </div>
+</n:island>
 ```
 
 ---

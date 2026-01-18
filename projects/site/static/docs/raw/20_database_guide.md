@@ -281,10 +281,14 @@ let deleted = User::query()
 
 ## Transactions
 
-```rust
-use nucleus_std::photon::transaction;
+Use the database-specific transaction function for your backend:
 
-transaction(|tx| Box::pin(async move {
+### SQLite
+
+```rust
+use nucleus_std::photon::transaction_sqlite;
+
+transaction_sqlite(|tx| Box::pin(async move {
     sqlx::query("UPDATE accounts SET balance = balance - 100 WHERE id = ?")
         .bind(1)
         .execute(&mut **tx)
@@ -295,6 +299,40 @@ transaction(|tx| Box::pin(async move {
         .execute(&mut **tx)
         .await?;
     
+    Ok(())
+})).await?;
+```
+
+### PostgreSQL
+
+```rust
+use nucleus_std::photon::transaction_postgres;
+
+transaction_postgres(|tx| Box::pin(async move {
+    sqlx::query("UPDATE accounts SET balance = balance - 100 WHERE id = $1")
+        .bind(1)
+        .execute(&mut **tx)
+        .await?;
+    
+    sqlx::query("UPDATE accounts SET balance = balance + 100 WHERE id = $1")
+        .bind(2)
+        .execute(&mut **tx)
+        .await?;
+    
+    Ok(())
+})).await?;
+```
+
+### MySQL
+
+```rust
+use nucleus_std::photon::transaction_mysql;
+
+transaction_mysql(|tx| Box::pin(async move {
+    sqlx::query("UPDATE accounts SET balance = balance - 100 WHERE id = ?")
+        .bind(1)
+        .execute(&mut **tx)
+        .await?;
     Ok(())
 })).await?;
 ```
@@ -370,11 +408,22 @@ impl BelongsTo<User> for Post {
 
 ### Eager Loading
 
+Use the database-specific eager loading function:
+
 ```rust
-let users = User::query()
-    .include("posts")
-    .all::<User>()
-    .await?;
+use nucleus_std::photon::relations::{
+    load_has_many_sqlite, load_has_many_postgres, load_has_many_mysql,
+    load_belongs_to_sqlite, load_belongs_to_postgres, load_belongs_to_mysql,
+};
+
+// SQLite
+let posts_by_user = load_has_many_sqlite::<User, Post>(&users).await?;
+
+// PostgreSQL
+let posts_by_user = load_has_many_postgres::<User, Post>(&users).await?;
+
+// MySQL
+let posts_by_user = load_has_many_mysql::<User, Post>(&users).await?;
 ```
 
 ---
