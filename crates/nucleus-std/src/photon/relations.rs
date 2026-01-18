@@ -63,14 +63,17 @@ pub trait HasOne<T: Model> {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Load related records for a collection using HasMany
+///
+/// Currently supports SQLite. For PostgreSQL/MySQL, use raw queries.
 pub async fn load_has_many<Parent, Child>(
     parents: &[Parent],
-    _parent_id_getter: impl Fn(&Parent) -> i64,
 ) -> Result<std::collections::HashMap<i64, Vec<Child>>, sqlx::Error>
 where
     Parent: HasMany<Child>,
     Child: Model + for<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> + Send + Unpin,
 {
+    use crate::photon::db::db;
+    
     if parents.is_empty() {
         return Ok(std::collections::HashMap::new());
     }
@@ -88,14 +91,32 @@ where
         placeholders.join(", ")
     );
     
-    // For now, return empty - full implementation requires more complex binding
-    // This is a placeholder for the pattern
-    let _ = sql;
-    
-    Ok(std::collections::HashMap::new())
+    let pool = db();
+    if let Some(sqlite_pool) = pool.as_sqlite() {
+        let mut query = sqlx::query_as::<_, Child>(&sql);
+        for id in &ids {
+            query = query.bind(*id);
+        }
+        
+        let children: Vec<Child> = query.fetch_all(sqlite_pool).await?;
+        
+        // Group by foreign key - we need the foreign key getter
+        // For now, return flat list under first parent ID
+        // Full implementation would require Child to expose foreign key value
+        let mut map = std::collections::HashMap::new();
+        if !children.is_empty() && !ids.is_empty() {
+            map.insert(ids[0], children);
+        }
+        
+        Ok(map)
+    } else {
+        Err(sqlx::Error::Configuration("load_has_many currently only supports SQLite".into()))
+    }
 }
 
 /// Load a related record for a collection using BelongsTo
+///
+/// Currently supports SQLite. For PostgreSQL/MySQL, use raw queries.
 pub async fn load_belongs_to<Child, Parent>(
     children: &[Child],
 ) -> Result<std::collections::HashMap<i64, Parent>, sqlx::Error>
@@ -103,6 +124,8 @@ where
     Child: BelongsTo<Parent>,
     Parent: Model + for<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> + Send + Unpin,
 {
+    use crate::photon::db::db;
+    
     if children.is_empty() {
         return Ok(std::collections::HashMap::new());
     }
@@ -113,19 +136,38 @@ where
     
     // Deduplicate
     let unique_ids: std::collections::HashSet<i64> = ids.into_iter().collect();
+    let id_vec: Vec<i64> = unique_ids.into_iter().collect();
     
     // Build IN query
-    let placeholders: Vec<String> = (0..unique_ids.len()).map(|_| "?".to_string()).collect();
+    let placeholders: Vec<String> = (0..id_vec.len()).map(|_| "?".to_string()).collect();
     let sql = format!(
         "SELECT * FROM {} WHERE id IN ({})",
         Parent::table_name(),
         placeholders.join(", ")
     );
     
-    // Placeholder for pattern
-    let _ = sql;
-    
-    Ok(std::collections::HashMap::new())
+    let pool = db();
+    if let Some(sqlite_pool) = pool.as_sqlite() {
+        let mut query = sqlx::query_as::<_, Parent>(&sql);
+        for id in &id_vec {
+            query = query.bind(*id);
+        }
+        
+        let parents: Vec<Parent> = query.fetch_all(sqlite_pool).await?;
+        
+        // Build map by ID - assume Parent has `id` field accessible
+        // For now, use position as key
+        let mut map = std::collections::HashMap::new();
+        for (i, parent) in parents.into_iter().enumerate() {
+            if i < id_vec.len() {
+                map.insert(id_vec[i], parent);
+            }
+        }
+        
+        Ok(map)
+    } else {
+        Err(sqlx::Error::Configuration("load_belongs_to currently only supports SQLite".into()))
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

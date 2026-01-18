@@ -663,7 +663,7 @@ impl<'a> Builder<'a> {
 // TRANSACTIONS
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Execute a closure within a database transaction
+/// Execute a closure within a SQLite database transaction
 ///
 /// The transaction is automatically committed if the closure returns Ok,
 /// or rolled back if it returns Err or panics.
@@ -671,9 +671,9 @@ impl<'a> Builder<'a> {
 /// # Example
 ///
 /// ```rust,ignore
-/// use nucleus_std::photon::transaction;
+/// use nucleus_std::photon::transaction_sqlite;
 ///
-/// transaction(|tx| Box::pin(async move {
+/// transaction_sqlite(|tx| Box::pin(async move {
 ///     sqlx::query("INSERT INTO users (name) VALUES (?)")
 ///         .bind("Alice")
 ///         .execute(&mut **tx)
@@ -681,28 +681,114 @@ impl<'a> Builder<'a> {
 ///     Ok(())
 /// })).await?;
 /// ```
-pub async fn transaction<F, T>(f: F) -> Result<T, sqlx::Error>
+pub async fn transaction_sqlite<F, T>(f: F) -> Result<T, sqlx::Error>
 where
     F: for<'c> FnOnce(&'c mut sqlx::Transaction<'_, sqlx::Sqlite>) -> Pin<Box<dyn Future<Output = Result<T, sqlx::Error>> + Send + 'c>>,
 {
     let pool = db();
     
-    if let Some(sqlite_pool) = pool.as_sqlite() {
-        let mut tx = sqlite_pool.begin().await?;
-        
-        match f(&mut tx).await {
-            Ok(result) => {
-                tx.commit().await?;
-                Ok(result)
-            }
-            Err(e) => {
-                tx.rollback().await.ok(); // Best effort rollback
-                Err(e)
-            }
+    let sqlite_pool = pool.as_sqlite()
+        .ok_or_else(|| sqlx::Error::Configuration("Not a SQLite database".into()))?;
+    
+    let mut tx = sqlite_pool.begin().await?;
+    
+    match f(&mut tx).await {
+        Ok(result) => {
+            tx.commit().await?;
+            Ok(result)
         }
-    } else {
-        Err(sqlx::Error::Configuration("Transactions only supported for SQLite currently".into()))
+        Err(e) => {
+            tx.rollback().await.ok();
+            Err(e)
+        }
     }
+}
+
+/// Execute a closure within a PostgreSQL database transaction
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use nucleus_std::photon::transaction_postgres;
+///
+/// transaction_postgres(|tx| Box::pin(async move {
+///     sqlx::query("INSERT INTO users (name) VALUES ($1)")
+///         .bind("Alice")
+///         .execute(&mut **tx)
+///         .await?;
+///     Ok(())
+/// })).await?;
+/// ```
+pub async fn transaction_postgres<F, T>(f: F) -> Result<T, sqlx::Error>
+where
+    F: for<'c> FnOnce(&'c mut sqlx::Transaction<'_, sqlx::Postgres>) -> Pin<Box<dyn Future<Output = Result<T, sqlx::Error>> + Send + 'c>>,
+{
+    let pool = db();
+    
+    let pg_pool = pool.as_postgres()
+        .ok_or_else(|| sqlx::Error::Configuration("Not a PostgreSQL database".into()))?;
+    
+    let mut tx = pg_pool.begin().await?;
+    
+    match f(&mut tx).await {
+        Ok(result) => {
+            tx.commit().await?;
+            Ok(result)
+        }
+        Err(e) => {
+            tx.rollback().await.ok();
+            Err(e)
+        }
+    }
+}
+
+/// Execute a closure within a MySQL database transaction
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use nucleus_std::photon::transaction_mysql;
+///
+/// transaction_mysql(|tx| Box::pin(async move {
+///     sqlx::query("INSERT INTO users (name) VALUES (?)")
+///         .bind("Alice")
+///         .execute(&mut **tx)
+///         .await?;
+///     Ok(())
+/// })).await?;
+/// ```
+pub async fn transaction_mysql<F, T>(f: F) -> Result<T, sqlx::Error>
+where
+    F: for<'c> FnOnce(&'c mut sqlx::Transaction<'_, sqlx::MySql>) -> Pin<Box<dyn Future<Output = Result<T, sqlx::Error>> + Send + 'c>>,
+{
+    let pool = db();
+    
+    let mysql_pool = pool.as_mysql()
+        .ok_or_else(|| sqlx::Error::Configuration("Not a MySQL database".into()))?;
+    
+    let mut tx = mysql_pool.begin().await?;
+    
+    match f(&mut tx).await {
+        Ok(result) => {
+            tx.commit().await?;
+            Ok(result)
+        }
+        Err(e) => {
+            tx.rollback().await.ok();
+            Err(e)
+        }
+    }
+}
+
+/// Legacy transaction function - uses SQLite
+/// 
+/// **Deprecated**: Use `transaction_sqlite`, `transaction_postgres`, or `transaction_mysql` instead.
+#[deprecated(since = "0.2.0", note = "Use transaction_sqlite, transaction_postgres, or transaction_mysql")]
+pub async fn transaction<F, T>(f: F) -> Result<T, sqlx::Error>
+where
+    F: for<'c> FnOnce(&'c mut sqlx::Transaction<'_, sqlx::Sqlite>) -> Pin<Box<dyn Future<Output = Result<T, sqlx::Error>> + Send + 'c>>,
+{
+    transaction_sqlite(f).await
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

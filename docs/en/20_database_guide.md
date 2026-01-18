@@ -281,10 +281,14 @@ let deleted = User::query()
 
 ## Transactions
 
-```rust
-use nucleus_std::photon::transaction;
+Use the database-specific transaction function for your backend:
 
-transaction(|tx| Box::pin(async move {
+### SQLite
+
+```rust
+use nucleus_std::photon::transaction_sqlite;
+
+transaction_sqlite(|tx| Box::pin(async move {
     sqlx::query("UPDATE accounts SET balance = balance - 100 WHERE id = ?")
         .bind(1)
         .execute(&mut **tx)
@@ -295,6 +299,40 @@ transaction(|tx| Box::pin(async move {
         .execute(&mut **tx)
         .await?;
     
+    Ok(())
+})).await?;
+```
+
+### PostgreSQL
+
+```rust
+use nucleus_std::photon::transaction_postgres;
+
+transaction_postgres(|tx| Box::pin(async move {
+    sqlx::query("UPDATE accounts SET balance = balance - 100 WHERE id = $1")
+        .bind(1)
+        .execute(&mut **tx)
+        .await?;
+    
+    sqlx::query("UPDATE accounts SET balance = balance + 100 WHERE id = $1")
+        .bind(2)
+        .execute(&mut **tx)
+        .await?;
+    
+    Ok(())
+})).await?;
+```
+
+### MySQL
+
+```rust
+use nucleus_std::photon::transaction_mysql;
+
+transaction_mysql(|tx| Box::pin(async move {
+    sqlx::query("UPDATE accounts SET balance = balance - 100 WHERE id = ?")
+        .bind(1)
+        .execute(&mut **tx)
+        .await?;
     Ok(())
 })).await?;
 ```
