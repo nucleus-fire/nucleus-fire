@@ -38,6 +38,7 @@ pub mod scout;
 pub mod testing;
 pub mod push;
 pub mod graph;
+pub mod tenant;
 
 // Re-export attribute macros
 pub use nucleus_macros::server;
@@ -73,6 +74,7 @@ pub use redis_cache::{UnifiedCache, CacheBackend, MemoryCacheBackend, RedisBacke
 pub use health::{HealthChecker, HealthReport, HealthStatus, ComponentCheck};
 pub use pool_monitor::{PoolMonitor, PoolStats, PoolHealth, PoolHealthStatus, PoolDashboard, QueryMetrics, PoolSizingRecommendation};
 pub use scout::{Scout, ScoutError, SearchQuery, SearchResults, SearchHit, IndexInfo, IndexTask, TaskStatus, SearchParams};
+pub use tenant::{Tenant, TenantExtractor, TenantStrategy, TenantGuard, TenantInfo, TenantError, TenantQuery};
 pub use sqlx;
 pub use axum;
 
