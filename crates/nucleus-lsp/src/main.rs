@@ -799,6 +799,7 @@ impl LanguageServer for Backend {
                         end: Position { line: line_num as u32, character: line.len() as u32 },
                     },
                     detail: None,
+                    #[allow(deprecated)]
                     deprecated: None,
                     tags: None,
                     children: None,
