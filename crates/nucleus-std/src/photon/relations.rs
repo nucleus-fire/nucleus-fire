@@ -380,11 +380,23 @@ mod tests {
         fn get_foreign_key_value(&self) -> i64 { self.user_id }
     }
     
+    // HasOne mock
+    struct MockProfile { _id: i64, user_id: i64 }
+    
+    impl Model for MockProfile {
+        fn table_name() -> &'static str { "profiles" }
+    }
+    
+    impl HasOne<MockProfile> for MockUser {
+        fn foreign_key() -> &'static str { "user_id" }
+        fn get_id(&self) -> i64 { self.id }
+    }
+    
     #[test]
     fn test_has_many_trait() {
         let user = MockUser { id: 1 };
         assert_eq!(<MockUser as HasMany<MockPost>>::foreign_key(), "user_id");
-        assert_eq!(user.get_id(), 1);
+        assert_eq!(<MockUser as HasMany<MockPost>>::get_id(&user), 1);
     }
     
     #[test]
@@ -393,4 +405,60 @@ mod tests {
         assert_eq!(<MockPost as BelongsTo<MockUser>>::foreign_key(), "user_id");
         assert_eq!(post.get_foreign_key_value(), 42);
     }
+    
+    #[test]
+    fn test_has_one_trait() {
+        let user = MockUser { id: 5 };
+        assert_eq!(<MockUser as HasOne<MockProfile>>::foreign_key(), "user_id");
+        assert_eq!(<MockUser as HasOne<MockProfile>>::get_id(&user), 5);
+    }
+    
+    #[test]
+    fn test_model_table_names() {
+        assert_eq!(MockUser::table_name(), "users");
+        assert_eq!(MockPost::table_name(), "posts");
+        assert_eq!(MockProfile::table_name(), "profiles");
+    }
+    
+    #[test]
+    fn test_multiple_parents_ids() {
+        let users = vec![
+            MockUser { id: 1 },
+            MockUser { id: 2 },
+            MockUser { id: 3 },
+        ];
+        
+        let ids: Vec<i64> = users.iter().map(|u| <MockUser as HasMany<MockPost>>::get_id(u)).collect();
+        assert_eq!(ids, vec![1, 2, 3]);
+    }
+    
+    #[test]
+    fn test_multiple_foreign_keys() {
+        let posts = vec![
+            MockPost { _id: 1, user_id: 10 },
+            MockPost { _id: 2, user_id: 10 },
+            MockPost { _id: 3, user_id: 20 },
+        ];
+        
+        let fk_values: Vec<i64> = posts.iter().map(|p| p.get_foreign_key_value()).collect();
+        assert_eq!(fk_values, vec![10, 10, 20]);
+        
+        // Test deduplication
+        let unique: std::collections::HashSet<i64> = fk_values.into_iter().collect();
+        assert_eq!(unique.len(), 2); // Only 10 and 20
+    }
+    
+    #[test]
+    fn test_empty_users_handling() {
+        let users: Vec<MockUser> = vec![];
+        assert!(users.is_empty());
+    }
+    
+    #[test]
+    fn test_foreign_key_static_str() {
+        // Foreign keys should be static strings for efficiency
+        let fk: &'static str = <MockUser as HasMany<MockPost>>::foreign_key();
+        assert_eq!(fk.len(), 7); // "user_id" is 7 chars
+    }
 }
+

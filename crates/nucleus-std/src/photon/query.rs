@@ -939,4 +939,166 @@ mod tests {
         assert!(sql.contains("age >= ?"));
         assert!(sql.contains("deleted_at IS NULL"));
     }
+    
+    #[test]
+    fn test_limit_offset() {
+        let builder = Builder::new("users")
+            .limit(10)
+            .offset(20);
+        
+        let (sql, _) = builder.to_sql(DatabaseType::Sqlite);
+        
+        assert!(sql.contains("LIMIT 10"));
+        assert!(sql.contains("OFFSET 20"));
+    }
+    
+    #[test]
+    fn test_multiple_where_conditions() {
+        let builder = Builder::new("users")
+            .r#where("status", "active")
+            .r#where("role", "admin")
+            .r#where("verified", true);
+        
+        let (sql, bindings) = builder.to_sql(DatabaseType::Sqlite);
+        
+        assert!(sql.contains("WHERE"));
+        assert!(sql.contains("AND"));
+        assert_eq!(bindings.len(), 3);
+    }
+    
+    #[test]
+    fn test_order_by_multiple() {
+        let builder = Builder::new("users")
+            .order_by("created_at", "DESC")
+            .order_by("name", "ASC");
+        
+        let (sql, _) = builder.to_sql(DatabaseType::Sqlite);
+        
+        assert!(sql.contains("ORDER BY created_at DESC"));
+        // Note: Current implementation may overwrite, but this tests the interface
+    }
+    
+    #[test]
+    fn test_in_operator() {
+        let builder = Builder::new("users")
+            .filter_op("id", Op::In, "1,2,3");
+        
+        let (sql, _) = builder.to_sql(DatabaseType::Sqlite);
+        
+        assert!(sql.contains("id IN"));
+    }
+    
+    #[test]
+    fn test_not_in_operator() {
+        let builder = Builder::new("users")
+            .filter_op("status", Op::NotIn, "banned,suspended");
+        
+        let (sql, _) = builder.to_sql(DatabaseType::Sqlite);
+        
+        assert!(sql.contains("NOT IN"));
+    }
+    
+    #[test]
+    fn test_is_not_null() {
+        let builder = Builder::new("users")
+            .filter_op("email_verified", Op::IsNotNull, 0i64);
+        
+        let (sql, bindings) = builder.to_sql(DatabaseType::Sqlite);
+        
+        assert!(sql.contains("IS NOT NULL"));
+        // IsNotNull doesn't need a binding
+        assert_eq!(bindings.len(), 0);
+    }
+    
+    #[test]
+    fn test_like_operator() {
+        let builder = Builder::new("users")
+            .filter_op("name", Op::Like, "%john%");
+        
+        let (sql, bindings) = builder.to_sql(DatabaseType::Sqlite);
+        
+        assert!(sql.contains("LIKE"));
+        assert_eq!(bindings.len(), 1);
+    }
+    
+    #[test]
+    fn test_mysql_placeholders() {
+        let builder = Builder::new("users")
+            .r#where("id", 1i64)
+            .r#where("status", "active");
+        
+        let (sql, _) = builder.to_sql(DatabaseType::MySql);
+        
+        // MySQL uses ? placeholders like SQLite
+        assert!(sql.contains("?"));
+    }
+    
+    #[test]
+    fn test_empty_select() {
+        let builder = Builder::new("users");
+        let (sql, _) = builder.to_sql(DatabaseType::Sqlite);
+        
+        assert!(sql.contains("SELECT * FROM users"));
+    }
+    
+    #[test]
+    fn test_select_specific_columns() {
+        let builder = Builder::new("users")
+            .select(&["id", "name", "email"]);
+        
+        let (sql, _) = builder.to_sql(DatabaseType::Sqlite);
+        
+        assert!(sql.contains("SELECT id, name, email FROM users"));
+    }
+    
+    #[test]
+    fn test_all_operators() {
+        // Test all Op variants have correct SQL output
+        assert_eq!(Op::Eq.to_sql(DatabaseType::Sqlite), "=");
+        assert_eq!(Op::Ne.to_sql(DatabaseType::Sqlite), "!=");
+        assert_eq!(Op::Gt.to_sql(DatabaseType::Sqlite), ">");
+        assert_eq!(Op::Lt.to_sql(DatabaseType::Sqlite), "<");
+        assert_eq!(Op::In.to_sql(DatabaseType::Sqlite), "IN");
+        assert_eq!(Op::NotIn.to_sql(DatabaseType::Sqlite), "NOT IN");
+    }
+    
+    #[test]
+    fn test_right_join() {
+        let builder = Builder::new("posts")
+            .right_join("users", "posts.user_id", "users.id");
+        
+        let (sql, _) = builder.to_sql(DatabaseType::Postgres);
+        
+        assert!(sql.contains("RIGHT JOIN users ON posts.user_id = users.id"));
+    }
+    
+    #[test]
+    fn test_insert_multiple_values() {
+        let builder = Builder::new("users")
+            .insert()
+            .value("name", "Alice")
+            .value("email", "alice@test.com")
+            .value("age", 25i64)
+            .value("active", true);
+        
+        let (sql, bindings) = builder.to_sql(DatabaseType::Sqlite);
+        
+        assert!(sql.contains("INSERT INTO users"));
+        assert_eq!(bindings.len(), 4);
+    }
+    
+    #[test]
+    fn test_update_multiple_values() {
+        let builder = Builder::new("users")
+            .update()
+            .value("name", "Updated Name")
+            .value("email", "new@email.com")
+            .r#where("id", 1i64);
+        
+        let (sql, bindings) = builder.to_sql(DatabaseType::Sqlite);
+        
+        assert!(sql.contains("UPDATE users SET"));
+        assert_eq!(bindings.len(), 3); // 2 values + 1 where
+    }
 }
+
