@@ -769,7 +769,7 @@ pub fn build_project() -> miette::Result<()> {
     };
 
     let main_code = format!(
-        r#"#![allow(unused_imports)]
+        r#"#![allow(unused_imports, clippy::single_char_add_str)]
         use axum::{{response::{{Html, IntoResponse}}, routing::get, extract::{{Query, Form}}, Router}};
         use tower_http::services::ServeDir;
         use tower_http::compression::CompressionLayer;
@@ -817,24 +817,27 @@ pub fn build_project() -> miette::Result<()> {
             }}
 
             // Static Router with Zero-Allocation Assets
-            let app = Router::new()
+            #[allow(clippy::let_and_return)]
+            {{
+                let app = Router::new()
+                    {}
+                    .nest_service("/pkg", ServeDir::new("static/pkg"))
+                    .nest_service("/assets", ServeDir::new("static/assets"))
+                    .nest_service("/static", ServeDir::new("static"))
+                    .nest_service("/docs/raw", ServeDir::new("../../docs/en"))
+                    .route_service("/docs/manifest.json", tower_http::services::ServeFile::new("static/docs/manifest.json"))
+                    .layer(tower_http::set_header::SetResponseHeaderLayer::if_not_present(
+                        axum::http::header::CACHE_CONTROL,
+                        axum::http::HeaderValue::from_static("public, max-age=31536000, immutable"),
+                    ))
+                    .layer(CompressionLayer::new().br(true).gzip(true))
+                    {};
+                    
+                // Auto-Inject Middleware if `src/middleware.rs` exists
                 {}
-                .nest_service("/pkg", ServeDir::new("static/pkg"))
-                .nest_service("/assets", ServeDir::new("static/assets"))
-                .nest_service("/static", ServeDir::new("static"))
-                .nest_service("/docs/raw", ServeDir::new("../../docs/en"))
-                .route_service("/docs/manifest.json", tower_http::services::ServeFile::new("static/docs/manifest.json"))
-                .layer(tower_http::set_header::SetResponseHeaderLayer::if_not_present(
-                    axum::http::header::CACHE_CONTROL,
-                    axum::http::HeaderValue::from_static("public, max-age=31536000, immutable"),
-                ))
-                .layer(CompressionLayer::new().br(true).gzip(true))
-                {};
-                
-            // Auto-Inject Middleware if `src/middleware.rs` exists
-            {}
 
-            app
+                app
+            }}
         }}
         "#,
         handlers, // Statics

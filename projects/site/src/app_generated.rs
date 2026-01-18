@@ -1,4 +1,4 @@
-#![allow(unused_imports)]
+#![allow(unused_imports, clippy::single_char_add_str)]
         use axum::{response::{Html, IntoResponse}, routing::get, extract::{Query, Form}, Router};
         use tower_http::services::ServeDir;
         use tower_http::compression::CompressionLayer;
@@ -7980,23 +7980,26 @@ html_body.push_str("</html>");
             }
 
             // Static Router with Zero-Allocation Assets
-            let app = Router::new()
-                .route("/", get(handle_index).post(handle_action_index)).route("/index", get(handle_index).post(handle_action_index)).route("/admin", get(handle_admin).post(handle_action_admin)).route("/clean_layout", get(handle_clean_layout)).route("/components", get(handle_components)).route("/playground", get(handle_playground)).route("/docs", get(handle_docs))
-                .nest_service("/pkg", ServeDir::new("static/pkg"))
-                .nest_service("/assets", ServeDir::new("static/assets"))
-                .nest_service("/static", ServeDir::new("static"))
-                .nest_service("/docs/raw", ServeDir::new("../../docs/en"))
-                .route_service("/docs/manifest.json", tower_http::services::ServeFile::new("static/docs/manifest.json"))
-                .layer(tower_http::set_header::SetResponseHeaderLayer::if_not_present(
-                    axum::http::header::CACHE_CONTROL,
-                    axum::http::HeaderValue::from_static("public, max-age=31536000, immutable"),
-                ))
-                .layer(CompressionLayer::new().br(true).gzip(true))
-                ;
+            #[allow(clippy::let_and_return)]
+            {
+                let app = Router::new()
+                    .route("/", get(handle_index).post(handle_action_index)).route("/index", get(handle_index).post(handle_action_index)).route("/admin", get(handle_admin).post(handle_action_admin)).route("/clean_layout", get(handle_clean_layout)).route("/components", get(handle_components)).route("/playground", get(handle_playground)).route("/docs", get(handle_docs))
+                    .nest_service("/pkg", ServeDir::new("static/pkg"))
+                    .nest_service("/assets", ServeDir::new("static/assets"))
+                    .nest_service("/static", ServeDir::new("static"))
+                    .nest_service("/docs/raw", ServeDir::new("../../docs/en"))
+                    .route_service("/docs/manifest.json", tower_http::services::ServeFile::new("static/docs/manifest.json"))
+                    .layer(tower_http::set_header::SetResponseHeaderLayer::if_not_present(
+                        axum::http::header::CACHE_CONTROL,
+                        axum::http::HeaderValue::from_static("public, max-age=31536000, immutable"),
+                    ))
+                    .layer(CompressionLayer::new().br(true).gzip(true))
+                    ;
+                    
+                // Auto-Inject Middleware if `src/middleware.rs` exists
                 
-            // Auto-Inject Middleware if `src/middleware.rs` exists
-            
 
-            app
+                app
+            }
         }
         
