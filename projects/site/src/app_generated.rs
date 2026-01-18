@@ -7762,7 +7762,7 @@ html_body.push_str(">");
 html_body.push_str("<span");
 html_body.push_str(" class=\"hero-badge\"");
 html_body.push_str(">");
-html_body.push_str("Nucleus v3.5");
+html_body.push_str("Nucleus v1.0.0");
 html_body.push_str("</span>");
 html_body.push_str("<h1");
 html_body.push_str(">");

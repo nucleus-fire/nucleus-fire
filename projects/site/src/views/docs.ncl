@@ -54,7 +54,7 @@
                 <section class="docs-landing" id="docs-landing">
                     <div class="docs-hero-modern">
                         <div class="docs-hero-content">
-                            <span class="hero-badge">Nucleus v3.5</span>
+                            <span class="hero-badge">Nucleus v1.0.0</span>
                             <h1>Build faster, scale better.</h1>
                             <p>The high-performance framework for modern web applications. Zero-compromise speed, Developer Experience, and Type Safety.</p>
                             <div class="hero-actions">
