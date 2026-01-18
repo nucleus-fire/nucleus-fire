@@ -68,6 +68,7 @@
   {"slug": "58_graphql_guide", "title": "GraphQL Guide", "file": "58_graphql_guide.md"},
   {"slug": "59_ai_agents", "title": "AI Agents Guide", "file": "59_ai_agents.md"},
   {"slug": "60_mcp_protocol", "title": "MCP Protocol Reference", "file": "60_mcp_protocol.md"},
+  {"slug": "61_rpc_guide", "title": "RPC & Server Functions Guide", "file": "61_rpc_guide.md"},
   {"slug": "55_ide_setup", "title": "IDE Setup Guide", "file": "55_ide_setup.md"},
   {"slug": "00_master_feature_list", "title": "Master Feature List", "file": "00_master_feature_list.md"}
 ]

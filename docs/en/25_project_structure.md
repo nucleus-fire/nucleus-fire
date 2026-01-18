@@ -9,7 +9,9 @@ A Nucleus project follows a clear convention-over-configuration structure:
 ```
 my-app/
 ├── Cargo.toml              # Rust manifest
-├── nucleus.config          # Framework configuration
+├── nucleus.config          # Framework configuration (TOML)
+├── .env                    # Environment variables (secrets)
+├── .env.example            # Example env file (committed)
 ├── content.deck            # i18n strings
 │
 ├── migrations/             # Database schemas
@@ -19,6 +21,8 @@ my-app/
 │   ├── views/              # Pages (NCL templates)
 │   │   ├── index.ncl       # → /
 │   │   ├── about.ncl       # → /about  
+│   │   ├── api/            # API routes (JSON responses)
+│   │   │   └── users.ncl   # → /api/users
 │   │   └── blog/
 │   │       ├── index.ncl   # → /blog
 │   │       └── [id].ncl    # → /blog/:id
@@ -38,6 +42,17 @@ my-app/
 │   ├── layouts/            # Page layouts
 │   │   └── main.ncl
 │   │
+│   ├── jobs/               # Background job handlers (Pulse)
+│   │   ├── mod.rs
+│   │   └── email_job.rs
+│   │
+│   ├── guards/             # Auth guards & middleware
+│   │   ├── mod.rs
+│   │   └── admin_guard.rs
+│   │
+│   ├── events/             # Event handlers (WebSocket, etc.)
+│   │   └── mod.rs
+│   │
 │   ├── middleware.rs       # Request middleware
 │   │
 │   ├── assets/             # Source images (optimized on build)
@@ -52,7 +67,8 @@ my-app/
 │   └── images/
 │
 ├── tests/                  # Integration tests
-│   └── integration.rs
+│   ├── integration_test.rs
+│   └── api_test.rs
 │
 └── target/                 # Build output (gitignored)
     └── release/
@@ -352,13 +368,18 @@ src/
 | Type of Code | Location |
 |--------------|----------|
 | Page rendering | `src/views/` |
+| API endpoints | `src/views/api/` |
 | Database queries | `src/services/` |
 | Data structures | `src/models/` |
 | UI components | `src/components/` |
 | Page wrappers | `src/layouts/` |
+| Background jobs | `src/jobs/` |
+| Auth guards | `src/guards/` |
+| Event handlers | `src/events/` |
 | Request processing | `src/middleware.rs` |
 | Third-party code | `src/vendor/` |
 | Public files | `static/` |
 | Source images | `src/assets/` |
 | Schema changes | `migrations/` |
-| Tests | `tests/` |
+| Unit tests | `tests/*.rs` |
+| E2E tests | `tests/e2e/` |

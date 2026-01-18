@@ -83,30 +83,48 @@ Nucleus includes a full component system for building reusable UI:
 
 ---
 
-## 📦 Standard Library (20 Modules)
+## 📦 Standard Library (42 Modules)
 
 | Module | Category | Description |
 |--------|----------|-------------|
 | [Photon](04_stdlib_reference.md#photon) | Data | Type-safe SQL ORM |
 | [Config](04_stdlib_reference.md#config) | Data | Environment configuration |
-| [Sonar](04_stdlib_reference.md#sonar) | Data | Full-text search |
-| [Fortress](04_stdlib_reference.md#fortress) | Security | Auth, JWT, RBAC |
+| [Sonar](04_stdlib_reference.md#sonar) | Data | Embedded full-text search |
+| [Scout](04_stdlib_reference.md#scout) | Data | Advanced search with indexing |
+| [Fortress](04_stdlib_reference.md#fortress) | Security | Auth, JWT, RBAC, rate limiting |
+| [OAuth](04_stdlib_reference.md#oauth) | Security | Social login (Google, GitHub, etc.) |
+| [Session](04_stdlib_reference.md#session) | Security | Cookie sessions, CSRF |
 | [Chain](04_stdlib_reference.md#chain) | Security | Web3/EVM utilities |
-| [Neutron](04_stdlib_reference.md#neutron) | State | Reactive signals |
+| [Neutron](04_stdlib_reference.md#neutron) | State | Reactive signals & stores |
 | [Gondola](04_stdlib_reference.md#gondola) | State | CRDT offline sync |
-| [Pulse](04_stdlib_reference.md#pulse) | Backend | Background jobs |
+| [Pulse](04_stdlib_reference.md#pulse) | Backend | Background job queue |
+| [Scheduler](04_stdlib_reference.md#scheduler) | Backend | Cron/recurring tasks |
 | [Postman](04_stdlib_reference.md#postman) | Backend | Email (SMTP & SES) |
+| [Upload](04_stdlib_reference.md#upload) | Backend | File uploads & validation |
+| [Logging](04_stdlib_reference.md#logging) | Backend | Structured logging |
 | [RPC](04_stdlib_reference.md#rpc) | Backend | Server functions |
 | [Payments](04_stdlib_reference.md#payments) | Commerce | Stripe integration |
-| [Vault](04_stdlib_reference.md#vault) | Commerce | Money handling |
-| [Stream](04_stdlib_reference.md#stream) | Real-time | WebSocket channels |
+| [Vault](04_stdlib_reference.md#vault) | Commerce | Money handling & ledger |
+| [Stream](04_stdlib_reference.md#stream) | Real-time | WebSocket rooms & broadcast |
 | [DevTools](04_stdlib_reference.md#devtools) | Real-time | Debug utilities |
+| [Health](04_stdlib_reference.md#health) | Infrastructure | Liveness/readiness probes |
+| [Pool Monitor](04_stdlib_reference.md#pool-monitor) | Infrastructure | DB connection pool stats |
+| [Cache](04_stdlib_reference.md#cache) | Infrastructure | In-memory caching |
+| [Redis Cache](04_stdlib_reference.md#redis-cache) | Infrastructure | Distributed caching |
+| [Tenant](04_stdlib_reference.md#tenant) | Infrastructure | Multi-tenancy |
 | [Federation](04_stdlib_reference.md#federation) | Integration | CMS aggregation |
-| [Neural](04_stdlib_reference.md#neural) | Integration | AI/LLM utilities |
-| [Browser](04_stdlib_reference.md#browser) | Integration | Headless automation |
+| [Neural](04_stdlib_reference.md#neural) | AI | LLM/AI client |
+| [Browser](04_stdlib_reference.md#browser) | AI | Headless automation |
+| [MCP](04_stdlib_reference.md#mcp) | AI | Model Context Protocol |
+| [Agent](04_stdlib_reference.md#agent) | AI | AI agent framework |
+| [Graph](04_stdlib_reference.md#graph) | API | GraphQL server |
+| [Push](04_stdlib_reference.md#push) | API | Web push notifications |
+| [Forms](04_stdlib_reference.md#forms) | API | Form validation |
+| [Middleware](04_stdlib_reference.md#middleware) | API | Request middleware |
 | [Polyglot](04_stdlib_reference.md#polyglot) | I18n | Internationalization |
 | [Lens](04_stdlib_reference.md#lens) | Media | Image processing |
 | [Beacon](04_stdlib_reference.md#beacon) | Analytics | Privacy-first tracking |
+| [Testing](04_stdlib_reference.md#testing) | Dev | Test utilities |
 
 ---
 

@@ -1,492 +1,405 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nucleus Studio</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        zinc: {
+                            850: '#18181b',
+                            950: '#09090b', 
+                        },
+                        brand: {
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            500_10: 'rgba(139, 92, 246, 0.1)',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-app: #09090b;
-            --bg-sidebar: #121214;
-            --bg-surface: #1c1c1f;
-            --bg-surface-hover: #27272a;
-            --border: #27272a;
-            --text-primary: #ededed;
-            --text-secondary: #a1a1aa;
-            --text-placeholder: #52525b;
-            --accent: #8b5cf6; /* Violet */
-            --accent-hover: #7c3aed;
-            --accent-dim: rgba(139, 92, 246, 0.15);
-            --success: #10b981;
-            --success-dim: rgba(16, 185, 129, 0.15);
-            --error: #ef4444;
-            --error-dim: rgba(239, 68, 68, 0.15);
-            --font-sans: 'Inter', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        /* CustomScrollbar */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: #18181b; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 5px; border: 2px solid #18181b; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
         
-        body {
-            font-family: var(--font-sans);
-            background: var(--bg-app);
-            color: var(--text-primary);
-            height: 100vh;
-            display: flex;
-            overflow: hidden;
-            font-size: 14px;
-            -webkit-font-smoothing: antialiased;
-        }
+        .toast-show { transform: translateY(0) !important; }
 
-        /* Sidebar */
-        aside {
-            width: 260px;
-            background: var(--bg-sidebar);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
-
-        .brand {
-            height: 60px;
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
-            font-weight: 700;
-            font-size: 16px;
-            color: var(--text-primary);
-            border-bottom: 1px solid var(--border);
-            gap: 10px;
-        }
-        
-        .brand-icon { font-size: 20px; }
-
-        .db-status {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .db-path {
-            font-family: var(--font-mono);
-            font-size: 12px;
-            color: var(--accent);
-            background: var(--accent-dim);
-            padding: 4px 8px;
-            border-radius: 4px;
-            word-break: break-all;
-            display: inline-block;
-        }
-
-        .nav-section {
-            padding: 20px 0;
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .nav-label {
-            padding: 0 20px 8px;
-            text-transform: uppercase;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            color: var(--text-secondary);
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 20px;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: all 0.15s ease;
-            position: relative;
-        }
-
-        .nav-item:hover {
-            background: var(--bg-surface-hover);
-            color: var(--text-primary);
-        }
-
-        .nav-item.active {
-            background: var(--bg-surface-hover);
-            color: var(--text-primary);
-        }
-        
-        .nav-item.active::before {
-            content: '';
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 3px;
-            background: var(--accent);
-        }
-
-        .table-name { display: flex; align-items: center; gap: 8px; }
-        .table-icon { font-size: 14px; opacity: 0.7; }
-        .row-count { font-size: 11px; opacity: 0.5; font-family: var(--font-mono); }
-
-        /* Main Content */
-        main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 0; /* Prevent flex blowout */
-        }
-
-        header.top-bar {
-            height: 60px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 24px;
-            background: var(--bg-app);
-        }
-
-        .breadcrumb {
-            font-weight: 500;
-            font-size: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .breadcrumb-sep { color: var(--text-secondary); }
-        .breadcrumb-active { color: var(--text-secondary); }
-
-        /* Workspace */
-        .workspace {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            padding: 0;
-        }
-
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid var(--border);
-            background: var(--bg-app);
-            padding: 0 24px;
-        }
-
-        .tab {
-            padding: 12px 0;
-            margin-right: 24px;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
-
-        .tab:hover { color: var(--text-primary); }
-        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-        /* Content Views */
-        .view-panel {
-            flex: 1;
-            overflow: auto;
-            position: relative;
-            display: none;
-        }
-        
-        .view-panel.active { display: flex; flex-direction: column; }
-
-        /* Data Grid */
-        .data-grid-container {
-            flex: 1;
-            overflow: auto;
-            position: relative;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-            white-space: nowrap;
-        }
-        
-        th {
-            background: var(--bg-surface);
-            position: sticky;
-            top: 0;
-            text-align: left;
-            padding: 12px 16px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            border-bottom: 1px solid var(--border);
-            z-index: 10;
-        }
-        
-        td {
-            padding: 10px 16px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text-primary);
-        }
-        
-        tr:hover td { background: var(--bg-surface-hover); }
-
-        .type-badge {
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: var(--bg-surface-hover);
-            color: var(--text-secondary);
-            margin-left: 8px;
-            font-family: var(--font-mono);
-        }
-
-        .cell-null { color: var(--text-placeholder); font-style: italic; }
-        .cell-number { font-family: var(--font-mono); color: #60a5fa; }
-        .cell-bool { 
-            display: inline-flex; height: 16px; width: 16px; 
-            align-items: center; justify-content: center; 
-            border-radius: 4px; 
-        }
-        .bool-true { background: var(--success-dim); color: var(--success); }
-        .bool-false { background: var(--error-dim); color: var(--error); }
-
-        /* Toolbar */
-        .toolbar {
-            padding: 12px 24px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--bg-app);
-        }
-        
-        .pagination { display: flex; gap: 8px; align-items: center; }
-        
-        .btn {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.15s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .btn:hover:not(:disabled) { background: var(--bg-surface-hover); border-color: #52525b; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .btn-primary {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: white;
-        }
-        
-        .btn-primary:hover:not(:disabled) {
-            background: var(--accent-hover);
-            border-color: var(--accent-hover);
-        }
-
-        /* Editor */
-        .editor-container {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-        }
-        
-        .sql-editor-wrapper {
-            padding: 20px 24px 0;
-        }
-        
-        .sql-editor {
-            width: 100%;
-            height: 160px;
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px;
-            font-family: var(--font-mono);
-            font-size: 14px;
-            color: var(--text-primary);
-            resize: vertical;
-            line-height: 1.5;
-        }
-        
-        .sql-editor:focus { border-color: var(--accent); }
-
-        .query-actions {
-            padding: 12px 24px;
-            display: flex;
-            gap: 12px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .query-results {
-            flex: 1;
-            overflow: auto;
-            position: relative;
-        }
-
-        /* Empty States */
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: var(--text-secondary);
-            gap: 16px;
-        }
-        
-        .empty-icon { font-size: 48px; opacity: 0.5; }
-        .empty-text { font-size: 15px; }
-
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transform: translateY(100px);
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            z-index: 100;
-        }
-        
-        .toast.show { transform: translateY(0); }
-        .toast-success { border-left: 3px solid var(--success); }
-        .toast-error { border-left: 3px solid var(--error); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 0.8s linear infinite; }
     </style>
 </head>
-<body>
-    <aside>
-        <div class="brand">
-            <span class="brand-icon">⚛️</span>
-            Nucleus Studio
-        </div>
-        <div class="db-status">
-            <div class="db-path" id="dbPath">Connecting...</div>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/sql/sql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/hint/sql-hint.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/hint/show-hint.min.css">
+</head>
+<body class="bg-zinc-950 text-zinc-100 font-sans h-screen flex overflow-hidden antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- SIDEBAR -->
+    <!-- Mobile Overlay with Fade Transition -->
+    <div id="mobileOverlay" 
+         onclick="closeSidebar()" 
+         class="fixed inset-0 bg-zinc-950/80 backdrop-blur-sm z-30 opacity-0 pointer-events-none transition-opacity duration-300 lg:hidden"
+         aria-hidden="true">
+    </div>
+    
+    <aside id="sidebar" 
+           class="fixed inset-y-0 left-0 z-40 w-72 bg-zinc-900 border-r border-zinc-800 flex flex-col flex-shrink-0 select-none transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-out shadow-2xl lg:shadow-none lg:static"
+           aria-label="Sidebar Navigation">
+        
+        <div class="h-14 flex items-center justify-between px-5 font-bold text-sm text-zinc-100 border-b border-zinc-800 bg-zinc-900/50">
+            <div class="flex items-center gap-2.5">
+                <span class="text-xl">⚛️</span>
+                Nucleus Studio
+            </div>
+            <!-- Close Button (Mobile Only) -->
+            <button onclick="closeSidebar()" 
+                    class="lg:hidden p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-md transition-colors"
+                    aria-label="Close Sidebar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
         </div>
         
-        <div class="nav-section">
-            <div class="nav-label">Tables</div>
-            <div id="tableList">
-                <!-- Tables injected here -->
+        <div class="p-4 border-b border-zinc-800">
+            <div id="dbPath" class="font-mono text-[10px] text-brand-500 bg-brand-500_10 px-2 py-1 rounded border border-brand-500/20 break-all inline-block w-full text-center truncate">
+                Connecting...
             </div>
+        </div>
+        
+        <div class="flex-1 py-5 overflow-y-auto">
+            <div class="px-5 pb-2 text-[10px] uppercase font-bold tracking-wider text-zinc-500">
+                Tables
+            </div>
+            <div id="tableList" class="flex flex-col">
+                <!-- Injected Tables -->
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-zinc-800 text-xs text-zinc-500 text-center">
+            v0.1.0-beta
         </div>
     </aside>
 
-    <main>
-        <header class="top-bar">
-            <div class="breadcrumb" id="breadcrumb">
-                <span class="breadcrumb-active">All Tables</span>
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col min-w-0 bg-zinc-950 relative">
+        <!-- Top Bar -->
+        <header class="h-14 border-b border-zinc-800 flex items-center justify-between px-4 lg:px-6 bg-zinc-950/80 backdrop-blur z-20">
+            <div class="flex items-center gap-3">
+                <button id="sidebarToggle" onclick="openSidebar()" 
+                        class="lg:hidden p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-md transition-colors"
+                        aria-label="Open Menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+                <div id="breadcrumb" class="font-medium text-sm flex items-center gap-2 truncate">
+                    <span class="text-zinc-500">Tables</span>
+                </div>
             </div>
-            <div class="actions">
-                <!-- Global actions -->
+            
+            <div class="flex items-center gap-3">
+                 <!-- Theme Toggle or User Info could go here -->
             </div>
         </header>
 
-        <div class="workspace">
-            <div class="tabs">
-                <div class="tab" data-tab="data" onclick="switchTab('data')">Data</div>
-                <div class="tab" data-tab="schema" onclick="switchTab('schema')">Schema</div>
-                <div class="tab" data-tab="query" onclick="switchTab('query')">SQL Console</div>
+        <!-- Workspace -->
+        <div class="flex-1 flex flex-col overflow-hidden relative">
+            
+            <!-- DASHBOARD HOME (Default View) -->
+            <div id="view-home" class="view-panel flex-1 flex flex-col overflow-auto relative p-8">
+                <div class="max-w-4xl mx-auto w-full">
+                    <div class="mb-10">
+                        <h1 class="text-3xl font-bold text-white mb-2">Welcome to Nucleus Studio</h1>
+                        <p class="text-zinc-400">Manage your local SQLite database with ease.</p>
+                         <div class="mt-4 flex gap-2">
+                             <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex-1">
+                                 <span class="text-xs text-zinc-500 uppercase font-bold tracking-wider">Database</span>
+                                 <div id="dash-db-name" class="text-xl font-mono text-brand-500 mt-1 truncate">...</div>
+                             </div>
+                             <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex-1">
+                                 <span class="text-xs text-zinc-500 uppercase font-bold tracking-wider">Tables</span>
+                                 <div id="dash-table-count" class="text-xl text-white mt-1">0</div>
+                             </div>
+                             <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex-1">
+                                 <span class="text-xs text-zinc-500 uppercase font-bold tracking-wider">Status</span>
+                                 <div class="text-xl text-emerald-500 mt-1">Connected</div>
+                             </div>
+                         </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <!-- Quick Actions -->
+                        <div>
+                            <h2 class="text-sm font-bold text-zinc-300 mb-4 uppercase tracking-wider">Quick Actions</h2>
+                            <div class="grid gap-3">
+                                <button onclick="switchTab('query')" class="flex items-center gap-4 bg-zinc-900 border border-zinc-800 p-4 rounded-xl hover:border-brand-500 hover:bg-zinc-800 transition-all text-left group">
+                                    <div class="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center text-brand-500 group-hover:scale-110 transition-transform">
+                                        ⌨️
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-white">SQL Console</div>
+                                        <div class="text-xs text-zinc-500">Run custom queries</div>
+                                    </div>
+                                </button>
+                                <button onclick="document.getElementById('tableList').children[0].click()" class="flex items-center gap-4 bg-zinc-900 border border-zinc-800 p-4 rounded-xl hover:border-brand-500 hover:bg-zinc-800 transition-all text-left group">
+                                    <div class="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+                                        🔍
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-white">Browse Data</div>
+                                        <div class="text-xs text-zinc-500">View first table</div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Recent/Top Tables -->
+                        <div>
+                            <h2 class="text-sm font-bold text-zinc-300 mb-4 uppercase tracking-wider">Tables Overview</h2>
+                            <div id="dash-tables" class="grid gap-2">
+                                <!-- Injected -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs (Pills Design) -->
+            <div id="workspace-tabs" class="hidden border-b border-zinc-800 bg-zinc-950 px-6 py-3 flex gap-2">
+                <div class="tab px-4 py-1.5 text-xs font-semibold cursor-pointer rounded-full border transition-all" data-tab="data" onclick="switchTab('data')">Data</div>
+                <div class="tab px-4 py-1.5 text-xs font-semibold cursor-pointer rounded-full border transition-all" data-tab="schema" onclick="switchTab('schema')">Schema</div>
+                <div class="tab px-4 py-1.5 text-xs font-semibold cursor-pointer rounded-full border transition-all" data-tab="query" onclick="switchTab('query')">SQL Console</div>
             </div>
 
             <!-- TAB: DATA -->
-            <div id="view-data" class="view-panel active">
-                <div class="toolbar">
-                    <div class="pagination">
-                        <button class="btn" onclick="prevPage()" id="btnPrev">← Prev</button>
-                        <span id="pageInfo" style="color: var(--text-secondary); font-size: 13px;">Loading...</span>
-                        <button class="btn" onclick="nextPage()" id="btnNext">Next →</button>
-                    </div>
-                    <div class="actions">
-                        <button class="btn" onclick="loadData(true)">↻ Refresh</button>
-                    </div>
-                </div>
-                <div class="data-grid-container" id="dataGrid">
-                    <!-- Table Grid -->
-                </div>
+            <div id="view-data" class="view-panel flex-1 hidden flex-col overflow-auto relative active-panel">
+                 <div class="flex items-center justify-between px-6 py-3 border-b border-zinc-800 bg-zinc-950 min-h-[50px]">
+                     <div class="flex items-center gap-3">
+                         <button id="btnPrev" class="btn" onclick="prevPage()">← Prev</button>
+                         <span id="pageInfo" class="text-xs text-zinc-400 font-mono">Loading...</span>
+                         <button id="btnNext" class="btn" onclick="nextPage()">Next →</button>
+                     </div>
+                     <div class="flex gap-2">
+                         <button class="btn btn-primary" onclick="openRowModal()">+ New Row</button>
+                         <button class="btn" onclick="toggleFilter()">🔍 Filter</button>
+                         <button class="btn" onclick="exportCSV()" title="Export current page to CSV">⇩ CSV</button>
+                         <button class="btn" onclick="loadData(true)">↻ Refresh</button>
+                     </div>
+                 </div>
+
+                 <!-- Filter Bar -->
+                 <div id="filterBar" class="hidden gap-2 px-6 py-2 bg-zinc-900 border-b border-zinc-800 items-center text-xs">
+                     <select id="filterCol" class="input-select"></select>
+                     <select id="filterOp" class="input-select w-24">
+                         <option value="=">=</option>
+                         <option value="contains">contains</option>
+                         <option value=">">&gt;</option>
+                         <option value="<">&lt;</option>
+                     </select>
+                     <input id="filterVal" class="input-text" placeholder="Value..." onkeydown="if(event.key==='Enter') applyFilter()">
+                     <button class="btn btn-primary py-1 px-2 h-8" onclick="applyFilter()">Apply</button>
+                     <button class="btn py-1 px-2 h-8" onclick="clearFilter()">✖</button>
+                 </div>
+
+                 <div id="dataGrid" class="flex-1 overflow-auto">
+                     <!-- Grid -->
+                 </div>
             </div>
 
             <!-- TAB: SCHEMA -->
-            <div id="view-schema" class="view-panel">
-                 <div class="data-grid-container" id="schemaGrid"></div>
+            <div id="view-schema" class="view-panel hidden flex-col overflow-auto relative">
+                <div id="schemaGrid" class="flex-1 overflow-auto"></div>
             </div>
 
             <!-- TAB: QUERY -->
-            <div id="view-query" class="view-panel">
-                 <div class="editor-container">
-                     <div class="sql-editor-wrapper">
-                         <textarea id="sqlInput" class="sql-editor" placeholder="-- Enter SQL Query here...
-SELECT * FROM users LIMIT 10;"></textarea>
-                     </div>
-                     <div class="query-actions">
-                         <button class="btn btn-primary" onclick="runQuery()">▶ Run Query</button>
-                         <button class="btn" onclick="document.getElementById('sqlInput').value = ''">Clear</button>
-                     </div>
-                     <div class="query-results" id="queryResult">
-                         <div class="empty-state">
-                             <span class="empty-icon">⌨️</span>
-                             <span class="empty-text">Run a query to see results</span>
-                         </div>
-                     </div>
-                 </div>
+            <div id="view-query" class="view-panel hidden flex-col overflow-auto relative p-6">
+                <div class="mb-4">
+                    <textarea id="sqlInput" class="w-full h-40 bg-zinc-900 border border-zinc-800 rounded-lg p-4 font-mono text-sm text-zinc-100 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors resize-y" placeholder="-- Enter SQL Query here...&#10;SELECT * FROM users LIMIT 10;"></textarea>
+                </div>
+                <div class="flex gap-3 mb-4 pb-4 border-b border-zinc-800">
+                    <button class="btn btn-primary" onclick="runQuery()">▶ Run Query</button>
+                    <button class="btn" onclick="state.editor.setValue('')">Clear</button>
+                </div>
+                <div id="queryResult" class="flex-1 overflow-auto border border-zinc-800 rounded-lg bg-zinc-950">
+                    <div class="flex flex-col items-center justify-center h-full text-zinc-500 gap-4 p-10 text-center">
+                        <span class="text-4xl opacity-20">⌨️</span>
+                        <span class="text-sm">Run a query to see results</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Loading Overlay -->
+            <div id="loadingOverlay" class="absolute inset-0 bg-zinc-950/60 backdrop-blur-[2px] z-20 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
+                <div class="flex items-center gap-3 text-zinc-400 text-sm">
+                    <div class="w-4 h-4 border-2 border-zinc-700 border-t-brand-500 rounded-full spinner"></div>
+                    <span>Loading...</span>
+                </div>
             </div>
         </div>
     </main>
 
-    <div id="toast" class="toast"></div>
+    <!-- TOAST -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-zinc-900 border border-zinc-800 text-zinc-100 px-4 py-3 rounded-lg text-sm shadow-xl flex items-center gap-3 transform translate-y-24 transition-transform duration-300 z-50"></div>
+
+    <!-- MODAL -->
+    <div id="rowModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center opacity-0 transition-opacity duration-200">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl w-[500px] max-w-[90vw] max-h-[85vh] flex flex-col shadow-2xl scale-95 transition-transform duration-200 modal-content">
+            <div class="px-5 py-4 border-b border-zinc-800 flex justify-between items-center">
+                <span id="modalTitle" class="font-bold text-sm">Edit Row</span>
+                <button onclick="closeModal()" class="text-zinc-500 hover:text-white p-1 rounded hover:bg-zinc-800 transition-colors">✕</button>
+            </div>
+            <div id="modalForm" class="p-5 overflow-y-auto flex-1"></div>
+            <div class="px-5 py-4 border-t border-zinc-800 flex justify-end gap-3 bg-zinc-900 rounded-b-xl">
+                 <button class="btn" onclick="closeModal()">Cancel</button>
+                 <button class="btn btn-primary" onclick="saveRow()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMPONENT CLASSES (Tailwind Abstractions) -->
+    <style>
+        /* Reusing common classes just for consistent definition in JS ref */
+        .btn {
+            @apply flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-zinc-850 border border-zinc-700 text-zinc-100 hover:bg-zinc-800 hover:border-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all;
+        }
+        /* Since we can't use @apply in standard style block with CDN without PostCSS, we used the inline classes above.
+           The classes below are strictly helper classes for JS toggling 
+        */
+        .active-tab { 
+            background-color: #7c3aed !important; 
+            border-color: #7c3aed !important; 
+            color: white !important; 
+            box-shadow: 0 2px 10px rgba(124, 58, 237, 0.3) !important;
+        }
+        .tab {
+            background-color: #18181b; 
+            border-color: #27272a; 
+            color: #a1a1aa;
+        }
+        .tab:hover:not(.active-tab) {
+            background-color: #27272a;
+            color: white;
+            border-color: #3f3f46;
+        }
+        .active-panel { display: flex !important; }
+        
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500;
+            background: #18181b; border: 1px solid #27272a; color: #f4f4f5;
+            transition: all 0.2s;
+        }
+        .btn:hover:not(:disabled) { background: #27272a; border-color: #52525b; transform: translateY(-1px); }
+        .btn:active:not(:disabled) { transform: translateY(0); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .btn-primary {
+            background: #8b5cf6; border-color: #8b5cf6; color: white;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: #7c3aed; border-color: #7c3aed; box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+        }
+        
+        .input-text {
+            width: 100%; background: #09090b; border: 1px solid #27272a; color: white; padding: 8px 12px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px; transition: all 0.15s;
+        }
+        .input-text:focus { border-color: #8b5cf6; box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1); }
+        
+        .input-select {
+            background: #09090b; border: 1px solid #27272a; color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px;
+        }
+        .input-select:focus { border-color: #8b5cf6; }
+    </style>
 
     <script>
-        // State
-        const state = {
-            tables: [],
-            currentTable: null,
-            currentTab: 'data', // data, schema, query
-            offset: 0,
-            limit: 50,
-            totalRows: 0
+        // Use Tailwind classes in JS rendering
+        const UI = {
+            navItem: (active) => `flex items-center justify-between px-5 py-2 cursor-pointer text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors border-l-2 ${active ? 'bg-zinc-800 text-white border-brand-500' : 'border-transparent'}`,
+            cell: (bg) => `px-4 py-2.5 border-b border-zinc-800 text-zinc-300 ${bg ? 'bg-zinc-900/50' : ''}`,
+            th: `bg-zinc-900 sticky top-0 text-left px-4 py-3 font-semibold text-zinc-500 border-b border-zinc-800 z-10 cursor-pointer hover:bg-zinc-800 transition-colors`,
+            badge: (color) => `inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono border ${color}`,
+            badgeTrue: `bg-emerald-500/10 text-emerald-500 border-emerald-500/20`,
+            badgeFalse: `bg-red-500/10 text-red-500 border-red-500/20`,
+            badgeType: `bg-zinc-800 text-zinc-500 border-zinc-700 ml-2`,
+            actionBtn: `opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-zinc-800 transition-all text-zinc-400 hover:scale-110`,
         };
 
-        // Init
+        // State & Logic preserved, just UI render updated
+        // State
+        const state = {
+            tables: [], currentTable: null, currentSchema: [], currentTab: 'home', offset: 0, limit: 50, totalRows: 0,
+            sortCol: null, sortDir: 'ASC', filterCol: null, filterOp: '=', filterVal: null, isEditing: false, editPk: null,
+            editor: null, currentData: null // Stores raw data for editing/export
+        };
+
         document.addEventListener('DOMContentLoaded', async () => {
              await loadInfo();
              await loadTables();
              
-             // Setup shortcuts
+             // Initial View
+             if (state.tables.length > 0) {
+                 updateDashboard();
+             }
+             
+             // Init CodeMirror
+             state.editor = CodeMirror.fromTextArea(document.getElementById('sqlInput'), {
+                 mode: 'text/x-sql',
+                 theme: 'dracula',
+                 lineNumbers: true,
+                 hintOptions: { tables: {} } // Will populate later
+             });
+             state.editor.setSize('100%', 200);
+             
              document.addEventListener('keydown', (e) => {
                  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
                      if (state.currentTab === 'query') runQuery();
+                     if (document.getElementById('rowModal').classList.contains('flex')) saveRow();
                  }
+                 if (e.key === 'Escape') closeModal();
              });
         });
 
-        // --- API ---
+        function updateDashboard() {
+            document.getElementById('dash-db-name').innerText = document.getElementById('dbPath').innerText.split('/').pop();
+            document.getElementById('dash-table-count').innerText = state.tables.length;
+            
+            document.getElementById('dash-tables').innerHTML = state.tables.slice(0, 5).map(t => `
+                <div class="flex items-center justify-between bg-zinc-900 border border-zinc-800 p-3 rounded-lg hover:border-zinc-600 transition-colors cursor-pointer" onclick="selectTable('${t.name}')">
+                    <div class="flex items-center gap-3">
+                        <span class="text-zinc-500">📄</span>
+                        <span class="font-mono text-sm text-zinc-200">${t.name}</span>
+                    </div>
+                    <span class="text-xs text-zinc-500 bg-zinc-950 px-2 py-1 rounded font-mono">${t.row_count} rows</span>
+                </div>
+            `).join('');
+        }
+
+        // --- API & LOGIC ---
+        // (Keeping mostly same logic, just modifying DOM manipulation for Tailwind classes)
 
         async function loadInfo() {
             try {
                 const res = await fetch('/api/info');
                 const info = await res.json();
                 document.getElementById('dbPath').textContent = info.path;
-            } catch (e) {
-                showToast('Failed to connect to backend', 'error');
-            }
+            } catch (e) { showToast('Failed to connect', 'error'); }
         }
 
         async function loadTables() {
@@ -494,276 +407,447 @@ SELECT * FROM users LIMIT 10;"></textarea>
                 const res = await fetch('/api/tables');
                 state.tables = await res.json();
                 renderTableList();
-                
-                // If tables exist and none selected, select first
-                if (state.tables.length > 0 && !state.currentTable) {
-                    selectTable(state.tables[0].name);
-                } else if (state.tables.length === 0) {
-                    document.getElementById('dataGrid').innerHTML = `
-                         <div class="empty-state">
-                             <span class="empty-icon">📂</span>
-                             <span class="empty-text">Database is empty</span>
-                         </div>
-                    `;
-                }
-            } catch (e) {
-                showToast('Failed to load tables', 'error');
-            }
+                // Removed automatic selection of first table to show Dashboard first
+            } catch (e) { showToast('Failed to load tables', 'error'); }
+        }
+
+        async function loadSchemaInternal(table) {
+            const res = await fetch(`/api/tables/${table}/schema`);
+            return await res.json();
+        }
+
+        function exportCSV() {
+            if (!state.currentData || !state.currentData.rows.length) return showToast("No data to export", "error");
+            
+            const cols = state.currentData.columns;
+            const rows = state.currentData.rows;
+            
+            const csvContent = [
+                cols.join(','),
+                ...rows.map(r => r.map(c => `"${(c || '').replace(/"/g, '""')}"`).join(','))
+            ].join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${state.currentTable}_export.csv`;
+            a.click();
         }
 
         async function loadData(force = false) {
             if (!state.currentTable) return;
-            
-            const grid = document.getElementById('dataGrid');
-            if (force) grid.innerHTML = '<div style="padding:20px; color:var(--text-secondary)">Loading...</div>';
+            if (force) toggleLoading(true);
 
             try {
-                const res = await fetch(`/api/tables/${state.currentTable}/data?offset=${state.offset}&limit=${state.limit}`);
+                if (!state.currentSchema || state.currentSchema.length === 0) {
+                     state.currentSchema = await loadSchemaInternal(state.currentTable);
+                     renderFilterOptions();
+                }
+                let url = `/api/tables/${state.currentTable}/data?offset=${state.offset}&limit=${state.limit}`;
+                if (state.sortCol) url += `&sort_col=${encodeURIComponent(state.sortCol)}&sort_dir=${state.sortDir}`;
+                if (state.filterCol && state.filterVal) url += `&filter_col=${encodeURIComponent(state.filterCol)}&filter_op=${encodeURIComponent(state.filterOp)}&filter_val=${encodeURIComponent(state.filterVal)}`;
+
+                const res = await fetch(url);
                 const data = await res.json();
                 state.totalRows = data.total;
-                
+                state.currentData = data; // Store raw data
                 renderDataGrid(data, 'dataGrid');
                 updatePagination();
-            } catch (e) {
-                showToast('Failed to load data', 'error');
-            }
+            } catch (e) { console.error(e); showToast('Failed to load data', 'error'); } 
+            finally { if (force) toggleLoading(false); }
         }
         
         async function loadSchema() {
             if (!state.currentTable) return;
             try {
-                const res = await fetch(`/api/tables/${state.currentTable}/schema`);
-                const cols = await res.json();
-                
-                // Transform to grid format
-                const data = {
+                const cols = await loadSchemaInternal(state.currentTable);
+                state.currentSchema = cols;
+                renderDataGrid({
                     columns: ['Column', 'Type', 'Nullable', 'Primary Key'],
-                    rows: cols.map(c => [
-                        c.name,
-                        `TYPE_${c.type}`, 
-                        c.nullable, 
-                        c.primary_key
-                    ])
-                };
-                renderDataGrid(data, 'schemaGrid', true);
-            } catch (e) {
-                showToast('Failed to load schema', 'error');
-            }
+                    rows: cols.map(c => [c.name, `TYPE_${c.type}`, c.nullable, c.primary_key])
+                }, 'schemaGrid', true);
+            } catch (e) { showToast('Failed to load schema', 'error'); }
         }
 
         async function runQuery() {
-            const sql = document.getElementById('sqlInput').value.trim();
+            const sql = state.editor.getValue().trim();
             if (!sql) return;
-
             const resDiv = document.getElementById('queryResult');
-            resDiv.innerHTML = '<div style="padding:20px; color:var(--text-secondary)">Running...</div>';
+            resDiv.innerHTML = '<div class="p-8 text-zinc-500 text-center">Running...</div>';
 
             try {
-                const res = await fetch('/api/query', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sql })
-                });
+                const res = await fetch('/api/query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sql }) });
                 const result = await res.json();
 
                 if (result.error) {
-                    resDiv.innerHTML = `
-                        <div style="padding: 20px;">
-                            <div style="background: var(--error-dim); color: var(--error); padding: 12px; border-radius: 6px; font-family: var(--font-mono);">
-                                ${result.error}
-                            </div>
-                        </div>
-                    `;
+                    resDiv.innerHTML = `<div class="p-5"><div class="bg-red-500/10 text-red-500 p-3 rounded font-mono text-xs border border-red-500/20">${result.error}</div></div>`;
                     showToast('Query failed', 'error');
                 } else if (result.affected !== null) {
-                    resDiv.innerHTML = `
-                        <div style="padding: 20px;">
-                            <div style="background: var(--success-dim); color: var(--success); padding: 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 18px">✓</span>
-                                <span>Success: ${result.affected} row(s) affected</span>
-                            </div>
-                        </div>
-                    `;
-                    // Refresh tables in case DDL changed
-                    if (sql.toUpperCase().includes('CREATE') || sql.toUpperCase().includes('DROP')) {
-                        loadTables();
-                    }
+                    resDiv.innerHTML = `<div class="p-5"><div class="bg-emerald-500/10 text-emerald-500 p-3 rounded flex items-center gap-2 border border-emerald-500/20"><span class="text-lg">✓</span> Success: ${result.affected} row(s) affected</div></div>`;
+                    if (sql.toUpperCase().includes('CREATE') || sql.toUpperCase().includes('DROP')) loadTables();
                 } else {
                     renderDataGrid(result, 'queryResult');
                     showToast(`Returned ${result.rows.length} rows`, 'success');
                 }
-            } catch (e) {
-                showToast('Query execution error', 'error');
+            } catch (e) { showToast('Query execution error', 'error'); }
+        }
+
+        // --- CRUD ACTIONS ---
+
+        async function openRowModal(rowIdx = null) {
+            const modal = document.getElementById('rowModal');
+            const modalContent = modal.querySelector('.modal-content');
+            const title = document.getElementById('modalTitle');
+            const form = document.getElementById('modalForm');
+            
+            if (!state.currentSchema) state.currentSchema = await loadSchemaInternal(state.currentTable);
+            
+            let rowData = {};
+            if (rowIdx !== null) {
+                state.isEditing = true;
+                title.innerText = 'Edit Row';
+                
+                // CRITICAL FIX: Read from state.currentData instead of DOM to avoid truncated strings
+                const row = state.currentData.rows[rowIdx];
+                const cols = state.currentData.columns;
+                
+                cols.forEach((colName, i) => {
+                    rowData[colName] = row[i];
+                });
+
+                const pkCol = state.currentSchema.find(c => c.primary_key);
+                if (!pkCol) { showToast("Cannot edit: No Primary Key found", "error"); return; }
+                state.editPk = { col: pkCol.name, val: rowData[pkCol.name] };
+            } else {
+                // IMPORTANT FIX: Ensure Schema is loaded for new row even if not previously cached or empty
+                if (!state.currentSchema || state.currentSchema.length === 0) {
+                    state.currentSchema = await loadSchemaInternal(state.currentTable);
+                }
+                
+                state.isEditing = false;
+                title.innerText = 'New Row';
+                state.editPk = null;
             }
+            
+            form.innerHTML = state.currentSchema.map(col => {
+                const val = rowData[col.name] !== undefined ? rowData[col.name] : '';
+                const isAutoPk = !state.isEditing && col.primary_key && col.type === 'INTEGER';
+                const placeholder = isAutoPk ? '(Auto-increment)' : '';
+                const disabled = state.isEditing && col.primary_key ? 'disabled' : '';
+                
+                return `
+                    <div class="mb-4">
+                        <label class="block mb-2 text-xs font-bold text-zinc-500 uppercase tracking-wide">
+                            ${col.name} <span class="text-zinc-600 font-normal ml-1">(${col.type})</span> ${col.primary_key ? '🔑' : ''}
+                        </label>
+                        <input class="input-text" id="input_${col.name}" value="${val === null ? '' : val}" placeholder="${placeholder}" ${disabled}>
+                        ${val === null ? '<div class="text-[10px] text-zinc-500 mt-1">Previous: NULL</div>' : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }, 10);
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('rowModal');
+            const modalContent = modal.querySelector('.modal-content');
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            modalContent.classList.remove('scale-100');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 200);
+        }
+        
+        async function saveRow() {
+            const formData = {};
+            state.currentSchema.forEach(col => {
+                const el = document.getElementById(`input_${col.name}`);
+                if (!el) return;
+                let val = el.value;
+                if (val === '' && (!state.isEditing && col.primary_key && col.type === 'INTEGER')) return;
+                if (val === '') val = null; 
+                formData[col.name] = val;
+            });
+            
+            try {
+                const method = state.isEditing ? 'PUT' : 'POST';
+                const body = state.isEditing ? { pk_col: state.editPk.col, pk_val: state.editPk.val, row: formData } : { row: formData };
+                const res = await fetch(`/api/tables/${state.currentTable}/row`, {
+                    method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+                });
+                const result = await res.json();
+                if (result.error) showToast(result.error, 'error');
+                else {
+                    showToast(state.isEditing ? 'Row updated' : 'Row created', 'success');
+                    closeModal();
+                    loadData();
+                }
+            } catch (e) { showToast('Save failed', 'error'); }
+        }
+        
+        async function deleteRow(rowIdx) {
+            if (!confirm('Are you sure?')) return;
+             
+             // CRITICAL FIX: Read from state.currentData
+             const row = state.currentData.rows[rowIdx];
+             const cols = state.currentData.columns;
+             const rowData = {};
+             cols.forEach((colName, i) => rowData[colName] = row[i]);
+
+             const pkCol = state.currentSchema.find(c => c.primary_key);
+             if (!pkCol) { showToast("No Primary Key found", "error"); return; }
+             
+             try {
+                 await fetch(`/api/tables/${state.currentTable}/row`, {
+                     method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({ pk_col: pkCol.name, pk_val: rowData[pkCol.name] })
+                 });
+                 showToast('Row deleted', 'success'); loadData();
+             } catch (e) { showToast('Delete failed', 'error'); }
+        }
+
+        // --- FILTER & UI ---
+
+        function toggleFilter() {
+            const bar = document.getElementById('filterBar');
+            bar.classList.toggle('hidden');
+            bar.classList.toggle('flex');
+        }
+        function renderFilterOptions() {
+            document.getElementById('filterCol').innerHTML = state.currentSchema.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        }
+        function applyFilter() {
+            state.filterCol = document.getElementById('filterCol').value;
+            state.filterOp = document.getElementById('filterOp').value;
+            state.filterVal = document.getElementById('filterVal').value;
+            state.offset = 0; loadData();
+        }
+        function clearFilter() {
+            state.filterCol = null; state.filterVal = null;
+            document.getElementById('filterVal').value = '';
+            document.getElementById('filterBar').classList.add('hidden');
+            document.getElementById('filterBar').classList.remove('flex');
+            loadData();
+        }
+        function toggleSort(col) {
+            if (state.sortCol === col) state.sortDir = state.sortDir === 'ASC' ? 'DESC' : 'ASC';
+            else { state.sortCol = col; state.sortDir = 'ASC'; }
+            loadData();
+        }
+        function toggleLoading(show) {
+            const el = document.getElementById('loadingOverlay');
+            if (show) { el.classList.remove('opacity-0', 'pointer-events-none'); }
+            else { el.classList.add('opacity-0', 'pointer-events-none'); }
         }
 
         // --- RENDERERS ---
 
         function renderTableList() {
-            const list = document.getElementById('tableList');
-            list.innerHTML = state.tables.map(t => `
-                <div class="nav-item ${state.currentTable === t.name ? 'active' : ''}" onclick="selectTable('${t.name}')">
-                    <div class="table-name">
-                        <span class="table-icon">📄</span>
+            document.getElementById('tableList').innerHTML = state.tables.map(t => {
+                const active = state.currentTable === t.name;
+                return `
+                <div class="${UI.navItem(active)}" onclick="selectTable('${t.name}')">
+                    <div class="flex items-center gap-2 truncate">
+                        <span class="text-sm opacity-50">📄</span>
                         ${t.name}
                     </div>
-                    <span class="row-count">${t.row_count}</span>
-                </div>
-            `).join('');
+                    <span class="text-[10px] font-mono opacity-40 bg-zinc-950 px-1.5 rounded">${t.row_count}</span>
+                </div>`;
+            }).join('');
         }
         
         function renderDataGrid(data, targetId, isSchema = false) {
             const container = document.getElementById(targetId);
-            
-            if (data.rows.length === 0) {
-                 container.innerHTML = `
-                     <div class="empty-state">
-                         <span class="empty-icon">∅</span>
-                         <span class="empty-text">No data found</span>
-                     </div>
-                 `;
-                 return;
-            }
+            if (data.rows.length === 0) { container.innerHTML = emptyState('∅', 'No data found'); return; }
 
-            let html = '<table><thead><tr>';
-            
-            // Header
+            let html = '<table class="w-full text-left border-collapse text-sm whitespace-nowrap"><thead><tr>';
             data.columns.forEach(col => {
-                html += `<th>${col}</th>`;
+                let sortHtml = '';
+                if (!isSchema && targetId === 'dataGrid') {
+                    const isActive = state.sortCol === col;
+                    sortHtml = `<span class="ml-1 opacity-40 ${isActive ? 'text-brand-500 opacity-100' : ''}">${isActive ? (state.sortDir === 'ASC' ? '▲' : '▼') : '↕'}</span>`;
+                }
+                const onClick = (!isSchema && targetId === 'dataGrid') ? `onclick="toggleSort('${col}')"` : '';
+                html += `<th class="${UI.th}" ${onClick} data-col="${col}">${col}${sortHtml}</th>`;
             });
+            if (!isSchema && targetId === 'dataGrid') html += '<th class="bg-zinc-900 sticky top-0 border-b border-zinc-800 w-20"></th>';
             html += '</tr></thead><tbody>';
 
-            // Rows
-            data.rows.forEach(row => {
-                html += '<tr>';
-                row.forEach((cell, idx) => {
-                    html += `<td>${formatCell(cell, isSchema, idx)}</td>`;
-                });
+            data.rows.forEach((row, idx) => {
+                html += `<tr class="group hover:bg-zinc-800/30 transition-colors" data-idx="${idx}">`;
+                row.forEach(cell => { html += `<td class="px-4 py-2 border-b border-zinc-800 text-zinc-300 max-w-xs truncate">${formatCell(cell, isSchema)}</td>`; });
+                if (!isSchema && targetId === 'dataGrid') {
+                    html += `
+                        <td class="px-2 py-2 border-b border-zinc-800 text-right">
+                            <div class="flex justify-end gap-1">
+                                <button class="${UI.actionBtn} hover:text-blue-400" onclick="openRowModal(${idx})" title="Edit">✎</button>
+                                <button class="${UI.actionBtn} hover:text-red-400" onclick="deleteRow(${idx})" title="Delete">🗑</button>
+                            </div>
+                        </td>`;
+                }
                 html += '</tr>';
             });
-            
             html += '</tbody></table>';
             
-            // Add Row count footer for Query Results
-            if (targetId === 'queryResult') {
-                html = `<div style="padding: 8px 16px; background: var(--bg-surface); border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 12px;">Result: ${data.rows.length} rows</div>` + html;
-            }
-            
+            if (targetId === 'queryResult') html = `<div class="px-4 py-2 bg-zinc-900 border-b border-zinc-800 text-xs text-zinc-500">Result: ${data.rows.length} rows</div>` + html;
             container.innerHTML = html;
         }
 
-        function formatCell(val, isSchema, colIdx) {
-            if (val === 'NULL' || val === null) return '<span class="cell-null">NULL</span>';
-            
-            // Schema-specific formatting
+        function formatCell(val, isSchema) {
+            if (val === 'NULL' || val === null) return '<span class="text-zinc-600 italic text-xs">NULL</span>';
             if (isSchema) {
-                if (colIdx === 1) return `<span class="type-badge">${val.replace('TYPE_', '')}</span>`; // Type
-                if (colIdx === 2 || colIdx === 3) { // Nullable / PK
-                    const boolVal = val === true || val === 'true' || val === 1;
-                    if (boolVal) return '<span class="cell-bool bool-true">✓</span>';
-                    return '<span class="cell-bool bool-false">×</span>';
-                }
+                if (val.toString().startsWith('TYPE_')) return `<span class="${UI.badge(UI.badgeType)}">${val.replace('TYPE_', '')}</span>`;
+                const boolVal = val === true || val === 'true' || val === 1;
+                if (boolVal === true) return `<span class="${UI.badge(UI.badgeTrue)}">YES</span>`;
+                if (boolVal === false) return `<span class="${UI.badge(UI.badgeFalse)}">NO</span>`;
             }
-            
-            // Heuristic for types
-            if (!isNaN(parseFloat(val)) && isFinite(val)) return `<span class="cell-number">${val}</span>`;
-            if (val === 'true') return '<span class="cell-bool bool-true">T</span>';
-            if (val === 'false') return '<span class="cell-bool bool-false">F</span>';
-            
-            // Limit long text
+            if (!isNaN(parseFloat(val)) && isFinite(val)) return `<span class="font-mono text-blue-400">${val}</span>`;
+            if (val === 'true') return `<span class="${UI.badge(UI.badgeTrue)}">T</span>`;
+            if (val === 'false') return `<span class="${UI.badge(UI.badgeFalse)}">F</span>`;
             if (val.length > 100) return val.substring(0, 100) + '...';
-            
             return val;
+        }
+
+        function emptyState(icon, text) {
+            return `<div class="flex flex-col items-center justify-center h-full text-zinc-500 gap-4 p-10"><span class="text-4xl opacity-20">${icon}</span><span class="text-sm">${text}</span></div>`;
         }
 
         // --- ACTIONS ---
 
         function selectTable(name) {
-            state.currentTable = name;
-            state.offset = 0;
+            state.currentTable = name; state.offset = 0;
+            state.currentSchema = null;
+            state.filterCol = null; state.filterVal = null;
+            document.getElementById('filterVal').value = '';
+            document.getElementById('filterBar').classList.add('hidden');
+            document.getElementById('filterBar').classList.remove('flex');
             
-            // Update UI
-            document.querySelectorAll('.nav-item').forEach(el => {
-                el.classList.remove('active');
-                if (el.innerText.includes(name) && !el.innerText.includes('\nCopy')) { // simple check
-                    // Ideally check data-name, but we rebuild list anyway
-                }
-            });
-            renderTableList(); // lazy way to update active class accurately
-            
+            renderTableList();
             updateBreadcrumb();
             
-            // If in query tab, we don't switch unless user switches
-            // If in schema, load schema. If data, load data.
-            if (state.currentTab === 'data') loadData();
+            // If on Home, switch to Data
+            if (state.currentTab === 'home') switchTab('data');
+            else if (state.currentTab === 'data') loadData();
             else if (state.currentTab === 'schema') loadSchema();
-             // Pre-fill query editor if in query tab? Maybe not.
+            
+            // Auto close mobile menu
+            if (window.innerWidth < 1024) closeSidebar();
         }
         
         function switchTab(tab) {
             state.currentTab = tab;
             
-            // Update Tab UI
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+            // Toggle Workspace Tabs vs Home
+            const tabsNav = document.getElementById('workspace-tabs');
+            const homeView = document.getElementById('view-home');
             
-            // Toggle Panels
-            document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
-            document.getElementById(`view-${tab}`).classList.add('active');
+            if (tab === 'home') {
+                tabsNav.classList.add('hidden');
+                homeView.classList.remove('hidden'); homeView.classList.add('flex');
+                document.querySelectorAll('.view-panel').forEach(p => { 
+                    if (p.id !== 'view-home') {
+                        p.classList.add('hidden'); p.classList.remove('flex', 'active-panel'); 
+                    }
+                });
+                return;
+            } else {
+                tabsNav.classList.remove('hidden'); 
+                homeView.classList.add('hidden'); homeView.classList.remove('flex');
+            }
+
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active-tab'));
+            document.querySelector(`.tab[data-tab="${tab}"]`)?.classList.add('active-tab');
             
-            // Load content
+            document.querySelectorAll('.view-panel').forEach(p => { 
+                if (p.id !== 'view-home') {
+                    p.classList.add('hidden'); p.classList.remove('flex', 'active-panel'); 
+                }
+            });
+            const panel = document.getElementById(`view-${tab}`);
+            panel.classList.remove('hidden'); panel.classList.add('flex', 'active-panel');
+            
             if (tab === 'data') loadData();
             else if (tab === 'schema') loadSchema();
             else if (tab === 'query') {
-                // Focus editor
-                setTimeout(() => document.getElementById('sqlInput').focus(), 50);
+                setTimeout(() => {
+                    state.editor.refresh();
+                    state.editor.focus();
+                }, 50);
             }
+        }
+
+        // --- MOBILE SIDEBAR & A11Y ---
+        
+        function openSidebar() {
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('mobileOverlay');
+            sb.classList.remove('-translate-x-full');
+            ov.classList.remove('opacity-0', 'pointer-events-none');
+            document.body.style.overflow = 'hidden'; // Lock scroll
+            sb.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeSidebar() {
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('mobileOverlay');
+            sb.classList.add('-translate-x-full');
+            ov.classList.add('opacity-0', 'pointer-events-none');
+            document.body.style.overflow = '';
+            sb.setAttribute('aria-hidden', 'true');
+        }
+        
+        // Handle Sidebar Selection (Auto-close on mobile)
+        // InselectTable we add: if (window.innerWidth < 1024) closeSidebar();
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            if (sb.classList.contains('-translate-x-full')) openSidebar();
+            else closeSidebar();
         }
         
         function updateBreadcrumb() {
-            const table = state.currentTable || 'Select Table';
-            document.getElementById('breadcrumb').innerHTML = `
-                <span class="breadcrumb-sep">Tables</span>
-                <span class="breadcrumb-sep">/</span>
-                <span class="breadcrumb-active">${table}</span>
-            `;
+            const homeLink = `<span class="cursor-pointer hover:text-white transition-colors" onclick="switchTab('home')">Home</span>`;
+            if (!state.currentTable) {
+                 document.getElementById('breadcrumb').innerHTML = `${homeLink} <span class="text-zinc-700">/</span> <span class="text-zinc-500">Dashboard</span>`;
+            } else {
+                 document.getElementById('breadcrumb').innerHTML = `${homeLink} <span class="text-zinc-700">/</span> <span class="text-zinc-500">Tables</span> <span class="text-zinc-700">/</span> <span class="text-zinc-200">${state.currentTable}</span>`;
+            }
         }
         
         function updatePagination() {
             const start = state.offset + 1;
             const end = Math.min(state.offset + state.limit, state.totalRows);
             const total = state.totalRows;
-            
             if (total === 0) {
                 document.getElementById('pageInfo').innerText = '0 rows';
-                document.getElementById('btnPrev').disabled = true;
-                document.getElementById('btnNext').disabled = true;
+                document.getElementById('btnPrev').disabled = true; document.getElementById('btnNext').disabled = true;
                 return;
             }
-            
             document.getElementById('pageInfo').innerText = `${start}-${end} of ${total}`;
             document.getElementById('btnPrev').disabled = state.offset === 0;
             document.getElementById('btnNext').disabled = end >= total;
         }
-
-        function prevPage() {
-            state.offset = Math.max(0, state.offset - state.limit);
-            loadData();
-        }
-
-        function nextPage() {
-            state.offset += state.limit;
-            loadData();
-        }
+        
+        function prevPage() { state.offset = Math.max(0, state.offset - state.limit); loadData(); }
+        function nextPage() { state.offset += state.limit; loadData(); }
 
         function showToast(msg, type = 'success') {
             const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.className = `toast toast-${type} show`;
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+            const color = type === 'success' ? 'border-l-emerald-500' : 'border-l-red-500';
+            const icon = type === 'success' ? '✓' : '✕';
+            toast.innerHTML = `<span class="${type === 'success' ? 'text-emerald-500' : 'text-red-500'} font-bold">${icon}</span> ${msg}`;
+            toast.className = `fixed bottom-6 right-6 bg-zinc-900 border border-zinc-800 border-l-4 ${color} text-zinc-100 px-4 py-3 rounded text-sm shadow-xl flex items-center gap-3 transform translate-y-0 transition-transform duration-300 z-50`;
+            setTimeout(() => { toast.classList.add('translate-y-24'); }, 3000);
         }
     </script>
 </body>

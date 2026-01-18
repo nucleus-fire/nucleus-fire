@@ -303,6 +303,194 @@ CSS scoped to the current component.
 
 ---
 
+### `<n:loader>` - Data Loading (GET)
+
+Rust code that runs on GET requests to load data.
+
+**Example:**
+```html
+<n:loader>
+    let posts = Post::query()
+        .filter("published", true)
+        .order_by("created_at", "DESC")
+        .limit(10)
+        .all()
+        .await?;
+</n:loader>
+
+<n:for item={post} in={posts}>
+    <article>{post.title}</article>
+</n:for>
+```
+
+---
+
+### `<n:action>` - Form Handling (POST)
+
+Rust code that runs on POST requests to handle form submissions.
+
+**Example:**
+```html
+<n:action>
+    let email = form.get("email").unwrap_or_default();
+    
+    if !email.is_empty() {
+        Subscriber::create()
+            .set("email", &email)
+            .save()
+            .await?;
+    }
+    
+    return redirect("/success");
+</n:action>
+
+<form method="POST">
+    <input type="email" name="email" required />
+    <button type="submit">Subscribe</button>
+</form>
+```
+
+---
+
+### `<n:else>` - Conditional Else Block
+
+Alternative content when `<n:if>` condition is false.
+
+**Example:**
+```html
+<n:if condition={user.is_authenticated}>
+    <p>Welcome, {user.name}!</p>
+</n:if>
+<n:else>
+    <p>Please <a href="/login">log in</a>.</p>
+</n:else>
+```
+
+---
+
+### `<n:outlet>` - Nested Layout Content
+
+Renders child content in nested layouts.
+
+**Example:**
+```html
+<!-- src/layouts/admin.ncl -->
+<n:layout>
+    <nav>Admin Navigation</nav>
+    <main>
+        <n:outlet />  <!-- Child view content goes here -->
+    </main>
+</n:layout>
+```
+
+---
+
+### `<n:props>` - Component Props Definition
+
+Defines typed props for components.
+
+**Example:**
+```html
+<n:component name="Button">
+    <n:props>
+        variant: String = "primary"
+        size: String = "md"
+        disabled: bool = false
+    </n:props>
+    
+    <button class="btn btn-{variant} btn-{size}" disabled={disabled}>
+        <n:slot />
+    </button>
+</n:component>
+```
+
+---
+
+### `<n:client>` - Client-Side Rust/WASM
+
+Rust code that compiles to WASM and runs in the browser.
+
+**Example:**
+```html
+<n:client>
+    use nucleus_std::Signal;
+    
+    let count = Signal::new(0);
+    
+    fn increment() {
+        count.update(|c| *c += 1);
+    }
+</n:client>
+```
+
+---
+
+### `<n:hydrate>` - Partial Hydration
+
+Marks a section for client-side hydration with state preservation.
+
+**Example:**
+```html
+<n:hydrate>
+    <div id="interactive-widget">
+        <!-- This section will be hydrated -->
+    </div>
+</n:hydrate>
+```
+
+---
+
+### `<n:spec>` - Component Specifications
+
+Rust test specifications for the component.
+
+**Example:**
+```html
+<n:spec>
+    #[test]
+    fn test_button_renders() {
+        let html = render(Button { variant: "primary" });
+        assert!(html.contains("btn-primary"));
+    }
+</n:spec>
+```
+
+---
+
+### `<n:test>` - Inline Tests
+
+Rust test code that runs with `nucleus test`.
+
+**Example:**
+```html
+<n:test>
+    #[test]
+    fn test_user_creation() {
+        let user = User::create().set("email", "test@example.com").save().await;
+        assert!(user.is_ok());
+    }
+</n:test>
+```
+
+---
+
+### `<n:error-boundary>` - Error Handling
+
+Catches errors in child components and renders fallback content.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `fallback` | String | HTML to show on error |
+
+**Example:**
+```html
+<n:error-boundary fallback="<p>Something went wrong</p>">
+    <DataTable data={complex_data} />
+</n:error-boundary>
+```
+
+---
+
 ## Template Expressions
 
 ### Interpolation

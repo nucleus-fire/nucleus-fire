@@ -61,7 +61,8 @@ const categories = {
         '47_search_guide',
         '55_scout_guide',
         '57_push_notifications_guide',
-        '58_graphql_guide'
+        '58_graphql_guide',
+        '61_rpc_guide'
     ],
     'AI & Automation': [
         '42_neural_ai_guide',

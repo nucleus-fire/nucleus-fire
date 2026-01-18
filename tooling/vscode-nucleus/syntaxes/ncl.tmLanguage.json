@@ -27,6 +27,8 @@
         { "include": "#nucleus-structural-tags" },
         { "include": "#nucleus-control-tags" },
         { "include": "#nucleus-data-tags" },
+        { "include": "#nucleus-testing-tags" },
+        { "include": "#nucleus-utility-tags" },
         { "include": "#nucleus-client-tags" },
         { "include": "#nucleus-element-tags" },
         { "include": "#nucleus-component-tags" },
@@ -93,7 +95,7 @@
       "patterns": [
         {
           "name": "meta.tag.nucleus.data.ncl",
-          "begin": "(<)(n:model|n:action|n:load)\\b",
+          "begin": "(<)(n:model|n:action|n:load|n:loader)\\b",
           "beginCaptures": {
             "1": { "name": "punctuation.definition.tag.begin.ncl" },
             "2": { "name": "entity.name.tag.nucleus.data.ncl" }
@@ -108,18 +110,82 @@
         },
         {
           "name": "meta.tag.nucleus.data.content.ncl",
-          "begin": "(?<=<n:model[^>]*>|<n:action>|<n:load>)",
-          "end": "(?=</n:model>|</n:action>|</n:load>)",
+          "begin": "(?<=<n:model[^>]*>|<n:action>|<n:load>|<n:loader>)",
+          "end": "(?=</n:model>|</n:action>|</n:load>|</n:loader>)",
           "patterns": [
             { "include": "source.rust" }
           ]
         },
         {
           "name": "meta.tag.nucleus.data.close.ncl",
-          "match": "(</)(n:model|n:action|n:load)(>)",
+          "match": "(</)(n:model|n:action|n:load|n:loader)(>)",
           "captures": {
             "1": { "name": "punctuation.definition.tag.begin.ncl" },
             "2": { "name": "entity.name.tag.nucleus.data.ncl" },
+            "3": { "name": "punctuation.definition.tag.end.ncl" }
+          }
+        }
+      ]
+    },
+    "nucleus-testing-tags": {
+      "patterns": [
+        {
+          "name": "meta.tag.nucleus.testing.ncl",
+          "begin": "(<)(n:spec|n:test)\\b",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.nucleus.testing.ncl" }
+          },
+          "end": "(>)",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.tag.end.ncl" }
+          },
+          "patterns": [
+            { "include": "#tag-attributes" }
+          ]
+        },
+        {
+          "name": "meta.tag.nucleus.testing.content.ncl",
+          "begin": "(?<=<n:spec>|<n:test>)",
+          "end": "(?=</n:spec>|</n:test>)",
+          "patterns": [
+            { "include": "source.rust" }
+          ]
+        },
+        {
+          "name": "meta.tag.nucleus.testing.close.ncl",
+          "match": "(</)(n:spec|n:test)(>)",
+          "captures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.nucleus.testing.ncl" },
+            "3": { "name": "punctuation.definition.tag.end.ncl" }
+          }
+        }
+      ]
+    },
+    "nucleus-utility-tags": {
+      "patterns": [
+        {
+          "name": "meta.tag.nucleus.utility.ncl",
+          "begin": "(<)(n:style|n:error-boundary)\\b",
+          "beginCaptures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.nucleus.utility.ncl" }
+          },
+          "end": "(/?\u003e)",
+          "endCaptures": {
+            "1": { "name": "punctuation.definition.tag.end.ncl" }
+          },
+          "patterns": [
+            { "include": "#tag-attributes" }
+          ]
+        },
+        {
+          "name": "meta.tag.nucleus.utility.close.ncl",
+          "match": "(</)(n:style|n:error-boundary)(>)",
+          "captures": {
+            "1": { "name": "punctuation.definition.tag.begin.ncl" },
+            "2": { "name": "entity.name.tag.nucleus.utility.ncl" },
             "3": { "name": "punctuation.definition.tag.end.ncl" }
           }
         }

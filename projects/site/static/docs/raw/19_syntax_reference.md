@@ -83,79 +83,103 @@ Loads server-side data into the template context.
 <n:model users="db::get_users().await" />
 
 <ul>
-    {% for user in users %}
-        <li>{{ user.name }}</li>
-    {% endfor %}
+    <n:for item="user" in="users">
+        <li>{user.name}</li>
+    </n:for>
 </ul>
 ```
 
 ---
 
-### Interpolation
+### `<n:text>` - Text Rendering
 
-Use double braces `{{ }}` to render variables or expressions in text or attributes.
+Renders text content, either from i18n keys or expressions.
 
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `key` | String | i18n key from `content.deck` |
+| `value` | Expression | Rust expression to render |
+| `escape` | Boolean | HTML escape output (default: true) |
+
+**Examples:**
 ```html
-<!-- Text content -->
-<h1>Hello, {{ user.name }}!</h1>
+<!-- Localized text -->
+<n:text key="welcome_message" />
 
-<!-- Within attributes -->
-<a href="/post/{{ post.id }}">Read More</a>
+<!-- Variable output -->
+<n:text value="user.name" />
 
-<!-- Safe by default (HTML escaped) -->
-<p>{{ content }}</p>
-
-<!-- Expressions -->
-<p>You have {{ messages.len() }} messages.</p>
+<!-- Raw HTML (be careful!) -->
+<n:text value="post.html_content" escape="false" />
 ```
 
 ---
 
-### Loops (`{% for %}`)
+### `<n:for>` - Iteration
 
-Iterate over collections using Jinja-style syntax.
+Loops over collections.
 
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `item` | String | Variable name for current item |
+| `in` | String | Collection variable to iterate |
+| `index` | String | Optional: Variable name for index |
+
+**Examples:**
 ```html
 <!-- Basic loop -->
-{% for item in items %}
-    <div class="item">{{ item.name }}</div>
-{% endfor %}
+<n:for item="post" in="posts">
+    <article>
+        <h2>{post.title}</h2>
+        <p>{post.excerpt}</p>
+    </article>
+</n:for>
 
-<!-- Loop with index (Rust syntax) -->
-{% for (i, item) in items.iter().enumerate() %}
-    <div class="row-{{ i }}">{{ item }}</div>
-{% endfor %}
+<!-- With index -->
+<n:for item="item" in="items" index="i">
+    <li>#{i + 1}: {item.name}</li>
+</n:for>
 
-<!-- Empty check -->
-{% if items.is_empty() %}
-    <p>No items found.</p>
-{% endif %}
+<!-- Nested loops -->
+<n:for item="category" in="categories">
+    <section>
+        <h2>{category.name}</h2>
+        <n:for item="product" in="category.products">
+            <div>{product.name}</div>
+        </n:for>
+    </section>
+</n:for>
 ```
-### Conditionals (`{% if %}`)
 
-Conditional rendering using Jinja-style syntax.
+---
 
+### `<n:if>` - Conditionals
+
+Conditional rendering.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `condition` | Boolean expr | Condition to evaluate |
+
+**Examples:**
 ```html
 <!-- Simple condition -->
-{% if user.is_admin %}
+<n:if condition="user.is_admin">
     <button>Delete</button>
-{% endif %}
+</n:if>
 
-<!-- With else -->
-{% if user.is_authenticated %}
+<!-- With else (use two if blocks) -->
+<n:if condition="user.is_authenticated">
     <a href="/profile">Profile</a>
-{% else %}
+</n:if>
+<n:if condition="!user.is_authenticated">
     <a href="/login">Login</a>
-{% endif %}
+</n:if>
 
-<!-- Complex conditions & Else If -->
-{% if items.len() == 0 %}
-    <p>No items.</p>
-{% elif items.len() < 5 %}
-    <p>Few items.</p>
-{% else %}
-    <p>Many items.</p>
-{% endif %}
+<!-- Complex conditions -->
+<n:if condition="items.len() > 0 && user.can_view">
+    <ul>...</ul>
+</n:if>
 ```
 
 ---
@@ -253,7 +277,7 @@ Rust code executed during server-side rendering.
     let greeting = if hour < 12 { "Good morning" } else { "Hello" };
 </n:script>
 
-<p>{{ greeting }}, the date is {{ timestamp }}</p>
+<p>{greeting}, the date is {timestamp}</p>
 ```
 
 ---
@@ -279,46 +303,190 @@ CSS scoped to the current component.
 
 ---
 
----
+### `<n:loader>` - Data Loading (GET)
 
-### `<n:client>` - Client-Side Script
+Rust code that runs on GET requests to load data.
 
-Defines JavaScript that runs in the browser. Used for interactivity, event handling, and DOM manipulation.
-
+**Example:**
 ```html
-<n:client>
-    function showAlert() {
-        alert("Hello from Client!");
-    }
-</n:client>
+<n:loader>
+    let posts = Post::query()
+        .filter("published", true)
+        .order_by("created_at", "DESC")
+        .limit(10)
+        .all()
+        .await?;
+</n:loader>
 
-<button onclick="showAlert()">Click Me</button>
+<n:for item={post} in={posts}>
+    <article>{post.title}</article>
+</n:for>
 ```
 
 ---
 
-## Event Handling
+### `<n:action>` - Form Handling (POST)
 
-Nucleus uses standard HTML event attributes linked to `<n:client>` functions.
-
-| Attribute | Description |
-|-----------|-------------|
-| `onclick` | Mouse click |
-| `onchange` | Input value change |
-| `onsubmit` | Form submission |
+Rust code that runs on POST requests to handle form submissions.
 
 **Example:**
-
 ```html
-<button onclick="toggle()">Toggle</button>
+<n:action>
+    let email = form.get("email").unwrap_or_default();
+    
+    if !email.is_empty() {
+        Subscriber::create()
+            .set("email", &email)
+            .save()
+            .await?;
+    }
+    
+    return redirect("/success");
+</n:action>
 
+<form method="POST">
+    <input type="email" name="email" required />
+    <button type="submit">Subscribe</button>
+</form>
+```
+
+---
+
+### `<n:else>` - Conditional Else Block
+
+Alternative content when `<n:if>` condition is false.
+
+**Example:**
+```html
+<n:if condition={user.is_authenticated}>
+    <p>Welcome, {user.name}!</p>
+</n:if>
+<n:else>
+    <p>Please <a href="/login">log in</a>.</p>
+</n:else>
+```
+
+---
+
+### `<n:outlet>` - Nested Layout Content
+
+Renders child content in nested layouts.
+
+**Example:**
+```html
+<!-- src/layouts/admin.ncl -->
+<n:layout>
+    <nav>Admin Navigation</nav>
+    <main>
+        <n:outlet />  <!-- Child view content goes here -->
+    </main>
+</n:layout>
+```
+
+---
+
+### `<n:props>` - Component Props Definition
+
+Defines typed props for components.
+
+**Example:**
+```html
+<n:component name="Button">
+    <n:props>
+        variant: String = "primary"
+        size: String = "md"
+        disabled: bool = false
+    </n:props>
+    
+    <button class="btn btn-{variant} btn-{size}" disabled={disabled}>
+        <n:slot />
+    </button>
+</n:component>
+```
+
+---
+
+### `<n:client>` - Client-Side Rust/WASM
+
+Rust code that compiles to WASM and runs in the browser.
+
+**Example:**
+```html
 <n:client>
-    let isOpen = false;
-    function toggle() {
-        isOpen = !isOpen;
-        // Manual DOM updates required
+    use nucleus_std::Signal;
+    
+    let count = Signal::new(0);
+    
+    fn increment() {
+        count.update(|c| *c += 1);
     }
 </n:client>
+```
+
+---
+
+### `<n:hydrate>` - Partial Hydration
+
+Marks a section for client-side hydration with state preservation.
+
+**Example:**
+```html
+<n:hydrate>
+    <div id="interactive-widget">
+        <!-- This section will be hydrated -->
+    </div>
+</n:hydrate>
+```
+
+---
+
+### `<n:spec>` - Component Specifications
+
+Rust test specifications for the component.
+
+**Example:**
+```html
+<n:spec>
+    #[test]
+    fn test_button_renders() {
+        let html = render(Button { variant: "primary" });
+        assert!(html.contains("btn-primary"));
+    }
+</n:spec>
+```
+
+---
+
+### `<n:test>` - Inline Tests
+
+Rust test code that runs with `nucleus test`.
+
+**Example:**
+```html
+<n:test>
+    #[test]
+    fn test_user_creation() {
+        let user = User::create().set("email", "test@example.com").save().await;
+        assert!(user.is_ok());
+    }
+</n:test>
+```
+
+---
+
+### `<n:error-boundary>` - Error Handling
+
+Catches errors in child components and renders fallback content.
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `fallback` | String | HTML to show on error |
+
+**Example:**
+```html
+<n:error-boundary fallback="<p>Something went wrong</p>">
+    <DataTable data={complex_data} />
+</n:error-boundary>
 ```
 
 ---
@@ -327,21 +495,21 @@ Nucleus uses standard HTML event attributes linked to `<n:client>` functions.
 
 ### Interpolation
 
-Use `{{ expression }}` syntax for inline values:
+Use `{expression}` syntax for inline values:
 
 ```html
-<h1>Hello, {{ user.name }}!</h1>
-<p>You have {{ messages.len() }} messages</p>
-<time datetime="{{ post.date }}">{{ post.formatted_date }}</time>
+<h1>Hello, {user.name}!</h1>
+<p>You have {messages.len()} messages</p>
+<time datetime="{post.date}">{post.formatted_date}</time>
 ```
 
 ### Operators
 
 | Operator | Example | Description |
 |----------|---------|-------------|
-| `+`, `-`, `*`, `/` | `{{ a + b }}` | Arithmetic |
-| `==`, `!=`, `<`, `>` | `{{ a == b }}` | Comparison |
-| `&&`, `\|\|`, `!` | `{{ a && b }}` | Logical |
+| `+`, `-`, `*`, `/` | `{a + b}` | Arithmetic |
+| `==`, `!=`, `<`, `>` | `{a == b}` | Comparison |
+| `&&`, `\|\|`, `!` | `{a && b}` | Logical |
 | `.` | `{user.email}` | Field access |
 | `()` | `{calc()}` | Method call |
 

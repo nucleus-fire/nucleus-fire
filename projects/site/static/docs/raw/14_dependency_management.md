@@ -1,46 +1,330 @@
-# Unified Dependency Management
+# Dependency Management
 
-Nucleus V3 introduces a radical simplification of dependency management. We believe that managing dependencies should be uniform, regardless of whether you are installing a backend library or a frontend component.
+Nucleus V3 introduces unified dependency management. Managing dependencies should be uniform whether you're installing backend libraries or frontend components.
+
+---
 
 ## The `nucleus install` Command
 
-The unified command handles everything:
+A single command for all dependencies:
 
 ```bash
 nucleus install <package>
 ```
 
-### 1. Rust Crates
-If you specify a crate name (e.g., `serde`, `tokio`, `reqwest`), Nucleus detects this is a Rust dependency and wraps `cargo add`.
+### Rust Crates
+
+For Rust dependencies, Nucleus wraps `cargo add`:
 
 ```bash
+# Install a crate
 nucleus install serde
-# Result: Adds 'serde' to Cargo.toml and updates Cargo.lock
+# → cargo add serde
+
+# With features
+nucleus install serde --features derive
+# → cargo add serde --features derive
+
+# Specific version
+nucleus install tokio@1.35
+# → cargo add tokio@1.35
+
+# Dev dependency
+nucleus install --dev insta
+# → cargo add --dev insta
 ```
 
-### 2. Nucleus Modules
-If you specify a URL (Git repository), Nucleus treats it as a **Nucleus Module**.
+### Nucleus Modules
+
+For Nucleus-specific modules (components, plugins), use a URL:
 
 ```bash
+# GitHub repository
 nucleus install https://github.com/nucleus-ui/navbar
-# Result: Clones the repository into src/vendor/navbar
+# → Clones to src/vendor/navbar
+
+# Shortened syntax
+nucleus install nucleus-ui/navbar
+# → Clones from github.com/nucleus-ui/navbar
+
+# Specific branch/tag
+nucleus install nucleus-ui/navbar@v2.0
 ```
 
-## "Vendor by Default" Philosophy
+---
 
-Modern web development often suffers from "dependency hell" and fragility due to remote registries going down or packages being unassigned. Nucleus adopts a **Vendor by Default** approach for frontend modules.
+## Vendor by Default Philosophy
 
-*   **Offline First**: Modules are downloaded directly into your source tree (`src/vendor`).
-*   **Reproducibility**: You commit your `src/vendor` folder. Your CI/CD pipeline never breaks because a remote package was deleted.
-*   **Zero Config**: You do not need to edit a manifest file to use these modules.
+Modern web development suffers from "dependency hell" due to:
+- Remote registries going down
+- Packages being unpublished
+- Breaking changes in minor versions
+- Supply chain attacks
+
+Nucleus adopts **Vendor by Default** for frontend modules.
+
+### How It Works
+
+```
+nucleus install nucleus-ui/navbar
+```
+
+Creates:
+```
+src/vendor/
+└── navbar/
+    ├── navbar.ncl
+    ├── styles.css
+    └── README.md
+```
+
+### Benefits
+
+| Aspect | Traditional | Vendor by Default |
+|--------|-------------|-------------------|
+| **Availability** | Depends on registry | Always available |
+| **Reproducibility** | Lock files help | Guaranteed |
+| **Auditability** | Must fetch | Code is local |
+| **Offline builds** | Usually fails | Always works |
+| **CI/CD stability** | Can break | Never breaks |
+
+### Trade-offs
+
+| Concern | Solution |
+|---------|----------|
+| Repo size | Use `.gitattributes` for large assets |
+| Updates | `nucleus update <module>` command |
+| Security patches | `nucleus audit` checks for known issues |
+
+---
 
 ## Auto-Discovery
 
-The Nucleus Compiler (`ncc`) and Reactor (`atom`) are built to automatically discover modules in `src/vendor`.
+The compiler automatically discovers vendored modules:
 
-If you install a module named `navbar`:
-1.  It lives in `src/vendor/navbar/`.
-2.  The compiler scans this directory.
-3.  You can immediately use `<n:navbar>` in any of your views.
+```
+src/vendor/
+└── navbar/
+    └── navbar.ncl
+```
 
-No `import` statements. No configuration mapping. It just works.
+Use immediately in any view:
+
+```html
+<!-- No import needed -->
+<n:navbar title="My App" />
+```
+
+### Discovery Rules
+
+1. Directory name = component name (lowercase)
+2. Entry file = `{name}.ncl` or `index.ncl`
+3. Scoped styles in `styles.css` or inline `<style scoped>`
+
+---
+
+## Updating Dependencies
+
+### Update a Specific Module
+
+```bash
+nucleus update navbar
+# Fetches latest from origin, updates src/vendor/navbar
+```
+
+### Update All Modules
+
+```bash
+nucleus update --all
+```
+
+### Check for Updates
+
+```bash
+nucleus outdated
+# Shows modules with available updates
+```
+
+---
+
+## Cargo.toml Management
+
+Nucleus manages your `Cargo.toml` automatically:
+
+```bash
+nucleus install tokio sqlx serde
+```
+
+Results in:
+
+```toml
+[dependencies]
+tokio = { version = "1.35", features = ["full"] }
+sqlx = { version = "0.7", features = ["runtime-tokio", "sqlite"] }
+serde = { version = "1.0", features = ["derive"] }
+```
+
+### Feature Detection
+
+Nucleus automatically adds common features:
+
+| Crate | Auto-added Features |
+|-------|---------------------|
+| `tokio` | `["full"]` |
+| `serde` | `["derive"]` |
+| `sqlx` | `["runtime-tokio", "sqlite"]` |
+| `tracing` | `["std"]` |
+
+Override with explicit features:
+
+```bash
+nucleus install tokio --features "rt-multi-thread,io-util"
+```
+
+---
+
+## Removing Dependencies
+
+### Remove Rust Crate
+
+```bash
+nucleus remove serde
+# → cargo remove serde
+```
+
+### Remove Vendored Module
+
+```bash
+nucleus remove navbar
+# → Deletes src/vendor/navbar
+```
+
+---
+
+## Private Registries
+
+For enterprise deployments with private registries:
+
+```toml
+# .cargo/config.toml
+[registries.private]
+index = "https://registry.example.com/index"
+token = "Bearer ${CARGO_REGISTRY_TOKEN}"
+```
+
+```bash
+nucleus install --registry private my-company-auth
+```
+
+---
+
+## Security Auditing
+
+Built-in security scanning:
+
+```bash
+# Scan for known vulnerabilities
+nucleus audit
+
+# Example output
+  Crate     │ Version │ Advisory │ Severity
+────────────┼─────────┼──────────┼──────────
+  openssl   │ 0.10.54 │ CVE-2023-│ HIGH
+            │         │ 1234     │
+            │         │          │
+  Suggested: Update to openssl@0.10.60
+```
+
+### Automated Audits
+
+Add to CI:
+```yaml
+- name: Security Audit
+  run: nucleus audit --deny-warnings
+```
+
+---
+
+## Lock Files
+
+Nucleus uses Cargo's existing lock file:
+
+```
+Cargo.lock  # Rust dependencies (committed)
+```
+
+For vendored modules, the code itself is the lock—no separate lock file needed.
+
+---
+
+## Creating Publishable Modules
+
+To create a module others can install:
+
+### 1. Create Module
+
+```bash
+nucleus new --module my-widget
+```
+
+### 2. Structure
+
+```
+my-widget/
+├── my-widget.ncl
+├── styles.css
+├── README.md
+└── package.json    # Optional metadata
+```
+
+### 3. Publish
+
+Push to GitHub:
+```bash
+git init
+git remote add origin https://github.com/yourname/my-widget
+git push -u origin main
+```
+
+Others install with:
+```bash
+nucleus install yourname/my-widget
+```
+
+---
+
+## Best Practices
+
+### 1. Pin Major Versions
+
+```bash
+nucleus install serde@1
+# Allows 1.x updates, blocks 2.0
+```
+
+### 2. Audit Before Release
+
+```bash
+nucleus audit && nucleus build --release
+```
+
+### 3. Use Workspaces for Monorepos
+
+```toml
+# Cargo.toml
+[workspace]
+members = [
+    "apps/web",
+    "apps/api",
+    "packages/shared",
+]
+```
+
+### 4. Document Vendored Dependencies
+
+```
+src/vendor/
+├── README.md    # List all vendored modules
+├── navbar/
+└── footer/
+```

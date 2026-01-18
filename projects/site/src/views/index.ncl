@@ -197,62 +197,40 @@
         <div class="section-header">
             <p class="section-label">See It In Action</p>
             <h2 class="section-title">Write less. Do more.</h2>
+            <p class="section-desc">Clean, expressive code that compiles to blazingly fast binaries.</p>
         </div>
         
         <div class="code-tabs">
             <div class="tab-buttons">
-                <button class="tab-btn active" data-tab="api">API Endpoint</button>
-                <button class="tab-btn" data-tab="db">Database</button>
-                <button class="tab-btn" data-tab="auth">Authentication</button>
-                <button class="tab-btn" data-tab="ws">WebSocket</button>
+                <button class="tab-btn active" data-tab="page">Full Page</button>
+                <button class="tab-btn" data-tab="form">Forms</button>
+                <button class="tab-btn" data-tab="island">Interactive</button>
+                <button class="tab-btn" data-tab="api">API Route</button>
+                <button class="tab-btn" data-tab="rpc">Server RPC</button>
             </div>
             
             <div class="tab-content">
-                <div class="tab-panel active" id="tab-api">
-                    <pre class="code-block"><code><span class="keyword">use</span> nucleus::prelude::*;
-
-<span class="attr">#[server]</span>
-<span class="keyword">async fn</span> <span class="function">get_users</span>() -> Result&lt;Vec&lt;User&gt;&gt; {
-    User::query()
-        .filter(<span class="string">"active"</span>, <span class="bool">true</span>)
-        .limit(<span class="number">10</span>)
-        .fetch()
-        .<span class="keyword">await</span>
-}</code></pre>
+                <div class="tab-panel active" id="tab-page">
+                    <pre class="code-block"><code><span class="comment">&lt;!-- blog/[slug].ncl --&gt;</span>&#10;<span class="tag">&lt;n:view</span> <span class="attr">title</span>=<span class="string">"{post.title}"</span><span class="tag">&gt;</span>&#10;  <span class="tag">&lt;n:loader&gt;</span>&#10;    <span class="keyword">let</span> post = Post::find(slug).<span class="keyword">await</span>?;&#10;  <span class="tag">&lt;/n:loader&gt;</span>&#10;&#10;  <span class="tag">&lt;h1&gt;</span>{post.title}<span class="tag">&lt;/h1&gt;</span>&#10;  <span class="tag">&lt;p&gt;</span>{post.content}<span class="tag">&lt;/p&gt;</span>&#10;<span class="tag">&lt;/n:view&gt;</span></code></pre>
                 </div>
-                <div class="tab-panel" id="tab-db">
-                    <pre class="code-block"><code><span class="comment">// Type-safe SQL with Photon ORM</span>
-<span class="keyword">let</span> posts = Post::query()
-    .filter(<span class="string">"author_id"</span>, user.id)
-    .order_by(<span class="string">"created_at"</span>, Desc)
-    .include(<span class="string">"comments"</span>)
-    .fetch()
-    .<span class="keyword">await</span>?;</code></pre>
+                <div class="tab-panel" id="tab-form">
+                    <pre class="code-block"><code><span class="comment">&lt;!-- contact.ncl --&gt;</span>&#10;<span class="tag">&lt;n:view</span> <span class="attr">title</span>=<span class="string">"Contact"</span><span class="tag">&gt;</span>&#10;  <span class="tag">&lt;n:action&gt;</span>&#10;    <span class="keyword">let</span> data = form.validate()?;&#10;    Postman::send(&amp;data.email).<span class="keyword">await</span>?;&#10;  <span class="tag">&lt;/n:action&gt;</span>&#10;&#10;  <span class="tag">&lt;n:form&gt;</span>&#10;    <span class="tag">&lt;input</span> <span class="attr">name</span>=<span class="string">"email"</span> <span class="attr">required</span> <span class="tag">/&gt;</span>&#10;    <span class="tag">&lt;button&gt;</span>Submit<span class="tag">&lt;/button&gt;</span>&#10;  <span class="tag">&lt;/n:form&gt;</span>&#10;<span class="tag">&lt;/n:view&gt;</span></code></pre>
                 </div>
-                <div class="tab-panel" id="tab-auth">
-                    <pre class="code-block"><code><span class="comment">// Built-in auth with Fortress</span>
-<span class="keyword">let</span> hash = Fortress::hash_password(<span class="string">"secret"</span>)?;
-<span class="keyword">let</span> token = Fortress::generate_token(&user.id)?;
-
-<span class="comment">// Role-based access control</span>
-<span class="keyword">if</span> user.has_role(Role::Admin) {
-    <span class="comment">// Admin only code</span>
-}</code></pre>
+                <div class="tab-panel" id="tab-island">
+                    <pre class="code-block"><code><span class="comment">&lt;!-- Interactive island --&gt;</span>&#10;<span class="tag">&lt;n:island</span> <span class="attr">client:visible</span><span class="tag">&gt;</span>&#10;  <span class="tag">&lt;n:script&gt;</span>&#10;    <span class="keyword">let</span> count = Signal::new(<span class="number">0</span>);&#10;  <span class="tag">&lt;/n:script&gt;</span>&#10;&#10;  <span class="tag">&lt;button</span> <span class="attr">n:on:click</span>=<span class="string">{count.set(c+1)}</span><span class="tag">&gt;</span>&#10;    Clicks: {count}&#10;  <span class="tag">&lt;/button&gt;</span>&#10;<span class="tag">&lt;/n:island&gt;</span></code></pre>
                 </div>
-                <div class="tab-panel" id="tab-ws">
-                    <pre class="code-block"><code><span class="comment">// Real-time WebSocket channels</span>
-<span class="keyword">impl</span> StreamHandler <span class="keyword">for</span> ChatHandler {
-    <span class="keyword">async fn</span> <span class="function">on_message</span>(&self, msg: Value) {
-        Channel::new(<span class="string">"chat"</span>)
-            .broadcast(<span class="string">"new_message"</span>, &msg)
-            .<span class="keyword">await</span>?;
-    }
-}</code></pre>
+                <div class="tab-panel" id="tab-api">
+                    <pre class="code-block"><code><span class="comment">&lt;!-- api/users.ncl --&gt;</span>&#10;<span class="tag">&lt;n:view</span> <span class="attr">content_type</span>=<span class="string">"json"</span><span class="tag">&gt;</span>&#10;  <span class="tag">&lt;n:loader&gt;</span>&#10;    <span class="keyword">let</span> users = User::query()&#10;      .filter(<span class="string">"active"</span>, <span class="bool">true</span>)&#10;      .all().<span class="keyword">await</span>?;&#10;&#10;    json!({ <span class="string">"users"</span>: users })&#10;  <span class="tag">&lt;/n:loader&gt;</span>&#10;<span class="tag">&lt;/n:view&gt;</span></code></pre>
+                </div>
+                <div class="tab-panel" id="tab-rpc">
+                    <pre class="code-block"><code><span class="comment">// services/user.rs</span>&#10;<span class="keyword">use</span> nucleus_std::server;&#10;&#10;<span class="attr">#[server]</span>&#10;<span class="keyword">pub async fn</span> <span class="function">create_user</span>(&#10;  name: String&#10;) -&gt; Result&lt;User&gt; {&#10;  User::create()&#10;    .set(<span class="string">"name"</span>, &amp;name)&#10;    .save().<span class="keyword">await</span>&#10;}</code></pre>
                 </div>
             </div>
         </div>
     </div>
 </section>
+
+
 
 <!-- Features Section -->
 <section id="features" class="features">
@@ -356,7 +334,7 @@
     <div class="container">
         <div class="section-header">
             <p class="section-label">Batteries Included</p>
-            <h2 class="section-title">24 modules. Zero dependencies.</h2>
+            <h2 class="section-title">42 modules. Zero dependencies.</h2>
             <p class="section-desc">Everything you need to build production apps. No npm install required.</p>
         </div>
         
@@ -454,7 +432,7 @@
         </div>
         
         <div class="stdlib-cta">
-            <n:link href="/docs#04_stdlib_reference" class="btn btn-secondary">View All 24 Modules →</n:link>
+            <n:link href="/docs#18_complete_reference" class="btn btn-secondary">View All 42 Modules →</n:link>
         </div>
     </div>
 </section>
@@ -651,214 +629,97 @@
 </section>
 
 <!-- Feature Comparison Section -->
-<section id="comparison" class="comparison" style="padding: 100px 0; background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);">
+<section id="comparison" class="comparison-section">
     <div class="container">
-        <div class="section-header" style="text-align: center; margin-bottom: 60px;">
+        <div class="section-header">
             <p class="section-label">Framework Comparison</p>
             <h2 class="section-title">How Nucleus stacks up</h2>
-            <p class="section-desc" style="max-width: 600px; margin: 0 auto;">
-                A complete fullstack framework that rivals the best in every category.
-            </p>
         </div>
         
-        <div class="comparison-table-wrapper" style="overflow-x: auto; border-radius: 20px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);">
-            <table class="comparison-table" style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 800px;">
-                <thead>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <th style="padding: 20px 24px; text-align: left; font-weight: 600;">Feature</th>
-                        <th style="padding: 20px 16px; text-align: center; background: rgba(130,100,255,0.1); border-radius: 16px 16px 0 0;">
-                            <span style="color: var(--accent-primary);">⚛️ Nucleus</span>
-                        </th>
-                        <th style="padding: 20px 16px; text-align: center; color: var(--text-secondary);">Next.js</th>
-                        <th style="padding: 20px 16px; text-align: center; color: var(--text-secondary);">Rails</th>
-                        <th style="padding: 20px 16px; text-align: center; color: var(--text-secondary);">Django</th>
-                        <th style="padding: 20px 16px; text-align: center; color: var(--text-secondary);">Laravel</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Language</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);"><span style="color: #f97316;">Rust</span></td>
-                        <td style="padding: 16px; text-align: center; color: var(--text-secondary);">JS/TS</td>
-                        <td style="padding: 16px; text-align: center; color: var(--text-secondary);">Ruby</td>
-                        <td style="padding: 16px; text-align: center; color: var(--text-secondary);">Python</td>
-                        <td style="padding: 16px; text-align: center; color: var(--text-secondary);">PHP</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Type Safety</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Full</td>
-                        <td style="padding: 16px; text-align: center;">⚠️ Optional</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">⚠️ Optional</td>
-                        <td style="padding: 16px; text-align: center;">⚠️ Optional</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Memory Safety</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Guaranteed</td>
-                        <td style="padding: 16px; text-align: center;">❌ GC</td>
-                        <td style="padding: 16px; text-align: center;">❌ GC</td>
-                        <td style="padding: 16px; text-align: center;">❌ GC</td>
-                        <td style="padding: 16px; text-align: center;">❌ GC</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Built-in ORM</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Photon</td>
-                        <td style="padding: 16px; text-align: center;">❌ Prisma*</td>
-                        <td style="padding: 16px; text-align: center;">✅ ActiveRecord</td>
-                        <td style="padding: 16px; text-align: center;">✅ Django ORM</td>
-                        <td style="padding: 16px; text-align: center;">✅ Eloquent</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Built-in Auth</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Fortress</td>
-                        <td style="padding: 16px; text-align: center;">❌ NextAuth*</td>
-                        <td style="padding: 16px; text-align: center;">✅ Devise*</td>
-                        <td style="padding: 16px; text-align: center;">✅ Built-in</td>
-                        <td style="padding: 16px; text-align: center;">✅ Jetstream*</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Real-time WebSockets</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Stream</td>
-                        <td style="padding: 16px; text-align: center;">❌ Pusher*</td>
-                        <td style="padding: 16px; text-align: center;">✅ ActionCable</td>
-                        <td style="padding: 16px; text-align: center;">❌ Channels*</td>
-                        <td style="padding: 16px; text-align: center;">✅ Broadcasting</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Background Jobs</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Pulse</td>
-                        <td style="padding: 16px; text-align: center;">❌ Bull*</td>
-                        <td style="padding: 16px; text-align: center;">✅ Sidekiq*</td>
-                        <td style="padding: 16px; text-align: center;">❌ Celery*</td>
-                        <td style="padding: 16px; text-align: center;">✅ Queues</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Cron Scheduler</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Built-in</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">❌ Whenever*</td>
-                        <td style="padding: 16px; text-align: center;">❌ django-cron*</td>
-                        <td style="padding: 16px; text-align: center;">✅ Scheduler</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">AI/LLM Integration</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Neural</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">MCP Support</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Native</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Image Processing</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Lens</td>
-                        <td style="padding: 16px; text-align: center;">❌ Sharp*</td>
-                        <td style="padding: 16px; text-align: center;">❌ ImageMagick*</td>
-                        <td style="padding: 16px; text-align: center;">❌ Pillow*</td>
-                        <td style="padding: 16px; text-align: center;">❌ Intervention*</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Full-text Search</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Sonar</td>
-                        <td style="padding: 16px; text-align: center;">❌ Algolia*</td>
-                        <td style="padding: 16px; text-align: center;">❌ Searchkick*</td>
-                        <td style="padding: 16px; text-align: center;">❌ Haystack*</td>
-                        <td style="padding: 16px; text-align: center;">❌ Scout*</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Email Sending</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Postman</td>
-                        <td style="padding: 16px; text-align: center;">❌ Nodemailer*</td>
-                        <td style="padding: 16px; text-align: center;">✅ ActionMailer</td>
-                        <td style="padding: 16px; text-align: center;">✅ Built-in</td>
-                        <td style="padding: 16px; text-align: center;">✅ Mailable</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Rate Limiting</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Fortress</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">❌ Rack::Attack*</td>
-                        <td style="padding: 16px; text-align: center;">❌ django-ratelimit*</td>
-                        <td style="padding: 16px; text-align: center;">✅ Throttle</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Health Checks</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Built-in</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">❌ health_check*</td>
-                        <td style="padding: 16px; text-align: center;">❌ django-health*</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Static Export (SSG)</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Unified</td>
-                        <td style="padding: 16px; text-align: center;">✅</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Zero Runtime</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Yes</td>
-                        <td style="padding: 16px; text-align: center;">❌ Node.js</td>
-                        <td style="padding: 16px; text-align: center;">❌ Ruby</td>
-                        <td style="padding: 16px; text-align: center;">❌ Python</td>
-                        <td style="padding: 16px; text-align: center;">❌ PHP</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Development Tools</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Console + GUI</td>
-                        <td style="padding: 16px; text-align: center;">⚠️ Basic</td>
-                        <td style="padding: 16px; text-align: center;">✅ Console</td>
-                        <td style="padding: 16px; text-align: center;">✅ Shell</td>
-                        <td style="padding: 16px; text-align: center;">✅ Tinker</td>
-                    </tr>
-
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Interactive REPL</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Console</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">✅ Console</td>
-                        <td style="padding: 16px; text-align: center;">✅ Shell</td>
-                        <td style="padding: 16px; text-align: center;">✅ Tinker</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Database Studio (GUI)</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Studio</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">✅ Admin</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 16px 24px;">Live Profiler</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);">✅ Built-in</td>
-                        <td style="padding: 16px; text-align: center;">❌</td>
-                        <td style="padding: 16px; text-align: center;">❌ MiniProfiler*</td>
-                        <td style="padding: 16px; text-align: center;">❌ DebugTbar*</td>
-                        <td style="padding: 16px; text-align: center;">❌ Telescope*</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 16px 24px; font-weight: 600;">Throughput</td>
-                        <td style="padding: 16px; text-align: center; background: rgba(130,100,255,0.05);"><span style="color: #22c55e; font-weight: 600;">20,400 req/s</span></td>
-                        <td style="padding: 16px; text-align: center; color: var(--text-secondary);">~3,500</td>
-                        <td style="padding: 16px; text-align: center; color: var(--text-secondary);">~2,000</td>
-                        <td style="padding: 16px; text-align: center; color: var(--text-secondary);">~1,500</td>
-                        <td style="padding: 16px; text-align: center; color: var(--text-secondary);">~2,500</td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- Hero Stats Row -->
+        <div class="compare-hero">
+            <div class="compare-hero-stat">
+                <span class="compare-hero-value">20,400</span>
+                <span class="compare-hero-unit">req/s</span>
+                <span class="compare-hero-label">Throughput</span>
+            </div>
+            <div class="compare-hero-stat">
+                <span class="compare-hero-value">42</span>
+                <span class="compare-hero-unit">modules</span>
+                <span class="compare-hero-label">Built-in</span>
+            </div>
+            <div class="compare-hero-stat">
+                <span class="compare-hero-value">0</span>
+                <span class="compare-hero-unit">zero</span>
+                <span class="compare-hero-label">External Deps</span>
+            </div>
         </div>
-        <p style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-tertiary);">
-            * Requires third-party package. ✅ = Built-in, ⚠️ = Partial/Optional, ❌ = Requires external package
-        </p>
+        
+        <!-- Feature Comparison Table -->
+        <div class="compare-table">
+            <div class="compare-row header">
+                <div class="compare-cell feature">Feature</div>
+                <div class="compare-cell nucleus">Nucleus</div>
+                <div class="compare-cell other">Next.js</div>
+                <div class="compare-cell other">Rails</div>
+                <div class="compare-cell other">Laravel</div>
+            </div>
+            <div class="compare-row">
+                <div class="compare-cell feature">Type Safety</div>
+                <div class="compare-cell nucleus yes">✓</div>
+                <div class="compare-cell other partial">~</div>
+                <div class="compare-cell other no">✗</div>
+                <div class="compare-cell other partial">~</div>
+            </div>
+            <div class="compare-row">
+                <div class="compare-cell feature">ORM</div>
+                <div class="compare-cell nucleus yes">✓</div>
+                <div class="compare-cell other no">✗</div>
+                <div class="compare-cell other yes">✓</div>
+                <div class="compare-cell other yes">✓</div>
+            </div>
+            <div class="compare-row">
+                <div class="compare-cell feature">Auth System</div>
+                <div class="compare-cell nucleus yes">✓</div>
+                <div class="compare-cell other no">✗</div>
+                <div class="compare-cell other partial">~</div>
+                <div class="compare-cell other partial">~</div>
+            </div>
+            <div class="compare-row">
+                <div class="compare-cell feature">WebSockets</div>
+                <div class="compare-cell nucleus yes">✓</div>
+                <div class="compare-cell other no">✗</div>
+                <div class="compare-cell other yes">✓</div>
+                <div class="compare-cell other yes">✓</div>
+            </div>
+            <div class="compare-row">
+                <div class="compare-cell feature">Background Jobs</div>
+                <div class="compare-cell nucleus yes">✓</div>
+                <div class="compare-cell other no">✗</div>
+                <div class="compare-cell other partial">~</div>
+                <div class="compare-cell other yes">✓</div>
+            </div>
+            <div class="compare-row">
+                <div class="compare-cell feature">AI/LLM + MCP</div>
+                <div class="compare-cell nucleus yes">✓</div>
+                <div class="compare-cell other no">✗</div>
+                <div class="compare-cell other no">✗</div>
+                <div class="compare-cell other no">✗</div>
+            </div>
+            <div class="compare-row">
+                <div class="compare-cell feature">Zero Runtime</div>
+                <div class="compare-cell nucleus yes">✓</div>
+                <div class="compare-cell other no">✗</div>
+                <div class="compare-cell other no">✗</div>
+                <div class="compare-cell other no">✗</div>
+            </div>
+        </div>
+        
+        <p class="compare-legend">✓ Built-in &nbsp;&bull;&nbsp; ~ Plugin required &nbsp;&bull;&nbsp; ✗ Not available</p>
+        
+        <div class="compare-cta">
+            <a href="/docs#18_complete_reference" class="btn btn-secondary">Explore All 42 Modules →</a>
+        </div>
     </div>
 </section>
 
@@ -912,6 +773,276 @@
         color: white;
     }
     
+    /* ===== SECTION BACKGROUNDS ===== */
+    
+    /* Trusted By - Subtle dark with top border glow */
+    .trusted-by {
+        background: linear-gradient(180deg, #0a0a0a 0%, #080808 100%);
+        border-top: 1px solid rgba(0, 220, 130, 0.1);
+    }
+    
+    /* Examples - Deep purple-tinted dark */
+    .examples {
+        background: linear-gradient(180deg, #0d0a12 0%, #08060d 100%);
+        position: relative;
+    }
+    .examples::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.3), transparent);
+    }
+    
+    /* Features - Rich dark with subtle blue tint */
+    .features {
+        background: linear-gradient(180deg, #070a0f 0%, #050810 100%);
+        position: relative;
+    }
+    .features::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.3), transparent);
+    }
+    
+    /* Stdlib - Green accent glow */
+    .stdlib-section {
+        background: linear-gradient(180deg, #050d08 0%, #030805 100%) !important;
+        position: relative;
+    }
+    .stdlib-section::before {
+        background: linear-gradient(90deg, transparent, rgba(0, 220, 130, 0.4), transparent) !important;
+    }
+    
+    /* Render Race Section - Deep contrast */
+    .render-section {
+        background: linear-gradient(180deg, #0a0810 0%, #06050a 100%);
+        position: relative;
+    }
+    .render-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.3), transparent);
+    }
+    
+    /* Benchmarks - Warm dark */
+    .benchmarks {
+        background: linear-gradient(180deg, #0c0908 0%, #080605 100%) !important;
+        position: relative;
+    }
+    .benchmarks::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(251, 146, 60, 0.3), transparent);
+    }
+    
+    /* Comparison - Neutral dark */
+    .comparison {
+        background: linear-gradient(180deg, #0a0a0a 0%, #060606 100%) !important;
+    }
+    
+    /* Newsletter - Accent glow at bottom */
+    .newsletter {
+        background: linear-gradient(180deg, #080a0c 0%, #050608 100%);
+        position: relative;
+    }
+    .newsletter::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 400px;
+        height: 200px;
+        background: radial-gradient(ellipse, rgba(0, 220, 130, 0.08) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    
+    /* CTA - Gradient glow */
+    .cta {
+        background: linear-gradient(180deg, #060608 0%, #0a0c10 100%);
+        position: relative;
+    }
+    .cta::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 600px;
+        height: 400px;
+        background: radial-gradient(ellipse, rgba(0, 220, 130, 0.1) 0%, rgba(14, 165, 233, 0.05) 50%, transparent 70%);
+        pointer-events: none;
+    }
+    
+    /* ===== COMPARISON SECTION ===== */
+    .comparison-section {
+        padding: 100px 0;
+        background: linear-gradient(180deg, #0a0a0c 0%, #050507 100%);
+    }
+    
+    /* Hero Stats */
+    .compare-hero {
+        display: flex;
+        justify-content: center;
+        gap: 60px;
+        margin-bottom: 60px;
+        padding: 40px 0;
+    }
+    
+    @media (max-width: 640px) {
+        .compare-hero {
+            flex-direction: column;
+            gap: 30px;
+            align-items: center;
+        }
+    }
+    
+    .compare-hero-stat {
+        text-align: center;
+    }
+    
+    .compare-hero-value {
+        display: block;
+        font-size: 56px;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--accent), #0ea5e9);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1;
+    }
+    
+    .compare-hero-unit {
+        display: block;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-top: 4px;
+    }
+    
+    .compare-hero-label {
+        display: block;
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+    
+    /* Comparison Table */
+    .compare-table {
+        max-width: 800px;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    
+    .compare-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .compare-row:last-child {
+        border-bottom: none;
+    }
+    
+    .compare-row.header {
+        background: rgba(255, 255, 255, 0.03);
+    }
+    
+    .compare-row.header .compare-cell {
+        font-weight: 600;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+    }
+    
+    .compare-row.header .compare-cell.nucleus {
+        color: var(--accent);
+    }
+    
+    .compare-cell {
+        padding: 16px 20px;
+        font-size: 14px;
+        text-align: center;
+    }
+    
+    .compare-cell.feature {
+        text-align: left;
+        color: var(--text-secondary);
+    }
+    
+    .compare-cell.nucleus {
+        background: rgba(0, 220, 130, 0.05);
+        font-weight: 600;
+    }
+    
+    .compare-cell.nucleus.yes {
+        color: var(--accent);
+    }
+    
+    .compare-cell.other {
+        color: var(--text-muted);
+    }
+    
+    .compare-cell.other.yes {
+        color: var(--accent);
+    }
+    
+    .compare-cell.other.partial {
+        color: #f59e0b;
+    }
+    
+    .compare-cell.other.no {
+        color: #6b7280;
+    }
+    
+    @media (max-width: 640px) {
+        .compare-row {
+            grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
+        }
+        .compare-cell {
+            padding: 12px 8px;
+            font-size: 12px;
+        }
+    }
+    
+    .compare-legend {
+        text-align: center;
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 20px;
+    }
+    
+    .compare-cta {
+        text-align: center;
+        margin-top: 40px;
+    }
+    
+    /* Footer - Darkest */
+    footer {
+        background: #030303;
+    }
+    
     /* Hero Content Layout */
     .hero-content-wrapper {
         position: relative;
@@ -922,7 +1053,7 @@
         justify-content: center;
         text-align: center;
         min-height: 100vh;
-        padding: 6rem 1.5rem 10rem;
+        padding: 2rem 1.5rem 10rem;
         max-width: 64rem;
         margin: 0 auto;
     }
@@ -1280,6 +1411,23 @@
     @keyframes bounce {
         0%, 100% { transform: translate(-50%, 0); }
         50% { transform: translate(-50%, 10px); }
+    }
+    
+    /* Code Examples - Fix Wrapping */
+    .code-tabs .tab-panel pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-x: hidden;
+    }
+    
+    .code-tabs .tab-panel code {
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    
+    .code-tabs .code-block {
+        overflow-x: hidden;
+        max-width: 100%;
     }
 </n:style>
 
