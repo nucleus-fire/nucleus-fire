@@ -1,6 +1,6 @@
 # Payments Guide
 
-Nucleus Payments provides a simplified wrapper around the Stripe API for common tasks like Checkout and Webhooks.
+Nucleus Payments provides a production-ready wrapper around the Stripe API for common SaaS billing tasks.
 
 ## Quick Start
 
@@ -10,7 +10,14 @@ Add your Stripe secret key to `nucleus.config`:
 
 ```toml
 [payments]
-stripe_key = "sk_test_..."
+stripe_key = "${STRIPE_SECRET_KEY}"
+currency = "usd"
+```
+
+Or set the environment variable directly:
+
+```bash
+export STRIPE_SECRET_KEY="sk_live_..." # or sk_test_... for testing
 ```
 
 ### 2. Create a Checkout Session
@@ -28,8 +35,8 @@ async fn create_checkout() -> Result<String, NucleusError> {
                 quantity: 1,
             }
         ],
-        "payment", // or "subscription"
-        None,      // idempotency key
+        "subscription", // or "payment" for one-time
+        None,           // idempotency key
         Some("user@example.com"),
     ).await?;
     
@@ -37,25 +44,85 @@ async fn create_checkout() -> Result<String, NucleusError> {
 }
 ```
 
-## Features
+## Customer Management
 
-### Customers
-
-create a new customer in Stripe:
+### Create Customer
 
 ```rust
-let id = Stripe::create_customer("user@example.com", Some("Alice")).await?;
+use nucleus_std::payments::{Stripe, Customer};
+
+let customer: Customer = Stripe::create_customer(
+    "user@example.com",
+    Some("Alice Smith")
+).await?;
+
+println!("Created customer: {}", customer.id);
 ```
 
-### Subscriptions
-
-Create a subscription for an existing customer:
+### Get Customer
 
 ```rust
-let status = Stripe::create_subscription("cus_123", "price_premium").await?;
+let customer = Stripe::get_customer("cus_123").await?;
+println!("Email: {:?}", customer.email);
 ```
 
-### Webhook Verification
+## Subscriptions
+
+### Create Subscription
+
+```rust
+use nucleus_std::payments::{Stripe, Subscription};
+
+let subscription: Subscription = Stripe::create_subscription(
+    "cus_123",
+    "price_premium"
+).await?;
+
+println!("Status: {}", subscription.status); // "active", "trialing", etc.
+```
+
+### Cancel Subscription
+
+```rust
+let cancelled = Stripe::cancel_subscription("sub_123").await?;
+assert!(cancelled.cancel_at_period_end); // Cancels at end of billing period
+```
+
+## Billing Portal
+
+Allow customers to manage their own subscriptions:
+
+```rust
+use nucleus_std::payments::{Stripe, PortalSession};
+
+let portal: PortalSession = Stripe::create_portal_session(
+    "cus_123",
+    "https://example.com/account"
+).await?;
+
+// Redirect to portal.url for customer self-service
+```
+
+## Prices & Products
+
+### List Available Prices
+
+```rust
+use nucleus_std::payments::{Stripe, Price};
+
+let prices: Vec<Price> = Stripe::list_prices(Some(10)).await?;
+
+for price in prices {
+    println!("{}: {} {}/{}",
+        price.id,
+        price.unit_amount.unwrap_or(0) / 100,
+        price.currency,
+        price.recurring.map(|r| r.interval).unwrap_or_default()
+    );
+}
+```
+
+## Webhook Verification
 
 Verify incoming Stripe webhooks securely:
 
@@ -73,12 +140,15 @@ async fn handle_webhook(
     let secret = std::env::var("STRIPE_WEBHOOK_SECRET")?;
     
     if Stripe::verify_webhook(&body, signature, &secret)? {
-        // Process webhook event
         let event: serde_json::Value = serde_json::from_str(&body)?;
         
         match event["type"].as_str() {
             Some("checkout.session.completed") => {
-                // Fulfill order
+                // Activate subscription
+                let customer_id = event["data"]["object"]["customer"].as_str();
+            }
+            Some("customer.subscription.deleted") => {
+                // Deactivate access
             }
             _ => {}
         }
@@ -88,6 +158,39 @@ async fn handle_webhook(
 }
 ```
 
+## Testing
+
+### Unit Tests (no API key needed)
+
+```bash
+cargo test -p nucleus-std payments::tests
+```
+
+### Integration Tests (requires Stripe test key)
+
+```bash
+export STRIPE_TEST_SECRET_KEY="sk_test_..."
+export STRIPE_TEST_PRICE_ID="price_..."  # Optional, for checkout tests
+cargo test -p nucleus-std payments::integration_tests -- --nocapture
+```
+
 ## Error Handling
 
-Stripe methods return `Result<T, NucleusError>`. Errors are mapped to `NucleusError::PaymentError` or `NucleusError::NetworkError`.
+All methods return `Result<T, NucleusError>`. Stripe errors are parsed and mapped to `NucleusError::PaymentError`:
+
+```rust
+match Stripe::get_customer("invalid_id").await {
+    Ok(customer) => println!("Found: {}", customer.id),
+    Err(e) => eprintln!("Stripe error: {}", e), // "invalid_request_error: No such customer"
+}
+```
+
+## Types Reference
+
+| Type | Fields |
+|------|--------|
+| `Customer` | `id`, `email`, `name`, `created` |
+| `Price` | `id`, `active`, `currency`, `unit_amount`, `recurring`, `product` |
+| `Subscription` | `id`, `customer`, `status`, `current_period_end`, `cancel_at_period_end` |
+| `PortalSession` | `id`, `url` |
+| `LineItem` | `price`, `quantity` |
