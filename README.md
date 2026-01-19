@@ -8,7 +8,7 @@
 [![Build Status](https://img.shields.io/github/actions/workflow/status/nucleus-fire/nucleus-fire/ci.yml)](https://github.com/nucleus-fire/nucleus-fire/actions)
 [![Discord](https://img.shields.io/discord/1234567890?color=5865F2&label=discord)](https://discord.gg/nucleus)
 
-Nucleus V3 is a paradigm shift. It replaces the complex tangle of optimizations (React, Webpack, Node.js runtime, ORM caching layers) with a single, hyper-optimized Rust binary. **Zero Garbage Collection. Zero Runtime Exceptions. Zero Config.**
+Nucleus is a paradigm shift. It replaces the complex tangle of optimizations (React, Webpack, Node.js runtime, ORM caching layers) with a single, hyper-optimized Rust binary. **Zero Garbage Collection. Zero Runtime Exceptions. Zero Config.**
 
 ---
 
@@ -19,7 +19,7 @@ We benchmarked Nucleus against the industry leaders on equivalent hardware.
 
 | Framework | Lang | Req/Sec | Latency (p99) | vs Nucleus |
 | :--- | :--- | :--- | :--- | :--- |
-| **Nucleus V3** | **Rust** | **20,400** | **0.8ms** | **1.0x** |
+| **Nucleus** | **Rust** | **20,400** | **0.8ms** | **1.0x** |
 | Go Fiber | Go | 18,200 | 1.2ms | 0.89x |
 | Actix Web | Rust | 17,500 | 1.1ms | 0.85x |
 | Node.js (Fastify) | JS | 8,200 | 4.5ms | 0.40x |
