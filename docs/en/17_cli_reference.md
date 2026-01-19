@@ -33,6 +33,7 @@ nucleus --version
 | [`nucleus db`](#nucleus-db) | Database operations |
 | [`nucleus generate`](#nucleus-generate) | Code generators |
 | [`nucleus install`](#nucleus-install) | Install dependencies |
+| [`nucleus check`](#nucleus-check) | Run Guardian Linter checks |
 | [`nucleus console`](#nucleus-console) | Interactive REPL for database queries |
 | [`nucleus studio`](#nucleus-studio) | Web-based database management UI |
 | [`nucleus browser`](#nucleus-browser) | Headless browser automation |
@@ -634,6 +635,56 @@ Options:
 |--------|-------------|
 | `--subscription` | Include subscription pricing table |
 | `--crypto` | Include crypto payment support |
+
+---
+
+## nucleus check
+
+Run the **Guardian Linter** to analyze your codebase for quality, security, accessibility, and performance issues.
+
+### Usage
+
+```bash
+nucleus check [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--strict` | Fail on warnings as well as errors |
+| `--fix` | Automatically fix fixable issues (e.g., indentation, sorting) |
+
+### What It Checks
+
+The Guardian engine enforces several rule sets:
+
+1.  **Accessibility (A11y)**:
+    *   `<img>` tags must have `alt` attributes
+    *   Buttons and Links must have content or `aria-label`
+    *   Form inputs must have labels
+
+2.  **Security**:
+    *   `<iframe>` tags must have `sandbox` attributes
+    *   Scripts must be sanitized
+
+3.  **Performance**:
+    *   Warns on large inline styles (>150 chars)
+    *   Detects unoptimized large assets
+
+4.  **Quality**:
+    *   Ensures `<script>` logic is paired with `<test>` or `<spec>`
+    *   Detects dead code or unused variables
+
+### Examples
+
+```bash
+# Run standard checks
+nucleus check
+
+# Run in CI (strict mode)
+nucleus check --strict
+```
 
 ---
 

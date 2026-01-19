@@ -325,6 +325,12 @@
                 <h3 class="feature-title">AI Native</h3>
                 <p class="feature-desc">First-class support for MCP and Agents. Build autonomous systems out of the box.</p>
             </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3 class="feature-title">Guardian Linter</h3>
+                <p class="feature-desc">Automated quality, security, and accessibility checks. Prevents bad code before it ships.</p>
+            </div>
         </div>
     </div>
 </section>
