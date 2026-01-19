@@ -797,19 +797,32 @@ fn convert_to_webp(src: &Path, dest: &Path) -> Result<()> {
 // function prerender_routes removed
 
 fn generate_placeholder_html(route: &str) -> String {
+    // For SSG, generate a minimal HTML shell that shows the route
+    // Real content would be injected by the Nucleus runtime or pre-rendered
+    let title = if route == "/" { "Home" } else { route.trim_start_matches('/') };
+    let theme_color = "#8B5CF6"; // Nucleus purple
+    
     format!(r#"<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nucleus - {}</title>
+    <title>{title}</title>
+    <link rel="stylesheet" href="/assets/index.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="{theme_color}">
 </head>
 <body>
-    <h1>Route: {}</h1>
-    <p>This page will be pre-rendered when the server is running.</p>
+    <div id="app">
+        <!-- Nucleus SSG: Route {route} -->
+        <noscript>
+            <p>This application requires JavaScript to run.</p>
+        </noscript>
+    </div>
+    <script src="/assets/nucleus.js" type="module"></script>
 </body>
 </html>
-"#, route, route)
+"#, title = title, route = route, theme_color = theme_color)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1339,8 +1352,14 @@ mod tests {
     #[test]
     fn test_generate_placeholder_html() {
         let html = generate_placeholder_html("/about");
-        assert!(html.contains("Route: /about"));
+        assert!(html.contains("<!-- Nucleus SSG: Route /about -->"));
         assert!(html.contains("<!DOCTYPE html>"));
+        assert!(html.contains("<title>about</title>"));
+        assert!(html.contains("manifest.json"));
+        
+        // Test home route
+        let home_html = generate_placeholder_html("/");
+        assert!(home_html.contains("<title>Home</title>"));
     }
     #[test]
     fn test_compute_hash_with_deps() {

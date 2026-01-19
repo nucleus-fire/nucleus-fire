@@ -280,7 +280,7 @@ async function syncPendingRequests() {{
 }}
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PUSH NOTIFICATIONS (stub for future use)
+// PUSH NOTIFICATIONS
 // ═══════════════════════════════════════════════════════════════════════════
 
 self.addEventListener('push', (event) => {{

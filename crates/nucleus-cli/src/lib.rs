@@ -454,8 +454,26 @@ pub async fn run_cli() -> miette::Result<()> {
             }
         }
         Some(Commands::Test) => {
-            println!("⚛️  Running Guardian...");
-            println!("✅ All tests passed (Stub).");
+            println!("⚛️  Running Guardian Test Suite...\n");
+            
+            // Run cargo test with workspace flag
+            let status = std::process::Command::new("cargo")
+                .args(["test", "--workspace"])
+                .status();
+            
+            match status {
+                Ok(exit_status) if exit_status.success() => {
+                    println!("\n✅ All tests passed!");
+                }
+                Ok(_) => {
+                    eprintln!("\n❌ Some tests failed.");
+                    std::process::exit(1);
+                }
+                Err(e) => {
+                    eprintln!("❌ Failed to run tests: {}", e);
+                    std::process::exit(1);
+                }
+            }
         }
         Some(Commands::Install { package }) => {
             handle_install(package)?;
