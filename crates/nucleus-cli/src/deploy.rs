@@ -403,34 +403,59 @@ fn generate_dockerfile() -> Result<()> {
     
     let content = format!(r#"# ═══════════════════════════════════════════════════════════════════════════
 # NUCLEUS FRAMEWORK - OPTIMIZED PRODUCTION DOCKERFILE
-# Multi-stage build for minimal image size (~20MB)
+# Multi-stage build for minimal image size (~25MB)
 # ═══════════════════════════════════════════════════════════════════════════
 
 # Stage 1: Build
-FROM rust:1.76-buster as builder
+FROM rust:1.82-bookworm as builder
 
 WORKDIR /app
-COPY . .
 
-# Build release binary with optimizations
+# Cache dependencies (only rebuild if Cargo files change)
+COPY Cargo.toml Cargo.lock* ./
+RUN mkdir src && echo "fn main() {{}}" > src/main.rs && \
+    cargo build --release && \
+    rm -rf src target/release/deps/{}*
+
+# Copy source and build
+COPY . .
 RUN cargo build --release
 
-# Stage 2: Runtime (Distroless for security)
-FROM gcr.io/distroless/cc-debian12
+# Stage 2: Runtime (Debian slim for compatibility)
+FROM debian:bookworm-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libssl3 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy only what's needed
+# Copy binary
 COPY --from=builder /app/target/release/{} /app/server
-COPY --from=builder /app/static /app/static
+
+# Copy static assets (if exists)
+COPY --from=builder /app/static /app/static 2>/dev/null || true
+COPY --from=builder /app/migrations /app/migrations 2>/dev/null || true
+COPY --from=builder /app/nucleus.config /app/nucleus.config 2>/dev/null || true
 
 # Environment
 ENV PORT=3000
+ENV RUST_LOG=info
 EXPOSE 3000
 
-# Run
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+# Run as non-root user
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
+
 CMD ["./server"]
-"#, binary_name);
+"#, binary_name, binary_name);
     
     fs::write(path, content).into_diagnostic()?;
     Ok(())
