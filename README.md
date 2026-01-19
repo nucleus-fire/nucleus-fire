@@ -94,7 +94,7 @@ Try the templates instantly in the cloud:
 -   **[Authentication](docs/en/21_authentication_guide.md)**
 -   **[AI Agents](docs/en/59_ai_agents.md)**
 
-## 🤝 internal vs External
+## 🆚 Comparison
 
 Comparing Nucleus to the "Best":
 
