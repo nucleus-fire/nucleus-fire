@@ -355,13 +355,53 @@ fn deploy_manual() -> Result<()> {
 // FILE GENERATORS
 // ═══════════════════════════════════════════════════════════════════════════
 
+pub fn run_init() -> Result<()> {
+    print_banner();
+    println!("{} Initializing deployment configuration...", GEAR);
+    println!();
+    
+    // Check for existing files
+    if Path::new("Dockerfile").exists() {
+        println!("{} Dockerfile already exists.", CHECK);
+    } else {
+        generate_dockerfile()?;
+        println!("{} Generated Dockerfile", CHECK);
+    }
+    
+    if Path::new(".dockerignore").exists() {
+        println!("{} .dockerignore already exists.", CHECK);
+    } else {
+        generate_dockerignore()?;
+        println!("{} Generated .dockerignore", CHECK);
+    }
+    
+    // Optional: Fly.toml (ask user?) For 1-click flow, let's generate it if missing, or maybe prompt?
+    // "1-click deploy" implies automation. Generating fly.toml is harmless if unused.
+    if Path::new("fly.toml").exists() {
+         println!("{} fly.toml already exists.", CHECK);
+    } else {
+        generate_fly_toml()?;
+        println!("{} Generated fly.toml", CHECK);
+    }
+    
+    println!();
+    println!("{} Deployment initialization complete!", SPARKLES);
+    println!("   You can now run 'nucleus deploy' to deploy to the cloud.");
+    
+    Ok(())
+}
+
 fn generate_dockerfile() -> Result<()> {
     let path = Path::new("Dockerfile");
     if path.exists() {
         return Ok(()); // Don't overwrite
     }
     
-    let content = r#"# ═══════════════════════════════════════════════════════════════════════════
+    let app_name = detect_app_name().unwrap_or_else(|| "server".to_string());
+    // Normalize name (underscores) for binary
+    let binary_name = app_name.replace('-', "_");
+    
+    let content = format!(r#"# ═══════════════════════════════════════════════════════════════════════════
 # NUCLEUS FRAMEWORK - OPTIMIZED PRODUCTION DOCKERFILE
 # Multi-stage build for minimal image size (~20MB)
 # ═══════════════════════════════════════════════════════════════════════════
@@ -373,7 +413,7 @@ WORKDIR /app
 COPY . .
 
 # Build release binary with optimizations
-RUN cargo build --release --bin server
+RUN cargo build --release
 
 # Stage 2: Runtime (Distroless for security)
 FROM gcr.io/distroless/cc-debian12
@@ -381,7 +421,7 @@ FROM gcr.io/distroless/cc-debian12
 WORKDIR /app
 
 # Copy only what's needed
-COPY --from=builder /app/target/release/server /app/server
+COPY --from=builder /app/target/release/{} /app/server
 COPY --from=builder /app/static /app/static
 
 # Environment
@@ -390,7 +430,7 @@ EXPOSE 3000
 
 # Run
 CMD ["./server"]
-"#;
+"#, binary_name);
     
     fs::write(path, content).into_diagnostic()?;
     Ok(())

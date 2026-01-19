@@ -1,0 +1,42 @@
+services:
+  # Showcase Template
+  - type: web
+    name: nucleus-showcase
+    env: docker
+    plan: free
+    region: ohio
+    dockerContext: .
+    dockerfilePath: templates/apps/showcase/Dockerfile
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: NUCLEUS_ENV
+        value: production
+
+  # SaaS Template
+  - type: web
+    name: nucleus-saas
+    env: docker
+    plan: free
+    region: ohio
+    dockerContext: .
+    dockerfilePath: templates/apps/saas/Dockerfile
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: NUCLEUS_ENV
+        value: production
+
+  # Blog Template
+  - type: web
+    name: nucleus-blog
+    env: docker
+    plan: free
+    region: ohio
+    dockerContext: .
+    dockerfilePath: templates/apps/blog/Dockerfile
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: NUCLEUS_ENV
+        value: production

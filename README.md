@@ -63,12 +63,24 @@ nucleus run
 
 # 4. Open Nucleus Studio (in a separate terminal)
 nucleus studio
+
+# 5. Prepare for Production
+nucleus deploy init
 ```
 
-## 🌟 Premium Examples
+## 🚀 One-Click Deploy
 
-| Demo | Description | Tech Stack |
+Try the templates instantly in the cloud:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/nucleus-fire/nucleus-fire)
+
+## 🌟 Templates & Starters
+
+| Template | Description | Tech Stack |
 | :--- | :--- | :--- |
+| **[Showcase](templates/apps/showcase)** | ✨ **Framework Demo** | Routing, Signals, Forms, Async, Error Handling |
+| **[SaaS](templates/apps/saas)** | 🚀 **Startup Boilerplate** | Auth, Teams, Pricing, Stripe Mock |
+| **[Blog](templates/apps/blog)** | ✍️ **Content Engine** | Markdown Controller, SEO, Sitemap |
 | **[Amour](templates/apps/dating)** | 💘 **Dating App** | 125k RPS, Real-time Chat, Geolocation |
 | **[Graph](templates/apps/dashboard)** | 📊 **Analytics Dashboard** | WASM Hydration, Charts, Dark Mode |
 | **[Chat](templates/apps/chat)** | 💬 **Messaging** | WebSockets, Optimistic UI, KV Store |

@@ -37,6 +37,9 @@ pub enum Commands {
     Test,
     /// Deploys the application (interactive multi-platform)
     Deploy {
+        #[command(subcommand)]
+        command: Option<DeployCommands>,
+
         /// Target platform: docker, fly, railway, render, manual
         #[arg(short, long)]
         target: Option<String>,
@@ -103,6 +106,12 @@ pub enum Commands {
         #[arg(short, long, default_value = "4000")]
         port: u16,
     },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum DeployCommands {
+    /// Initialize deployment configuration (Dockerfile, fly.toml, etc.)
+    Init,
 }
 
 #[derive(Subcommand, Debug)]
@@ -444,8 +453,12 @@ pub async fn run_cli() -> miette::Result<()> {
         Some(Commands::Install { package }) => {
             handle_install(package)?;
         }
-        Some(Commands::Deploy { target }) => {
-            deploy::run_deploy(target.clone())?;
+        Some(Commands::Deploy { command, target }) => {
+            if let Some(DeployCommands::Init) = command {
+                 deploy::run_init()?;
+            } else {
+                 deploy::run_deploy(target.clone())?;
+            }
         }
         Some(Commands::Export { output, wizard, incremental, base_url, platform }) => {
             if *wizard {
