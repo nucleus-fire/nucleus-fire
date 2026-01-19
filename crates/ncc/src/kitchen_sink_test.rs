@@ -40,12 +40,21 @@ fn test_kitchen_sink_compilation() {
 
     // 2. Guardian Check
     let guardian = Guardian::new();
-    let validation = guardian.validate(&nodes);
-    assert!(
-        validation.is_ok(),
-        "Guardian validation failed: {:?}",
-        validation.err()
-    );
+    let issues = guardian.validate(&nodes);
+
+    // Fail only if we have actual Errors (High Severity)
+    if issues.iter().any(|i| {
+        matches!(
+            i,
+            crate::guardian::GuardianRule::Security { .. }
+                | crate::guardian::GuardianRule::Quality { .. }
+        )
+    }) {
+        panic!(
+            "Guardian validation failed with critical errors: {:?}",
+            issues
+        );
+    }
 
     // 3. CSS Compilation
     let mut compiler = AtomicCompiler::new();

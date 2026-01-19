@@ -152,6 +152,17 @@ pub enum BrowserCommands {
 
 // Logic implementations
 pub async fn run_cli() -> miette::Result<()> {
+    // Install miette hook for nice errors
+    miette::set_hook(Box::new(|_| {
+        Box::new(
+            miette::MietteHandlerOpts::new()
+                .theme(miette::GraphicalTheme::unicode())
+                .word_wrapper(textwrap::Options::new(80))
+                .build(),
+        )
+    }))
+    .ok();
+
     let cli = Cli::parse();
     match &cli.command {
         Some(Commands::New { name }) => {

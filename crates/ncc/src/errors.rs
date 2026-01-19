@@ -106,7 +106,10 @@ pub enum NucleusError {
 
     // ═══ Validation Errors ═══
     #[error("{0}")]
-    #[diagnostic(code(nucleus::validation::error))]
+    #[diagnostic(
+        code(nucleus::validation::error),
+        help("Check the specific validation rule mentioned in the error message.")
+    )]
     ValidationError(String),
 
     // ═══ I/O Errors ═══

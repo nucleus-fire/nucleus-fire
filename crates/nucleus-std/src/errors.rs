@@ -27,6 +27,18 @@ pub enum NucleusError {
     InternalError(String),
 }
 
+impl NucleusError {
+    pub fn suggestion(&self) -> Option<&str> {
+        match self {
+            NucleusError::ConfigError(_) => Some("Check your nucleus.config or .env file for missing values."),
+            NucleusError::DatabaseError(_) => Some("Ensure your database is running and the connection string is correct. Run 'nucleus db migrate' to apply pending migrations."),
+            NucleusError::NetworkError(_) => Some("Check your internet connection or firewall settings."),
+            NucleusError::IOError(_) => Some("Verify file permissions and that the path exists."),
+            _ => None,
+        }
+    }
+}
+
 // Convenience alias
 pub type Result<T> = std::result::Result<T, NucleusError>;
 

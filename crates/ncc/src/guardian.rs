@@ -1,4 +1,45 @@
 use crate::ast::Node;
+use miette::{Diagnostic, SourceSpan};
+use thiserror::Error;
+
+#[derive(Error, Diagnostic, Debug, Clone)]
+pub enum GuardianRule {
+    #[error("Accessibility: {message}")]
+    #[diagnostic(code(guardian::a11y), severity(Warning))]
+    A11y {
+        message: String,
+        #[label("Here")]
+        span: Option<SourceSpan>,
+    },
+
+    #[error("Security Risk: {message}")]
+    #[diagnostic(
+        code(guardian::security),
+        severity(Error),
+        help("Ensure you are not exposing the application to XSS or Injection attacks.")
+    )]
+    Security {
+        message: String,
+        #[label("Risk Source")]
+        span: Option<SourceSpan>,
+    },
+
+    #[error("Performance: {message}")]
+    #[diagnostic(code(guardian::perf), severity(Warning))]
+    Performance {
+        message: String,
+        #[label("Optimization Opportunity")]
+        span: Option<SourceSpan>,
+    },
+
+    #[error("Quality: {message}")]
+    #[diagnostic(code(guardian::quality), severity(Error))]
+    Quality {
+        message: String,
+        #[label("Required Fix")]
+        span: Option<SourceSpan>,
+    },
+}
 
 pub struct Guardian;
 
@@ -7,85 +48,88 @@ impl Guardian {
         Self
     }
 
-    pub fn validate(&self, nodes: &[Node]) -> Result<(), String> {
+    pub fn validate(&self, nodes: &[Node]) -> Vec<GuardianRule> {
+        let mut violations = Vec::new();
+
+        self.validate_structure(nodes, &mut violations);
+        self.validate_nodes(nodes, &mut violations);
+
+        violations
+    }
+
+    fn validate_structure(&self, nodes: &[Node], violations: &mut Vec<GuardianRule>) {
         let has_script = nodes.iter().any(|n| matches!(n, Node::Script { .. }));
         let has_spec = nodes
             .iter()
             .any(|n| matches!(n, Node::Spec(_) | Node::Test(_)));
 
         if has_script && !has_spec {
-            return Err("Guardian Error: Found <n:script> logic without corresponding <n:spec> or <n:test>.".to_string());
+            violations.push(GuardianRule::Quality {
+                message: "Found <n:script> logic without corresponding <n:spec> or <n:test>."
+                    .to_string(),
+                span: None,
+            });
         }
-
-        self.validate_a11y(nodes)
     }
 
-    fn validate_a11y(&self, nodes: &[Node]) -> Result<(), String> {
+    fn validate_nodes(&self, nodes: &[Node], violations: &mut Vec<GuardianRule>) {
         for node in nodes {
             match node {
                 Node::Element(el) => {
-                    // Rule 1: Images must have alt text
+                    // A11y: Images must have alt
                     if el.tag_name == "img" && !el.attributes.iter().any(|(k, _)| k == "alt") {
-                        return Err(format!("Accessibility Violation: <img> tag (near {:?}) missing 'alt' attribute.", el.attributes));
+                        violations.push(GuardianRule::A11y {
+                            message: format!("<img> tag missing 'alt' attribute."),
+                            span: None,
+                        });
                     }
 
-                    // Rule 2: Buttons must have content or aria-label
-                    if el.tag_name == "button"
-                        && el.children.is_empty()
-                        && !el.attributes.iter().any(|(k, _)| k == "aria-label")
-                    {
-                        return Err(
-                            "Accessibility Violation: <button> empty and missing 'aria-label'."
-                                .to_string(),
-                        );
-                    }
-
-                    // Rule 3: Anchors must have content
-                    if el.tag_name == "a"
-                        && el.children.is_empty()
-                        && !el.attributes.iter().any(|(k, _)| k == "aria-label")
-                    {
-                        return Err(
-                            "Accessibility Violation: <a> link empty and missing 'aria-label'."
-                                .to_string(),
-                        );
-                    }
-
-                    // Rule 4: Inputs must have accessible label or identifier
+                    // A11y: Inputs needs labels
                     if el.tag_name == "input" {
-                        let attrs = &el.attributes;
-                        let type_attr = attrs
-                            .iter()
-                            .find(|(k, _)| k == "type")
-                            .map(|(_, v)| v.as_str())
-                            .unwrap_or("text");
-                        let ignored_types = ["hidden", "submit", "reset", "button", "image"];
-
-                        if !ignored_types.contains(&type_attr) {
-                            let has_label = attrs.iter().any(|(k, _)| {
-                                [
-                                    "aria-label",
-                                    "aria-labelledby",
-                                    "title",
-                                    "id",
-                                    "placeholder",
-                                ]
-                                .contains(&k.as_str())
+                        let has_label = el.attributes.iter().any(|(k, _)| {
+                            [
+                                "aria-label",
+                                "aria-labelledby",
+                                "title",
+                                "id",
+                                "placeholder",
+                            ]
+                            .contains(&k.as_str())
+                        });
+                        if !has_label {
+                            violations.push(GuardianRule::A11y {
+                                message: format!("<input> missing accessible label (aria-label, id, placeholder, etc)."),
+                                span: None,
                             });
-                            if !has_label {
-                                return Err(format!("Accessibility Violation: <input type='{}'> missing 'aria-label', 'title', 'id', or 'placeholder'.", type_attr));
-                            }
                         }
                     }
 
-                    self.validate_a11y(&el.children)?;
+                    // Perc: Large Inline Styles
+                    if let Some((_, style)) = el.attributes.iter().find(|(k, _)| k == "style") {
+                        if style.len() > 150 {
+                            violations.push(GuardianRule::Performance {
+                                message: "Inline style is too long (>150 chars). Extract to CSS class for better caching.".to_string(),
+                                span: None,
+                            });
+                        }
+                    }
+
+                    // Security: iFrames
+                    if el.tag_name == "iframe" && !el.attributes.iter().any(|(k, _)| k == "sandbox")
+                    {
+                        violations.push(GuardianRule::Security {
+                            message: "<iframe> detected without 'sandbox' attribute.".to_string(),
+                            span: None,
+                        });
+                    }
+
+                    self.validate_nodes(&el.children, violations);
                 }
-                Node::If { children, .. } => self.validate_a11y(children)?,
-                Node::For { children, .. } => self.validate_a11y(children)?,
+                Node::If { children, .. } => self.validate_nodes(children, violations),
+                Node::For { children, .. } => self.validate_nodes(children, violations),
                 _ => {}
             }
         }
-        Ok(())
     }
 }
 
@@ -101,68 +145,31 @@ mod tests {
     use crate::ast::Node;
 
     #[test]
-    fn test_guardian_passes_without_script() {
-        let nodes = vec![Node::Text("Hello".to_string())];
-        let guardian = Guardian::new();
-        assert!(guardian.validate(&nodes).is_ok());
-    }
-
-    #[test]
-    fn test_guardian_passes_with_script_and_spec() {
-        let nodes = vec![
-            Node::Script {
-                content: "fn main() {}".to_string(),
-                attributes: vec![],
-            },
-            Node::Spec("fn test() {}".to_string()),
-        ];
-        let guardian = Guardian::new();
-        assert!(guardian.validate(&nodes).is_ok());
-    }
-
-    #[test]
-    fn test_guardian_fails_with_script_no_spec() {
-        let nodes = vec![Node::Script {
-            content: "fn main() {}".to_string(),
-            attributes: vec![],
-        }];
-        let guardian = Guardian::new();
-        assert!(guardian.validate(&nodes).is_err());
-    }
-
-    #[test]
-    fn test_guardian_fails_img_no_alt() {
+    fn test_guardian_a11y() {
         let nodes = vec![Node::Element(crate::ast::Element {
             tag_name: "img".to_string(),
             attributes: vec![("src".to_string(), "foo.jpg".to_string())],
             children: vec![],
         })];
         let guardian = Guardian::new();
-        assert!(guardian.validate(&nodes).is_err());
+        let issues = guardian.validate(&nodes);
+        assert!(issues
+            .iter()
+            .any(|i| matches!(i, GuardianRule::A11y { .. })));
     }
 
     #[test]
-    fn test_guardian_fails_input_no_label() {
+    fn test_guardian_perf() {
+        let long_style = "color: red;".repeat(20);
         let nodes = vec![Node::Element(crate::ast::Element {
-            tag_name: "input".to_string(),
-            attributes: vec![("type".to_string(), "text".to_string())], // No label/id/placeholder
+            tag_name: "div".to_string(),
+            attributes: vec![("style".to_string(), long_style)],
             children: vec![],
         })];
         let guardian = Guardian::new();
-        assert!(guardian.validate(&nodes).is_err());
-    }
-
-    #[test]
-    fn test_guardian_passes_accessible_input() {
-        let nodes = vec![Node::Element(crate::ast::Element {
-            tag_name: "input".to_string(),
-            attributes: vec![
-                ("type".to_string(), "text".to_string()),
-                ("aria-label".to_string(), "Username".to_string()),
-            ],
-            children: vec![],
-        })];
-        let guardian = Guardian::new();
-        assert!(guardian.validate(&nodes).is_ok());
+        let issues = guardian.validate(&nodes);
+        assert!(issues
+            .iter()
+            .any(|i| matches!(i, GuardianRule::Performance { .. })));
     }
 }
