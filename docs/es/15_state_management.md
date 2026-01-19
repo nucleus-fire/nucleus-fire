@@ -1,6 +1,6 @@
 # Gestión de Estado (Neutron)
 
-Nucleus V3 introduce **Neutron**, un sistema de gestión de estado reactivo de última generación, diseñado para ser granular, seguro en hilos (thread-safe) e increíblemente simple de usar. Sigue el patrón "Signal" popularizado por frameworks modernos de frontend, pero adaptado para el modelo de propiedad de Rust y la arquitectura fullstack de Nucleus.
+Nucleus introduce **Neutron**, un sistema de gestión de estado reactivo de última generación, diseñado para ser granular, seguro en hilos (thread-safe) e increíblemente simple de usar. Sigue el patrón "Signal" popularizado por frameworks modernos de frontend, pero adaptado para el modelo de propiedad de Rust y la arquitectura fullstack de Nucleus.
 
 > [!NOTE]
 > **Neutron vs Otros**: A diferencia de Redux o Context, que a menudo activan re-renderizados completos, Neutron solo actualiza las dependencias específicas que cambian. Esto es "Reactividad Granular".

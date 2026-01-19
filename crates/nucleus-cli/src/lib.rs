@@ -994,7 +994,7 @@ CREATE TABLE IF NOT EXISTS users (
 
         <main>
             <div class="card">
-                <h2>🚀 You are running on Nucleus V3</h2>
+                <h2>🚀 You are running on Nucleus Framework</h2>
                 <p>Edit <code>src/views/index.ncl</code> to see changes instantly (HMR).</p>
             </div>
             

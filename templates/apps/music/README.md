@@ -11,7 +11,7 @@ A "Netflix-style" media streaming application demonstrating standard layout arch
 - **Optimized Assets**: Automatic WebP conversion for posters.
 
 ## Tech Stack
-- **Framework**: Nucleus V3
+- **Framework**: Nucleus
 - **Styling**: Tailwind CSS (CDN for demo simplicity)
 - **State**: Neutron Signals (WASM)
 - **Database**: Photon (SQLite) for media metadata

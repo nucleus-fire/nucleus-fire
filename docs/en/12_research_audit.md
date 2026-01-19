@@ -8,7 +8,7 @@ You asked if Nucleus is built in the "very best way based on modern research".
 *   **Modern Research**: **`io_uring` (Linux 5.10+)**.
     *   *The Theory*: Pure async completion-based I/O allows submitting standard filesystem and network operations to the kernel without syscall overhead per operation.
     *   *Upgrade Path*: Switch `atom` from `tokio` to `glommio` or `monoio` for Linux builds. This allows "Shared-Nothing" architecture (core pinning).
-    *   *Status*: Planned for Nucleus V3 ("The Crystal").
+    *   *Status*: Planned for Nucleus ("The Crystal").
 
 ## 2. Serialization (The Wire)
 *   **Current**: `serde_json` / `simd-json`. This is the fastest standard JSON parser.

@@ -10,7 +10,7 @@
             <n:outlet />
         </main>
         <footer style="border-top: 1px solid #333; padding: 1rem; text-align: center; color: #666; font-size: 0.8rem;">
-            Built with Nucleus V3
+            Built with Nucleus
         </footer>
     </div>
 </n:view>

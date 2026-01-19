@@ -11,7 +11,7 @@ async fn main() {
     
     // Start Reactor
     // Note: In a real app, we would inject a custom 'dashboard' module 
-    // into the runtime, but V3's 'NucleusRuntime::start' is a high-level wrapper.
+    // into the runtime, but Nucleus's 'NucleusRuntime::start' is a high-level wrapper.
     // We are relying on the declarative 'index.ncl' which the runtime will pick up.
     
     // We pass None for config to use defaults (which includes looking in src/views)

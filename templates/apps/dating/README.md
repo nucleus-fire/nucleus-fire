@@ -1,7 +1,7 @@
 # Amour: Premium Dating App (Nucleus Benchmark Flagship)
 
 > **Status**: Production Ready (Benchmark Reference)
-> **Built with**: Nucleus V3, TailwindCSS, TypeScript
+> **Built with**: Nucleus, TailwindCSS, TypeScript
 
 Amour is the flagship demonstration of the **Nucleus Framework's** capabilities. It is designed to mimic a high-scale, real-time premium dating application (like Tinder or Hinge) to validate Nucleus's performance, developer experience, and architectural patterns.
 

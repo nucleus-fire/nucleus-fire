@@ -4,7 +4,7 @@
 
 ### "Database initialization failed: unable to open database file"
 **Cause**: SQLite database file doesn't exist and auto-creation was disabled.
-**Fix**: Nucleus V3.5+ auto-creates SQLite databases. Ensure your config uses:
+**Fix**: Nucleus auto-creates SQLite databases. Ensure your config uses:
 ```toml
 [database]
 url = "sqlite:data.db"

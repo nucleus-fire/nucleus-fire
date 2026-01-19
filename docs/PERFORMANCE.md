@@ -38,7 +38,7 @@ We tested Nucleus against the broader industry options using a standardized "Hel
 
 | Framework | Lang | Architecture | Speed (RPS) | vs Nucleus |
 | :--- | :--- | :--- | :--- | :--- |
-| **Nucleus V3** | 🦀 Rust | Atom Reactor (Lock-Free) | **7,612** | **1.0x** |
+| **Nucleus** | 🦀 Rust | Atom Reactor (Lock-Free) | **7,612** | **1.0x** |
 | Axum | 🦀 Rust | Tokio + Tower | 6,507 | 0.85x |
 | Actix Web | 🦀 Rust | Actor Model | 5,972 | 0.78x |
 | Node.js (Raw) | 🐢 JS | Event Loop | 4,608 | 0.60x |

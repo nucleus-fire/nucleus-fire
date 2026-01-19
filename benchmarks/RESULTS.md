@@ -8,7 +8,7 @@ Run `./benchmarks/run_benchmark.sh` to replicate these results on your machine.
 
 | Framework | Requests/Sec | Latency (Avg) | Payload | Notes |
 |-----------|--------------|---------------|---------|-------|
-| **Nucleus V3** | **~18,000** | **5.56ms** | **23KB (Full UI)** | **Compressed (Gzip), Production Ready** |
+| **Nucleus** | **~18,000** | **5.56ms** | **23KB (Full UI)** | **Compressed (Gzip), Production Ready** |
 | Node/Express | ~14,200 | 3.50ms | 0.06KB (Hello World) | Single Threaded, tiny payload |
 | Python/FastAPI| *Failed* | N/A | N/A | Timed out (Dropped connections >15k reqs) |
 | Axum (Raw) | ~200,000 | 0.40ms | 0.01KB | Theoretical Max (Rust) |
@@ -17,7 +17,7 @@ Run `./benchmarks/run_benchmark.sh` to replicate these results on your machine.
 *Nucleus achieves 30% higher throughput than Node/Express while serving a payload that is **380x larger**.*
 
 ## Analysis
-1.  **Compression Efficiency**: Nucleus V3 with `CompressionLayer` reduces the 23KB UI to ~810 bytes over the wire, allowing massive throughput.
+1.  **Compression Efficiency**: Nucleus with `CompressionLayer` reduces the 23KB UI to ~810 bytes over the wire, allowing massive throughput.
 2.  **Concurrency**: Rust's multithreading (Tokio) handles 400+ concurrent connections effortlessly, whereas Python/FastAPI timed out.
 3.  **Stability**: Nucleus maintained 100% success rate under load, while competitors struggled or crashed.
 

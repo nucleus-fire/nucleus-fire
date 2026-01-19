@@ -2,7 +2,7 @@
     <!-- Server Side Model Loading -->
     <n:model todos="crate::services::todo::list_todos().await" />
     
-    <!-- V3: Server Action Handler -->
+    <!-- Nucleus: Server Action Handler -->
     <n:action>
         use crate::services::todo::add_todo;
 

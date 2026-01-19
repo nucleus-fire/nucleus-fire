@@ -9,7 +9,7 @@ A real-time analytics dashboard showcasing heavy data visualization and complex 
 - **Simulated WebSocket**: Random data jitter to mimic live traffic updates.
 
 ## Tech Stack
-- **Framework**: Nucleus V3
+- **Framework**: Nucleus
 - **Styling**: Tailwind CSS (custom config)
 - **Layout**: CSS Grid + Flexbox
 

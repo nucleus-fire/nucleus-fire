@@ -9,7 +9,7 @@ const EXAMPLES = {
         ncl: `<n:view title="Hello World">
     <!-- Using Nucleus Components -->
     <main class="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white text-center p-4 font-sans">
-        <Badge variant="primary">⚡ Nucleus v3</Badge>
+        <Badge variant="primary">⚡ Nucleus</Badge>
         
         <h1 class="text-4xl font-bold my-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500">
             Hello, Nucleus!
@@ -3450,9 +3450,9 @@ async function compile() {
             'post.date': 'Jan 8, 2026',
             'post.cover_image': 'https://picsum.photos/400/200',
             'post.category': 'Tutorial',
-            'featured.title': 'Build Faster with Nucleus v3',
+            'featured.title': 'Build Faster with Nucleus',
             'featured.slug': 'nucleus-v3-release',
-            'featured.excerpt': 'Discover the new features in Nucleus v3...',
+            'featured.excerpt': 'Discover the new features in Nucleus...',
             'todo.id': '1',
             'todo.title': 'Learn Nucleus',
             'todo.completed': 'false',

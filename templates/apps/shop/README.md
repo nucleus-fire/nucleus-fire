@@ -9,7 +9,7 @@ A high-performance E-Commerce demonstration implementing the "Store Pattern" for
 - **No JS Framework**: Pure Vanilla JS + Nucleus reactivity.
 
 ## Tech Stack
-- **Framework**: Nucleus V3
+- **Framework**: Nucleus
 - **Styling**: Tailwind CSS
 - **State**: Custom Pub/Sub Store (Client-side)
 - **Data**: Static Product List (for demo)

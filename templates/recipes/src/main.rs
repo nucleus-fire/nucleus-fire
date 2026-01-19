@@ -6,7 +6,7 @@ async fn main() {
     nucleus_std::photon::init_db("sqlite:nucleus.db").await.ok();
     
     // ... rest of init
-    println!("Nucleus Recipes V3 Running...");
+    println!("Nucleus Recipes Running...");
     
     // Load routes from views (simplified - normally ncc does this)
     let mut routes = HashMap::new();

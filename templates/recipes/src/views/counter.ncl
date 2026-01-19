@@ -2,7 +2,7 @@
     <div style="text-align: center; margin-top: 5rem;">
         <h1>Interactive Counter (WASM)</h1>
         
-        <!-- V3: Using Neutron Island + Signals -->
+        <!-- Nucleus: Using Neutron Island + Signals -->
         <n:island client:load>
             <n:script>
                 // Modern Signal-based state

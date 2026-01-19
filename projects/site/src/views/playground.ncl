@@ -251,7 +251,7 @@
                     <kbd>Ctrl</kbd> + <kbd>S</kbd> to save
                 </div>
                 <div class="footer-right">
-                    <span class="footer-hint">Powered by Nucleus v3.5</span>
+                    <span class="footer-hint">Powered by Nucleus</span>
                 </div>
             </footer>
         </div>
