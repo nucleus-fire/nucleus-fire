@@ -26,10 +26,16 @@ nucleus --version
 | [`nucleus run`](#nucleus-run) | Start development server (interpreter mode) |
 | [`nucleus build`](#nucleus-build) | Build for production |
 | [`nucleus deploy`](#nucleus-deploy) | Deploy to any platform |
+| [`nucleus deploy init`](#nucleus-deploy-init) | Generate deployment files (Dockerfile, fly.toml) |
+| [`nucleus export`](#nucleus-export) | Static site generation (SSG) |
+| [`nucleus publish`](#nucleus-publish) | Publish static site to platform |
 | [`nucleus test`](#nucleus-test) | Run tests |
 | [`nucleus db`](#nucleus-db) | Database operations |
 | [`nucleus generate`](#nucleus-generate) | Code generators |
 | [`nucleus install`](#nucleus-install) | Install dependencies |
+| [`nucleus console`](#nucleus-console) | Interactive REPL for database queries |
+| [`nucleus studio`](#nucleus-studio) | Web-based database management UI |
+| [`nucleus browser`](#nucleus-browser) | Headless browser automation |
 
 ---
 
@@ -319,6 +325,117 @@ railway up
 
 ---
 
+## nucleus deploy init
+
+Generate deployment configuration files without the interactive wizard.
+
+### Usage
+
+```bash
+nucleus deploy init
+```
+
+### What Gets Generated
+
+| File | Description |
+|------|-------------|
+| `Dockerfile` | Multi-stage optimized Docker build |
+| `.dockerignore` | Excludes unnecessary files |
+| `fly.toml` | Fly.io deployment configuration |
+
+### Example
+
+```bash
+cd my-project
+nucleus deploy init
+
+# Output:
+# ✅ Generated Dockerfile
+# ✅ Generated .dockerignore
+# ✅ Generated fly.toml
+```
+
+---
+
+## nucleus export
+
+Export your application as a static site (SSG).
+
+### Usage
+
+```bash
+nucleus export [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-o, --output` | Output directory (default: `dist`) |
+| `--wizard` | Run interactive wizard |
+| `--incremental` | Only rebuild changed files |
+| `--base-url` | Base URL for generated links |
+| `--platform` | Target: `netlify`, `vercel`, `cloudflare`, `github` |
+| `--pwa` | Generate PWA assets (manifest, service worker) |
+| `--pwa-name` | Custom name for the PWA |
+
+### Examples
+
+```bash
+# Basic export
+nucleus export
+
+# With PWA support
+nucleus export --pwa --pwa-name "My App"
+
+# Incremental build
+nucleus export --incremental
+
+# For Netlify
+nucleus export --platform netlify
+
+# Custom output directory
+nucleus export -o build
+```
+
+### PWA Assets Generated
+
+When `--pwa` is used:
+
+| File | Description |
+|------|-------------|
+| `manifest.json` | Web App Manifest for install prompts |
+| `sw.js` | Service Worker with cache-first strategy |
+| `offline.html` | Offline fallback page |
+| `assets/neutron-store.js` | Client-side storage library |
+
+---
+
+## nucleus publish
+
+Publish your static site to a hosting platform.
+
+### Usage
+
+```bash
+nucleus publish [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-p, --platform` | Target platform |
+
+### Supported Platforms
+
+- **Netlify** - Requires Netlify CLI authenticated
+- **Vercel** - Requires Vercel CLI authenticated
+- **Cloudflare Pages** - Requires Wrangler authenticated
+- **GitHub Pages** - Pushes to `gh-pages` branch
+
+---
+
 ## nucleus test
 
 Run tests using the Guardian test runner.
@@ -536,6 +653,134 @@ nucleus install @nucleus/auth
 
 # Install from URL
 nucleus install https://github.com/user/module
+```
+
+---
+
+## nucleus console
+
+Interactive REPL for database queries and exploration.
+
+### Usage
+
+```bash
+nucleus console [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--database` | Path to SQLite database file |
+
+### Examples
+
+```bash
+# Start console with default database
+nucleus console
+
+# Specify database
+nucleus console --database site.db
+```
+
+### Console Commands
+
+| Command | Description |
+|---------|-------------|
+| `.tables` | List all tables |
+| `.schema` | Show table schemas |
+| `.quit` | Exit the console |
+| SQL query | Execute SQL and show results |
+
+### Example Session
+
+```
+nucleus> .tables
+┌─────────────────────┐
+│ Tables              │
+├─────────────────────┤
+│ users               │
+│ posts               │
+│ migrations          │
+└─────────────────────┘
+
+nucleus> SELECT * FROM users LIMIT 2;
+┌────┬───────────────┬─────────────────────┐
+│ id │ email         │ created_at          │
+├────┼───────────────┼─────────────────────┤
+│ 1  │ alice@foo.com │ 2024-01-15 10:30:00 │
+│ 2  │ bob@bar.com   │ 2024-01-16 14:22:00 │
+└────┴───────────────┴─────────────────────┘
+```
+
+---
+
+## nucleus studio
+
+Web-based database management UI with real-time editing.
+
+### Usage
+
+```bash
+nucleus studio [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--database` | Path to SQLite database file |
+| `--port` | Web server port (default: 4000) |
+
+### Examples
+
+```bash
+# Start studio on default port
+nucleus studio --database site.db
+
+# Custom port
+nucleus studio --database site.db --port 8080
+```
+
+### Features
+
+- 📊 **Table browser** - View and edit data inline
+- 🔍 **SQL editor** - Execute custom queries with syntax highlighting
+- 📝 **Schema viewer** - Explore table structures
+- ➕ **CRUD operations** - Add, edit, delete rows via UI
+- 📱 **Mobile responsive** - Works on tablet and mobile
+
+---
+
+## nucleus browser
+
+Headless browser automation for testing and scraping.
+
+### Usage
+
+```bash
+nucleus browser <command> [options]
+```
+
+### Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `screenshot` | Capture a page screenshot |
+| `pdf` | Generate PDF from page |
+| `scrape` | Extract data from page |
+
+### Examples
+
+```bash
+# Screenshot a page
+nucleus browser screenshot https://example.com --output screen.png
+
+# Generate PDF
+nucleus browser pdf https://example.com --output page.pdf
+
+# Scrape with selector
+nucleus browser scrape https://example.com --selector "h1"
 ```
 
 ---
