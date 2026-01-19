@@ -63,6 +63,11 @@ nucleus new <name> [options]
 | `--database` | `-d` | Database type (`postgres`, `mysql`, `sqlite`) |
 | `--no-git` | | Skip git initialization |
 
+### Features
+- 🎨 **Modern Scaffolding**: Automatically sets up `src/assets` for the optimization pipeline.
+- 🚀 **Performance Preset**: Generates a `nucleus.config` tuned for production (caching, compression).
+- ✨ **Visual Feedback**: Animated progress steps during creation.
+
 ### Examples
 
 ```bash

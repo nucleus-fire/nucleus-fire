@@ -1,6 +1,6 @@
 use clap::Subcommand;
 use std::fs;
-// use std::io::Write;
+use crate::animations::{build_step, colors};
 use std::path::Path;
 use miette::{IntoDiagnostic, Result};
 
@@ -30,22 +30,31 @@ pub enum GenerateCommands {
 pub fn handle_generate(command: &GenerateCommands) -> Result<()> {
     match command {
         GenerateCommands::Scaffold { name, fields } => {
-            println!("🏗️  Scaffolding resource: {}", name);
+            println!("\n{}🏗️  Scaffolding resource: {}{}", colors::CYAN, name, colors::RESET);
+            
+            build_step("📦", &format!("Generating Model: {}", name));
             generate_model(name, fields)?;
+            
+            build_step("🗄️", "Creating Migration...");
             generate_migration(name, fields)?;
+            
+            build_step("🎮", "Generating Controllers & Views...");
             generate_controllers(name, fields)?;
+            
+            build_step("🔗", "Linking logic...");
             update_lib_rs(name)?;
-            println!("✅ Scaffold complete for '{}'", name);
+            
+            println!("\n{}✅ Scaffold complete for '{}'{}\n", colors::GREEN, name, colors::RESET);
         }
         GenerateCommands::Model { name, fields } => {
-             println!("🏗️  Generating model: {}", name);
+             println!("\n{}🏗️  Generating model: {}{}", colors::CYAN, name, colors::RESET);
              generate_model(name, fields)?;
-             println!("✅ Model complete for '{}'", name);
+             println!("\n{}✅ Model complete for '{}'{}\n", colors::GREEN, name, colors::RESET);
         }
         GenerateCommands::Payments { subscription } => {
-            println!("💳 Generating Payment Components...");
+            println!("\n{}💳 Generating Payment Components...{}", colors::CYAN, colors::RESET);
             generate_payments(*subscription)?;
-            println!("✅ Payments initialized!");
+            println!("\n{}✅ Payments initialized!{}", colors::GREEN, colors::RESET);
         }
     }
     Ok(())
@@ -59,7 +68,7 @@ fn generate_model(name: &str, fields: &[String]) -> Result<()> {
     let path = format!("src/logic/{}.rs", lower);
     fs::create_dir_all("src/logic").into_diagnostic()?;
     fs::write(&path, content).into_diagnostic()?;
-    println!("   create {}", path);
+    build_step("  +", &format!("Created {}", path));
     Ok(())
 }
 
@@ -230,7 +239,7 @@ fn generate_payments(subscription: bool) -> Result<()> {
     </style>
 </n:view>"##;
     fs::write(format!("{}/checkout.ncl", view_dir), checkout_content).into_diagnostic()?;
-    println!("   create {}/checkout.ncl", view_dir);
+    build_step("  +", &format!("Created {}/checkout.ncl", view_dir));
 
     // 2. Crypto View (EVM)
     let crypto_content = r##"<n:view title="Connect Wallet">
@@ -292,7 +301,7 @@ fn generate_payments(subscription: bool) -> Result<()> {
     </style>
 </n:view>"##;
     fs::write(format!("{}/crypto.ncl", view_dir), crypto_content).into_diagnostic()?;
-    println!("   create {}/crypto.ncl", view_dir);
+    build_step("  +", &format!("Created {}/crypto.ncl", view_dir));
 
     // 3. Pricing View (Optional)
     if subscription {
@@ -343,7 +352,7 @@ fn generate_payments(subscription: bool) -> Result<()> {
     </style>
 </n:view>"##;
         fs::write(format!("{}/pricing.ncl", view_dir), pricing_content).into_diagnostic()?;
-        println!("   create {}/pricing.ncl", view_dir);
+        build_step("  +", &format!("Created {}/pricing.ncl", view_dir));
     }
 
     // 4. Backend Logic
@@ -430,7 +439,7 @@ async fn create_subscription(Json(payload): Json<CreateSubPayload>) -> Result<Js
 "#;
     
     fs::write("src/logic/billing.rs", backend_content).into_diagnostic()?;
-    println!("   create src/logic/billing.rs");
+    build_step("  +", "Created src/logic/billing.rs");
 
     // Register logic
     update_lib_rs("billing")?;
@@ -473,7 +482,7 @@ fn generate_migration(name: &str, fields: &[String]) -> Result<()> {
     
     fs::create_dir_all("migrations").into_diagnostic()?;
     fs::write(&filename, content).into_diagnostic()?;
-    println!("   create {}", filename);
+    build_step("  +", &format!("Created {}", filename));
     Ok(())
 }
 
@@ -504,7 +513,7 @@ fn generate_controllers(name: &str, fields: &[String]) -> Result<()> {
 </n:model>"#, modname = lower, cap = cap, lower = lower);
     
     fs::write(format!("{}/index.ncl", view_dir), index_content).into_diagnostic()?;
-    println!("   create {}/index.ncl", view_dir);
+    build_step("  +", &format!("Created {}/index.ncl", view_dir));
 
     // 2. Show View ([id].ncl)
     let display_fields = fields.iter().map(|f| {
@@ -526,7 +535,7 @@ fn generate_controllers(name: &str, fields: &[String]) -> Result<()> {
 </n:model>"#, modname = lower, cap = cap, lower = lower, display_fields = display_fields);
 
     fs::write(format!("{}/[id].ncl", view_dir), show_content).into_diagnostic()?;
-    println!("   create {}/[id].ncl", view_dir);
+    build_step("  +", &format!("Created {}/[id].ncl", view_dir));
 
     // 3. New View (new.ncl)
     let form_fields = fields.iter().map(|f| {
@@ -550,7 +559,7 @@ fn generate_controllers(name: &str, fields: &[String]) -> Result<()> {
 </n:view>"#, cap = cap, modname = lower, form_fields = form_fields);
 
     fs::write(format!("{}/new.ncl", view_dir), new_content).into_diagnostic()?;
-    println!("   create {}/new.ncl", view_dir);
+    build_step("  +", &format!("Created {}/new.ncl", view_dir));
 
     // 4. Edit View ([id]/edit.ncl)
     let edit_form_fields = fields.iter().map(|f| {
@@ -573,7 +582,7 @@ fn generate_controllers(name: &str, fields: &[String]) -> Result<()> {
 
     fs::create_dir_all(format!("{}/[id]", view_dir)).into_diagnostic()?;
     fs::write(format!("{}/[id]/edit.ncl", view_dir), edit_content).into_diagnostic()?;
-    println!("   create {}/[id]/edit.ncl", view_dir);
+    build_step("  +", &format!("Created {}/[id]/edit.ncl", view_dir));
 
     Ok(())
 }
@@ -602,11 +611,11 @@ fn update_lib_rs(name: &str) -> Result<()> {
              if !logic_content.contains(&format!("pub mod {};", name.to_lowercase())) {
                  logic_content.push_str(&format!("\npub mod {};\n", name.to_lowercase()));
                  fs::write(logic_mod_path, logic_content).into_diagnostic()?;
-                 println!("   update {}", logic_mod_path);
+                 build_step("  +", &format!("Updated {}", logic_mod_path));
              }
         } else {
              // Maybe create it?
-             println!("⚠️  Could not automatically register module in logic/mod.rs. Please add 'pub mod {};' manually.", name.to_lowercase());
+             println!("{}⚠️  Could not automatically register module in logic/mod.rs. Please add 'pub mod {};' manually.{}", colors::YELLOW, name.to_lowercase(), colors::RESET);
         }
     }
     
