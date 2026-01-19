@@ -69,10 +69,10 @@ nucleus studio
 
 | Demo | Description | Tech Stack |
 | :--- | :--- | :--- |
-| **[Amour](examples/apps/dating)** | 💘 **Dating App** | 125k RPS, Real-time Chat, Geolocation |
-| **[Graph](examples/apps/dashboard)** | 📊 **Analytics Dashboard** | WASM Hydration, Charts, Dark Mode |
-| **[Chat](examples/apps/chat)** | 💬 **Messaging** | WebSockets, Optimistic UI, KV Store |
-| **[Shop](examples/apps/shop)** | 🛒 **E-Commerce** | Stripe Integration, Cart State |
+| **[Amour](templates/apps/dating)** | 💘 **Dating App** | 125k RPS, Real-time Chat, Geolocation |
+| **[Graph](templates/apps/dashboard)** | 📊 **Analytics Dashboard** | WASM Hydration, Charts, Dark Mode |
+| **[Chat](templates/apps/chat)** | 💬 **Messaging** | WebSockets, Optimistic UI, KV Store |
+| **[Shop](templates/apps/shop)** | 🛒 **E-Commerce** | Stripe Integration, Cart State |
 
 ## 📚 Documentation
 

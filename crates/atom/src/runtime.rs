@@ -51,6 +51,14 @@ impl NucleusRuntime {
         routes: Option<HashMap<String, String>>,
         stream_handler: Option<Arc<dyn StreamHandler>>,
     ) {
+        Self::start_with_router(routes, stream_handler, None).await;
+    }
+
+    pub async fn start_with_router(
+        routes: Option<HashMap<String, String>>,
+        stream_handler: Option<Arc<dyn StreamHandler>>,
+        extra_router: Option<Router>,
+    ) {
         // Optimize: Convert String -> Bytes for zero-copy cloning
         let optimized_routes: AHashMap<String, Bytes> = routes.unwrap_or_default()
             .into_iter()
@@ -101,8 +109,14 @@ impl NucleusRuntime {
         };
 
         // Initialize Router
-        let app = Self::make_router(state)
-            .layer(CompressionLayer::new().br(true).gzip(true));
+        let mut app = Self::make_router(state);
+        
+        // Merge extra router if provided (before layers to ensure consistency)
+        if let Some(router) = extra_router {
+            app = app.merge(router);
+        }
+
+        let app = app.layer(CompressionLayer::new().br(true).gzip(true));
 
         #[cfg(feature = "middleware-fortress")]
         let app = app.layer(axum::middleware::from_fn(fortress::fortress));

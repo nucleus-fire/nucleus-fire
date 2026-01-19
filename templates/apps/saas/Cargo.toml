@@ -1,0 +1,13 @@
+[package]
+name = "saas"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+nucleus-std = { path = "../../../crates/nucleus-std" }
+atom = { path = "../../../crates/atom", features = ["hot-reload"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

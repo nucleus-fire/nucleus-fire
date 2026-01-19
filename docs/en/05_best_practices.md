@@ -728,3 +728,31 @@ Before deploying to production:
 - [ ] Enable rate limiting on sensitive endpoints
 - [ ] Set up automated backups
 - [ ] Document rollback procedures
+
+---
+
+## 10. Local Resource Strategy
+
+For exemplary performance, privacy, and reliability, Nucleus projects should avoid dependencies on public CDNs (e.g., Google Fonts, Tailwind CDN, JSDelivr) in production.
+
+### Why Localize?
+
+*   **Performance**: Eliminates DNS lookups and TLS handshakes to third-party domains.
+*   **Reliability**: Your app works even if the CDN is down or blocked.
+*   **Privacy**: Prevents leaking user IP addresses to third parties.
+*   **Offline Capable**: Essential for PWA and local-first applications.
+
+### Implementation Guide
+
+#### 1. CSS Frameworks (Tailwind)
+Instead of using the CDN script, set up a local build process:
+1.  Initialize `package.json` and install `tailwindcss`.
+2.  Create a `input.css` file with `@tailwind` directives.
+3.  Run the Tailwind CLI to generate a static CSS file (e.g., `static/styles.css`).
+4.  Link the generated file in your HTML: `<link href="/assets/styles.css" rel="stylesheet">`.
+
+#### 2. Fonts
+Download font files (WOFF2) and serve them from your `static/fonts` directory. Use `@font-face` within your local CSS to reference them.
+
+#### 3. JavaScript Libraries
+Vendor large libraries by downloading the minified versions into `static/vendor/` or bundling them with your build process.

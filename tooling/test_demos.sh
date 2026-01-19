@@ -5,24 +5,24 @@ echo "🧪 Starting End-to-End Demo Verification..."
 
 # 1. Dashboard
 echo "📊 Verifying Dashboard..."
-cd examples/dashboard
+cd templates/apps/dashboard
 cargo check
 cargo test
-cd ../..
+cd ../../..
 
 # 2. Chat
 echo "💬 Verifying Chat..."
-cd examples/chat
+cd templates/apps/chat
 cargo check
 cargo test
-cd ../..
+cd ../../..
 
 # 3. Shop
 echo "🛒 Verifying Shop..."
-cd examples/shop
+cd templates/apps/shop
 cargo check
 cargo test
-cd ../..
+cd ../../..
 
 # 4. Docs Site
 echo "📚 Verifying Docs Site..."

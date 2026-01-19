@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+    font-family: 'Inter';
+    src: url('/assets/fonts/Inter-VariableFont_slnt,wght.ttf') format('truetype');
+    font-weight: 100 900;
+    font-display: swap;
+}
+
+.glass-panel {
+    @apply bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl;
+}
+
+.nav-link {
+    @apply px-4 py-2 rounded-lg transition text-gray-400 hover:text-white hover:bg-white/5;
+}
+
+.nav-link.active {
+    @apply text-white bg-white/10 font-medium;
+}

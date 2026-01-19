@@ -11,8 +11,8 @@ echo "🚀 Nucleus Stress Test Engine"
 echo "============================="
 
 # 1. Build Recipes App (Release Mode)
-echo "🔨 Building examples/recipes (Release)..."
-cargo build --release --bin server --manifest-path examples/recipes/Cargo.toml
+echo "🔨 Building templates/recipes (Release)..."
+cargo build --release --bin server --manifest-path templates/recipes/Cargo.toml
 
 # 2. Start Server
 SERVER_BIN="target/release/server"
