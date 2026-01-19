@@ -22,8 +22,8 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::path::PathBuf;
-use std::fs::OpenOptions;
-use std::io::Write;
+// use std::fs::OpenOptions;
+// use std::io::Write;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -258,13 +258,15 @@ impl Beacon {
             }
             
             AnalyticsProvider::File { path } => {
-                if let Ok(mut file) = OpenOptions::new()
+                use tokio::io::AsyncWriteExt;
+                if let Ok(mut file) = tokio::fs::OpenOptions::new()
                     .create(true)
                     .append(true)
                     .open(path)
+                    .await
                 {
                     if let Ok(json) = serde_json::to_string(event) {
-                        let _ = writeln!(file, "{}", json);
+                        let _ = file.write_all(format!("{}\n", json).as_bytes()).await;
                     }
                 }
             }

@@ -207,7 +207,9 @@ impl Config {
 
         let interpolated = Self::interpolate_env(&content);
         toml::from_str(&interpolated).unwrap_or_else(|e| {
-            eprintln!("⚠️  Nucleus Config Error: {}", NucleusError::ConfigError(e));
+            // Best practice: tracing::error! and let the app handle subscriber.
+            tracing::error!("Nucleus Config Error: {}", NucleusError::ConfigError(e));
+            
             // Fallback to default mostly safe for dev, but critical for prod?
             // For now keeping existing behavior but using proper error formatting in log
             Self::default()

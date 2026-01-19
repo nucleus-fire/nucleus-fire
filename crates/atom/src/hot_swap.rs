@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::Arc;
 use axum::body::Bytes;
 use tokio::sync::mpsc;
-use std::fs;
+// use std::fs;
 use arc_swap::ArcSwap;
 
 pub struct HotSwapListener {
@@ -21,7 +21,7 @@ impl HotSwapListener {
         let (tx, mut rx) = mpsc::channel(1);
         
         let mut watcher = RecommendedWatcher::new(move |res| {
-            tx.blocking_send(res).unwrap();
+            tx.blocking_send(res).ok();
         }, Config::default()).unwrap();
 
         let views_path = Path::new("src/views");
@@ -43,7 +43,7 @@ impl HotSwapListener {
                     if event.kind.is_modify() || event.kind.is_create() {
                         for path in event.paths {
                             if path.extension().is_some_and(|e| e == "ncl") {
-                                self.reload_file(&path);
+                                self.reload_file(&path).await;
                             }
                         }
                     }
@@ -53,9 +53,9 @@ impl HotSwapListener {
         }
     }
 
-    fn reload_file(&self, path: &Path) {
-        if let Ok(content) = fs::read_to_string(path) {
-             let stem = path.file_stem().unwrap().to_str().unwrap().to_string();
+    async fn reload_file(&self, path: &Path) {
+        if let Ok(content) = tokio::fs::read_to_string(path).await {
+             let stem = path.file_stem().unwrap_or_default().to_string_lossy().to_string();
              println!("🔄 Reloading {}...", stem);
              
              // Re-compile

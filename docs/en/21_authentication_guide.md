@@ -220,17 +220,21 @@ GITHUB_CLIENT_SECRET=...
 ```rust
 use nucleus_std::oauth::{OAuthConfig, OAuthProvider, OAuth};
 
+use axum_extra::extract::CookieJar;
+use axum_extra::extract::cookie::Cookie;
+
 #[server]
-async fn login_with_google() -> Redirect {
+async fn login_with_google(jar: CookieJar) -> (CookieJar, Redirect) {
     let config = OAuthConfig::from_env();
     let oauth = OAuth::new(config);
     
     // Generate URL
     let (url, state) = oauth.authorize_url(OAuthProvider::Google).unwrap();
     
-    // TODO: Store state in session/cookie to verify callback
+    // Store state in a secure HttpOnly cookie to verify later
+    let jar = jar.add(Cookie::build(("oauth_state", state)).http_only(true));
     
-    Redirect::to(&url)
+    (jar, Redirect::to(&url))
 }
 
 #[server]

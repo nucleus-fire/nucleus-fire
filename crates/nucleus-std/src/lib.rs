@@ -7,6 +7,7 @@ pub mod photon;
 pub mod fortress;
 pub mod neutron;
 pub mod vault;
+#[cfg(feature = "mail")]
 pub mod postman;
 pub mod pulse;
 pub mod gondola;
@@ -20,6 +21,7 @@ pub mod payments;
 pub mod rpc;
 pub mod federation;
 pub mod neural;
+#[cfg(feature = "browser")]
 pub mod browser;
 pub mod forms;
 pub mod oauth;
@@ -37,13 +39,16 @@ pub mod utils;
 pub mod scout;
 pub mod testing;
 pub mod push;
+#[cfg(feature = "graphql")]
 pub mod graph;
 pub mod tenant;
 
 // Re-export attribute macros
 pub use nucleus_macros::server;
 
+#[cfg(feature = "ai")]
 pub mod mcp;
+#[cfg(feature = "ai")]
 pub mod agent;
 
 // Re-exports
@@ -53,6 +58,7 @@ pub use fortress::{AuthUser, OptionalAuth, require_auth};
 pub use vault::{Money, Ledger, Account, AccountType, Transaction, LedgerEntry, Vault};
 pub use sonar::Sonar;
 pub use pulse::{Pulse, Job, JobConfig, JobPriority, JobStatus, PulseError};
+#[cfg(feature = "mail")]
 pub use postman::Postman;
 pub use lens::Lens;
 pub use polyglot::Polyglot;
@@ -61,6 +67,7 @@ pub use config::{Config, GLOBAL_CONFIG};
 pub use chain::Chain;
 pub use payments::Stripe;
 pub use neural::{Neural, NeuralError, ChatMessage, Role, Usage};
+#[cfg(feature = "browser")]
 pub use browser::{Browser, BrowserOptions, BrowserError};
 pub use neutron::Signal;
 pub use beacon::Beacon;

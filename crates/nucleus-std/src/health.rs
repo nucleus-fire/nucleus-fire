@@ -99,8 +99,8 @@ impl ComponentCheck {
         }
     }
     
-    #[allow(dead_code)]
-    fn with_details(mut self, details: HashMap<String, serde_json::Value>) -> Self {
+    
+    pub fn with_details(mut self, details: HashMap<String, serde_json::Value>) -> Self {
         self.details = Some(details);
         self
     }

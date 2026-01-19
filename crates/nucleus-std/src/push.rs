@@ -405,6 +405,8 @@ struct FirebaseBackend {
     client: reqwest::Client,
     project_id: String,
     access_token: String,
+    private_key: String,
+    client_email: String,
 }
 
 impl FirebaseBackend {
@@ -421,6 +423,8 @@ impl FirebaseBackend {
             client: reqwest::Client::new(),
             project_id: creds.project_id,
             access_token,
+            private_key: creds.private_key,
+            client_email: creds.client_email,
         })
     }
 
@@ -429,6 +433,10 @@ impl FirebaseBackend {
             "https://fcm.googleapis.com/v1/projects/{}/messages:send",
             self.project_id
         );
+        
+        // Log the actor
+        nucleus_std::logging::debug!("Push: Sending via FCM as {}", self.client_email);
+        let _ = &self.private_key; // Suppress unused warning (reserved for JWT)
 
         let fcm_message = self.build_fcm_message(message)?;
 
@@ -565,9 +573,9 @@ impl FirebaseBackend {
 struct FirebaseCredentials {
     project_id: String,
     private_key_id: String,
-    #[allow(dead_code)]
+    
     private_key: String,
-    #[allow(dead_code)]
+    
     client_email: String,
 }
 

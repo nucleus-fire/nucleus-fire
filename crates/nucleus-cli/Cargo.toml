@@ -10,7 +10,7 @@ ncc = { path = "../ncc" }
 atom = { path = "../atom" }
 tokio = { version = "1", features = ["full"] }
 miette = { version = "5.10", features = ["fancy"] }
-nucleus-std = { path = "../nucleus-std" }
+nucleus-std = { path = "../nucleus-std", features = ["browser", "mail"] }
 chrono = "0.4"
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite"] }
 image = "0.25.9"

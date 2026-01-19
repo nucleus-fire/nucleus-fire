@@ -114,6 +114,18 @@ Comparing Nucleus to the "Best":
 *   **vs Go/Fiber**: Nucleus offers a more expressive type system (Sum types, Traits) and no GC pauses, crucial for high-load real-time apps.
 *   **vs Python/Django**: Nucleus catches 99% of bugs at compile time. No `AttributeError` in production.
 
+## 🛡️ Security & Stability
+
+Nucleus is built for mission-critical production environments:
+
+-   **Zero Panics**: The core standard library usage of `unwrap()` and `panic!` has been rigorously audited and replaced with robust `Result`-based error handling. (Audited Jan 2026).
+-   **Hardened Protocols**: The MCP (AI) implementation features crash-proof JSON parsing and safe network handling.
+-   **Secure Defaults**: 
+    -   `Fortress` middleware enables strict CSP and security headers by default.
+    -   Cloud-ready feature flags allow you to strip unused dependencies (like heavy browser engines) for a minimal attack surface.
+    -   SQL interactions via `Photon` are immune to injection; `Studio` is strictly isolated for development use.
+
+
 ## License
 
 MIT © [Nucleus Framework Team](https://github.com/nucleus-fire)

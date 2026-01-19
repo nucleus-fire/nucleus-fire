@@ -521,7 +521,7 @@ fn generate_controllers(name: &str, fields: &[String]) -> Result<()> {
         format!("<p><strong>{}:</strong> {{ item.{} }}</p>", capitalize(&fname), fname)
     }).collect::<Vec<_>>().join("\n    ");
 
-    let show_content = format!(r#"<n:model item="crate::logic::{modname}::{cap}::find(params.id.parse().unwrap()).await.unwrap()">
+    let show_content = format!(r#"<n:model item="crate::logic::{modname}::{cap}::find(params.id.parse().unwrap_or_default()).await.unwrap_or(None)">
 <div class="container">
     <h1>{cap} #{{ item.id }}</h1>
     <div class="card">
@@ -570,7 +570,7 @@ fn generate_controllers(name: &str, fields: &[String]) -> Result<()> {
     </div>"#, name = fname, label = capitalize(&fname))
     }).collect::<Vec<_>>().join("\n    ");
 
-    let edit_content = format!(r#"<n:model item="crate::logic::{modname}::{cap}::find(params.id.parse().unwrap()).await.unwrap()">
+    let edit_content = format!(r#"<n:model item="crate::logic::{modname}::{cap}::find(params.id.parse().unwrap_or_default()).await.unwrap_or(None)">
 <div class="container">
     <h1>Edit {cap}</h1>
     <form method="POST">

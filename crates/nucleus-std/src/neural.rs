@@ -68,7 +68,7 @@ struct CompletionRequest {
 struct CompletionResponse {
     choices: Vec<Choice>,
     #[serde(default)]
-    #[allow(dead_code)]
+    
     usage: Option<Usage>,
 }
 
@@ -157,8 +157,13 @@ impl Neural {
         self.chat(vec![ChatMessage::user(prompt)]).await
     }
     
-    /// Chat with message history
+    /// Chat with message history (returns content only)
     pub async fn chat(&self, messages: Vec<ChatMessage>) -> Result<String, NeuralError> {
+        self.chat_detailed(messages).await.map(|r| r.content)
+    }
+
+    /// Chat with message history (returns full response with usage)
+    pub async fn chat_detailed(&self, messages: Vec<ChatMessage>) -> Result<NeuralResponse, NeuralError> {
         let request = CompletionRequest {
             model: self.model.clone(),
             messages,
@@ -188,10 +193,15 @@ impl Neural {
             .await
             .map_err(|e| NeuralError::Parse(e.to_string()))?;
         
-        body.choices
+        let content = body.choices
             .first()
             .map(|c| c.message.content.clone())
-            .ok_or(NeuralError::NoResponse)
+            .ok_or(NeuralError::NoResponse)?;
+
+        Ok(NeuralResponse {
+            content,
+            usage: body.usage,
+        })
     }
     
     /// Chat with system prompt
@@ -201,6 +211,13 @@ impl Neural {
             ChatMessage::user(user),
         ]).await
     }
+}
+
+/// Full neural response
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NeuralResponse {
+    pub content: String,
+    pub usage: Option<Usage>,
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -226,7 +226,7 @@ pub struct ScheduledTask {
     /// Cron schedule (None for one-time tasks)
     schedule: Option<CronSchedule>,
     /// One-time execution time
-    #[allow(dead_code)]
+    
     once_at: Option<DateTime<Utc>>,
     /// Task function
     task: BoxedTask,
@@ -282,6 +282,13 @@ impl ScheduledTask {
             Some(next) => Utc::now() >= next,
             None => false,
         }
+    }
+    pub fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    pub fn execution_time(&self) -> Option<DateTime<Utc>> {
+        self.once_at
     }
 }
 

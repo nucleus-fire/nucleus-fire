@@ -130,8 +130,9 @@ impl NucleusRuntime {
 
         // Start Reactor
         println!("Atom Reactor starting on 0.0.0.0:3000");
-        let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
-        axum::serve(listener, app).await.unwrap();
+        let listener = TcpListener::bind("0.0.0.0:3000").await
+            .expect("Failed to bind to port 3000. Is the port already in use?");
+        axum::serve(listener, app).await.expect("Server failed to start");
     }
 
     pub fn make_router(state: AppState) -> Router {

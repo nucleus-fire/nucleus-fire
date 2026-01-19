@@ -14,7 +14,7 @@
 ```bash
 # Clone the repository
 git clone https://github.com/nucleus-fire/nucleus-fire.git
-cd nucleus-lang
+cd nucleus-fire
 
 # Build and install the CLI
 cargo install --path crates/nucleus-cli

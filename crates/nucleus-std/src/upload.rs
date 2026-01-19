@@ -22,7 +22,7 @@
 //! ```
 
 use std::path::{Path, PathBuf};
-use std::io::Write;
+// use std::io::Write;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -155,8 +155,8 @@ impl UploadedFile {
     }
     
     /// Delete the uploaded file
-    pub fn delete(&self) -> Result<(), std::io::Error> {
-        std::fs::remove_file(&self.path)
+    pub async fn delete(&self) -> Result<(), std::io::Error> {
+        tokio::fs::remove_file(&self.path).await
     }
 }
 
@@ -208,7 +208,7 @@ impl Upload {
             .trim_matches('"');
         
         // Ensure storage directory exists
-        std::fs::create_dir_all(&config.storage_path)?;
+        tokio::fs::create_dir_all(&config.storage_path).await?;
         
         // Parse multipart
         let stream = body.into_data_stream();
@@ -278,8 +278,9 @@ impl Upload {
             
             // Save file
             let path = config.storage_path.join(&stored_name);
-            let mut file = std::fs::File::create(&path)?;
-            file.write_all(&data)?;
+            use tokio::io::AsyncWriteExt;
+            let mut file = tokio::fs::File::create(&path).await?;
+            file.write_all(&data).await?;
             
             let url = format!("/uploads/{}", stored_name);
             
@@ -331,26 +332,28 @@ impl Upload {
     }
     
     /// Delete an uploaded file
-    pub fn delete(file: &UploadedFile) -> Result<(), std::io::Error> {
-        std::fs::remove_file(&file.path)
+    pub async fn delete(file: &UploadedFile) -> Result<(), std::io::Error> {
+        tokio::fs::remove_file(&file.path).await
     }
     
     /// Delete files older than specified duration
-    pub fn cleanup_old_files(
+    pub async fn cleanup_old_files(
         storage_path: &Path,
         max_age: std::time::Duration,
     ) -> Result<usize, std::io::Error> {
         let mut deleted = 0;
         let now = std::time::SystemTime::now();
         
-        for entry in std::fs::read_dir(storage_path)? {
-            let entry = entry?;
-            let metadata = entry.metadata()?;
+        // Read dir is a bit complex with tokio, reading entries into a vec first
+        let mut entries = tokio::fs::read_dir(storage_path).await?;
+        
+        while let Some(entry) = entries.next_entry().await? {
+            let metadata = entry.metadata().await?;
             
             if let Ok(modified) = metadata.modified() {
                 if let Ok(age) = now.duration_since(modified) {
                     if age > max_age {
-                        std::fs::remove_file(entry.path())?;
+                        tokio::fs::remove_file(entry.path()).await?;
                         deleted += 1;
                     }
                 }

@@ -1,7 +1,8 @@
 use crate::ast::{Element, Node};
 
 pub fn generate_rust(nodes: &[Node]) -> String {
-    std::fs::write("/Users/dev/.gemini/antigravity/brain/690eb334-113d-4d6b-98bb-c71f54157da1/debug_ast.txt", format!("{:#?}", nodes)).ok();
+    // Debug logging removed for production
+    // std::fs::write("/tmp/debug_ast.txt", format!("{:#?}", nodes)).ok();
     let mut code = String::new();
     
     // Header

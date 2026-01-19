@@ -67,7 +67,8 @@ pub fn validate_query(query: &DaxQuery, schema: &MockSchema) -> Result<(), Strin
         return Err(format!("Table '{}' not found in schema.", query.entity));
     }
 
-    let table_fields = schema.tables.get(&query.entity).unwrap();
+    let table_fields = schema.tables.get(&query.entity)
+        .ok_or_else(|| format!("Internal compiler error: Table '{}' disappeared during validation", query.entity))?;
 
     // 2. Check Fields
     for field in &query.fields {

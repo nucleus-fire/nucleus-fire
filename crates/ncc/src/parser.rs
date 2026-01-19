@@ -298,7 +298,7 @@ fn parse_island(input: &str) -> IResult<&str, Node> {
     // Parse Directive
     let directive = attributes.iter()
         .find(|(k, _)| k.starts_with("client:"))
-        .map(|(k, _)| k.strip_prefix("client:").unwrap().to_string())
+        .map(|(k, _)| k.strip_prefix("client:").unwrap_or("").to_string())
         .unwrap_or_else(|| "load".to_string()); // Default to load
 
     let path = attributes.iter()

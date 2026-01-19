@@ -1110,8 +1110,8 @@ chrono = "0.4"
 simd-json = "0.13"
 mimalloc = "0.1"
 tower-http = { version = "0.5", features = ["fs", "trace", "compression-full"] }
-nucleus-std = { path = "../crates/nucleus-std" } # dev path
-atom = { path = "../crates/atom" } # dev path
+nucleus-std = { git = "https://github.com/nucleus-fire/nucleus-fire", branch = "main" }
+atom = { git = "https://github.com/nucleus-fire/nucleus-fire", branch = "main" }
 "#).replace("__NAME__", name);
 
     fs::write(path.join("Cargo.toml"), cargo_toml)?;
@@ -1147,7 +1147,7 @@ async fn handle_db_command(cmd: &DbCommands) -> miette::Result<()> {
             if db_url.starts_with("sqlite:") {
                  let path = db_url.trim_start_matches("sqlite:");
                  if !Path::new(path).exists() {
-                     fs::File::create(path).into_diagnostic()?;
+                     tokio::fs::File::create(path).await.into_diagnostic()?;
                  }
             }
             

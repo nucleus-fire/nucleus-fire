@@ -157,7 +157,7 @@ When you edit a `.ncl` file:
 To use `nucleus dev` directly (instead of `cargo run -p nucleus-cli -- dev`):
 
 ```bash
-# From the nucleus-lang directory
+# From the nucleus-fire directory
 cargo install --path crates/nucleus-cli
 
 # Now you can run from any project

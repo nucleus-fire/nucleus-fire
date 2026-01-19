@@ -322,12 +322,33 @@ impl McpServer {
     async fn handle_request(&self, req: JsonRpcRequest) -> JsonRpcMessage {
         match req.method.as_str() {
             "initialize" => {
+                let params = match self.server_info.params.as_ref() {
+                    Some(p) => p,
+                    None => return JsonRpcMessage::Response(JsonRpcResponse::error(
+                        req.id, -32603, "Internal error: Missing server info", None
+                    )),
+                };
+                
+                let server_info = match params.get("serverInfo") {
+                    Some(si) => si.clone(),
+                    None => return JsonRpcMessage::Response(JsonRpcResponse::error(
+                       req.id, -32603, "Internal error: Missing serverInfo in params", None
+                    )),
+                };
+                
+                let capabilities = match params.get("capabilities") {
+                    Some(c) => c.clone(),
+                    None => return JsonRpcMessage::Response(JsonRpcResponse::error(
+                       req.id, -32603, "Internal error: Missing capabilities in params", None
+                    )),
+                };
+
                 JsonRpcMessage::Response(JsonRpcResponse::success(
                     req.id,
                     json!({
                         "protocolVersion": "2024-11-05",
-                        "serverInfo": self.server_info.params.as_ref().unwrap()["serverInfo"].clone(),
-                        "capabilities": self.server_info.params.as_ref().unwrap()["capabilities"].clone()
+                        "serverInfo": server_info,
+                        "capabilities": capabilities
                     })
                 ))
             },
@@ -455,7 +476,10 @@ impl McpClient {
         let res = self.request("tools/list", None).await?;
         
         if let Some(result) = res.result {
-             let tools: Vec<Tool> = serde_json::from_value(result["tools"].clone())?;
+             let tools_value = result.get("tools")
+                .ok_or_else(|| McpError::Protocol("Missing 'tools' field in response".to_string()))?;
+             
+             let tools: Vec<Tool> = serde_json::from_value(tools_value.clone())?;
              Ok(tools)
         } else {
             Err(McpError::Protocol("No result in list_tools response".to_string()))
@@ -487,9 +511,10 @@ mod tests {
     use super::*;
     use serde_json::json;
     use tokio::sync::mpsc;
+    use std::error::Error;
 
     // Mock Transport for testing
-    #[allow(dead_code)]
+    
     struct MockTransport {
         tx: mpsc::Sender<JsonRpcMessage>,
         rx: Mutex<mpsc::Receiver<JsonRpcMessage>>,
@@ -507,7 +532,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_server_tools() {
+    async fn test_server_tools() -> Result<(), Box<dyn Error>> {
         let server = McpServer::new("test-server", "1.0");
         
         server.register_tool(
@@ -523,14 +548,15 @@ mod tests {
 
         // Test tools/list
         let req = JsonRpcRequest::new("tools/list", None, RequestId::Number(1));
-        let resp = server.handle_message(JsonRpcMessage::Request(req)).await.unwrap();
+        let resp = server.handle_message(JsonRpcMessage::Request(req)).await.ok_or("No response")?;
         
         if let JsonRpcMessage::Response(r) = resp {
-             let tools = r.result.unwrap()["tools"].as_array().unwrap().clone();
+             let result = r.result.ok_or("No result")?;
+             let tools = result.get("tools").ok_or("No tools field")?.as_array().ok_or("Tools not array")?;
              assert_eq!(tools.len(), 1);
              assert_eq!(tools[0]["name"], "echo");
         } else {
-            panic!("Expected response");
+            return Err("Expected response".into());
         }
 
         // Test tools/call
@@ -542,22 +568,24 @@ mod tests {
             })), 
             RequestId::Number(2)
         );
-        let resp = server.handle_message(JsonRpcMessage::Request(req)).await.unwrap();
+        let resp = server.handle_message(JsonRpcMessage::Request(req)).await.ok_or("No response")?;
         
         if let JsonRpcMessage::Response(r) = resp {
              assert!(r.error.is_none());
-             let res: CallToolResult = serde_json::from_value(r.result.unwrap()).unwrap();
+             let res: CallToolResult = serde_json::from_value(r.result.ok_or("No result")?)?;
              match &res.content[0] {
                  Content::Text { text } => assert_eq!(text, "{\"msg\":\"hello\"}"),
-                 _ => panic!("Wrong content type"),
+                 _ => return Err("Wrong content type".into()),
              }
         } else {
-            panic!("Expected response");
+            return Err("Expected response".into());
         }
+        
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_stream_transport() {
+    async fn test_stream_transport() -> Result<(), Box<dyn Error>> {
         use tokio::io::duplex;
         
         let (client_io, server_io) = duplex(1024);
@@ -568,57 +596,62 @@ mod tests {
         let server = StreamTransport::new(server_read, server_write);
 
         let req = JsonRpcRequest::new("ping", None, RequestId::Number(1));
-        client.send(JsonRpcMessage::Request(req.clone())).await.unwrap();
+        client.send(JsonRpcMessage::Request(req.clone())).await?;
 
-        let msg = server.receive().await.unwrap().unwrap();
+        let msg = server.receive().await?.ok_or("Stream closed")?;
         if let JsonRpcMessage::Request(r) = msg {
             assert_eq!(r.method, "ping");
         } else {
-            panic!("Expected request");
+            return Err("Expected request".into());
         }
+        
+        Ok(())
     }
 
     #[test]
-    fn test_request_serialization() {
+    fn test_request_serialization() -> Result<(), Box<dyn Error>> {
         let req = JsonRpcRequest::new(
             "list_tools", 
             None, 
             RequestId::Number(1)
         );
-        let json = serde_json::to_string(&req).unwrap();
+        let json = serde_json::to_string(&req)?;
         
-        let deserialized: JsonRpcRequest = serde_json::from_str(&json).unwrap();
+        let deserialized: JsonRpcRequest = serde_json::from_str(&json)?;
         assert_eq!(deserialized.method, "list_tools");
         assert_eq!(deserialized.id, RequestId::Number(1));
+        Ok(())
     }
 
     #[test]
-    fn test_notification_serialization() {
+    fn test_notification_serialization() -> Result<(), Box<dyn Error>> {
         let notif = JsonRpcNotification::new(
             "initialized", 
             None
         );
-        let json = serde_json::to_string(&notif).unwrap();
+        let json = serde_json::to_string(&notif)?;
         
-        let deserialized: JsonRpcNotification = serde_json::from_str(&json).unwrap();
+        let deserialized: JsonRpcNotification = serde_json::from_str(&json)?;
         assert_eq!(deserialized.method, "initialized");
+        Ok(())
     }
 
     #[test]
-    fn test_response_success_serialization() {
+    fn test_response_success_serialization() -> Result<(), Box<dyn Error>> {
         let resp = JsonRpcResponse::success(
             RequestId::Number(1),
             json!({ "tools": [] })
         );
-        let json = serde_json::to_string(&resp).unwrap();
+        let json = serde_json::to_string(&resp)?;
         
-        let deserialized: JsonRpcResponse = serde_json::from_str(&json).unwrap();
+        let deserialized: JsonRpcResponse = serde_json::from_str(&json)?;
         assert!(deserialized.error.is_none());
         assert!(deserialized.result.is_some());
+        Ok(())
     }
 
     #[test]
-    fn test_tool_serialization() {
+    fn test_tool_serialization() -> Result<(), Box<dyn Error>> {
         let tool = Tool {
             name: "test_tool".to_string(),
             description: "A test tool".to_string(),
@@ -630,10 +663,34 @@ mod tests {
             }),
         };
         
-        let json = serde_json::to_string(&tool).unwrap();
-        let deserialized: Tool = serde_json::from_str(&json).unwrap();
+        let json = serde_json::to_string(&tool)?;
+        let deserialized: Tool = serde_json::from_str(&json)?;
         
         assert_eq!(deserialized.name, "test_tool");
         assert_eq!(deserialized.description, "A test tool");
+        Ok(())
+    }
+
+    #[test]
+    fn test_server_missing_server_info_error() -> Result<(), Box<dyn Error>> {
+        // Test that server handles missing info gracefully
+        let server = McpServer {
+             tools: Arc::new(Mutex::new(HashMap::new())),
+             // Empty/Invalid server info
+             server_info: JsonRpcNotification::new("header", None),
+        };
+        
+        let req = JsonRpcRequest::new("initialize", None, RequestId::Number(1));
+        let rt = tokio::runtime::Runtime::new()?;
+        let resp = rt.block_on(async { server.handle_request(req).await });
+        
+        if let JsonRpcMessage::Response(r) = resp {
+             // Should be an error, NOT a panic
+             assert!(r.error.is_some());
+             assert_eq!(r.error.unwrap().code, -32603);
+        } else {
+             return Err("Expected response".into());
+        }
+        Ok(())
     }
 }

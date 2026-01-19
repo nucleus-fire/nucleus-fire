@@ -36,7 +36,7 @@ async fn get_featured() -> Json<Option<Video>> {
     // Simple random pick
     let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().subsec_nanos();
     let idx = nanos as usize % videos.len();
-    Json(Some(videos.into_iter().nth(idx).unwrap()))
+    Json(videos.into_iter().nth(idx))
 }
 
 #[derive(Serialize)]
