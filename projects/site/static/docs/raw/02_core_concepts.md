@@ -29,7 +29,7 @@ Unlike Node.js (Event Loop) or Java (Thread per Request), Nucleus uses the **Ato
 
 ## Hot Module Replacement (HMR) & State
 
-Nucleus V3 introduces a robust HMR system designed for productivity without data loss.
+Nucleus introduces a robust HMR system designed for productivity without data loss.
 
 ### How It Works
 1. **Instant Updates**: When you save a `.ncl` file, the Reactor broadcasts an update signal to the browser

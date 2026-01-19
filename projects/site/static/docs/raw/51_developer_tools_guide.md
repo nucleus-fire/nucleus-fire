@@ -1,6 +1,6 @@
 # Developer Tools Suite
 
-Nucleus V3.5 includes a comprehensive suite of developer tools designed to accelerate your workflow, debug faster, and gain deeper insights into your application.
+Nucleus includes a comprehensive suite of developer tools designed to accelerate your workflow, debug faster, and gain deeper insights into your application.
 
 ---
 

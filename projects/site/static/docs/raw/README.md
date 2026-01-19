@@ -132,10 +132,10 @@ Nucleus includes a full component system for building reusable UI:
 
 | Example | Location | Features |
 |---------|----------|----------|
-| [Recipes](16_examples.md#5-recipes-v3-showcase) | `examples/recipes` | Hello, Counter, Todo, Auth |
-| [Shop](16_examples.md#1-shop-state-management) | `examples/shop` | State management |
-| [Dashboard](16_examples.md#2-dashboard-analytics) | `examples/dashboard` | CSS, analytics |
-| [Chat](16_examples.md#3-chat-real-time) | `examples/chat` | WebSockets |
+| [Recipes](16_templates.md#5-recipes-v3-showcase) | `templates/recipes` | Hello, Counter, Todo, Auth |
+| [Shop](16_templates.md#1-shop-state-management) | `templates/shop` | State management |
+| [Dashboard](16_templates.md#2-dashboard-analytics) | `templates/dashboard` | CSS, analytics |
+| [Chat](16_templates.md#3-chat-real-time) | `templates/chat` | WebSockets |
 | Kitchen Sink | `kitchen-sink` | All 19 modules + demos |
 | Components Showcase | `projects/site/src/views/components.ncl` | All 7 components |
 
@@ -261,6 +261,7 @@ Nucleus includes a full component system for building reusable UI:
 | 26 | [Testing Guide](#26_testing_guide) | 270+ | Tests |
 | 27 | [Offline Sync](#27_offline_sync_guide) | 170+ | CRDTs |
 | 27 | [Social Login](#27_social_login_guide) | 350+ | OAuth |
+| 28 | [Local Storage](#28_local_storage_guide) | 200+ | Client-side storage |
 | 28 | [i18n Guide](#28_i18n_guide) | 150+ | Translations |
 | 29 | [Analytics Guide](#29_analytics_guide) | 100+ | Event tracking |
 | - | [Configuration](#configuration) | 290+ | Config system |

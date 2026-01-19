@@ -1,6 +1,6 @@
 # Dependency Management
 
-Nucleus V3 introduces unified dependency management. Managing dependencies should be uniform whether you're installing backend libraries or frontend components.
+Nucleus introduces unified dependency management. Managing dependencies should be uniform whether you're installing backend libraries or frontend components.
 
 ---
 

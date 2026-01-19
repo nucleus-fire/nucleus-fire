@@ -25,13 +25,18 @@ nucleus --version
 | [`nucleus dev`](#nucleus-dev) | Development server with hot reload |
 | [`nucleus run`](#nucleus-run) | Start development server (interpreter mode) |
 | [`nucleus build`](#nucleus-build) | Build for production |
-| [`nucleus export`](#nucleus-export) | Export as static site |
-| [`nucleus publish`](#nucleus-publish) | Deploy to hosting platforms |
 | [`nucleus deploy`](#nucleus-deploy) | Deploy to any platform |
+| [`nucleus deploy init`](#nucleus-deploy-init) | Generate deployment files (Dockerfile, fly.toml) |
+| [`nucleus export`](#nucleus-export) | Static site generation (SSG) |
+| [`nucleus publish`](#nucleus-publish) | Publish static site to platform |
 | [`nucleus test`](#nucleus-test) | Run tests |
 | [`nucleus db`](#nucleus-db) | Database operations |
 | [`nucleus generate`](#nucleus-generate) | Code generators |
 | [`nucleus install`](#nucleus-install) | Install dependencies |
+| [`nucleus check`](#nucleus-check) | Run Guardian Linter checks |
+| [`nucleus console`](#nucleus-console) | Interactive REPL for database queries |
+| [`nucleus studio`](#nucleus-studio) | Web-based database management UI |
+| [`nucleus browser`](#nucleus-browser) | Headless browser automation |
 
 ---
 
@@ -58,6 +63,11 @@ nucleus new <name> [options]
 | `--template` | `-t` | Template to use (`default`, `api`, `minimal`) |
 | `--database` | `-d` | Database type (`postgres`, `mysql`, `sqlite`) |
 | `--no-git` | | Skip git initialization |
+
+### Features
+- 🎨 **Modern Scaffolding**: Automatically sets up `src/assets` for the optimization pipeline.
+- 🚀 **Performance Preset**: Generates a `nucleus.config` tuned for production (caching, compression).
+- ✨ **Visual Feedback**: Animated progress steps during creation.
 
 ### Examples
 
@@ -148,7 +158,7 @@ When you edit a `.ncl` file:
 To use `nucleus dev` directly (instead of `cargo run -p nucleus-cli -- dev`):
 
 ```bash
-# From the nucleus-lang directory
+# From the nucleus-fire directory
 cargo install --path crates/nucleus-cli
 
 # Now you can run from any project
@@ -243,142 +253,6 @@ Binary is generated at `target/release/<project-name>`.
 
 ---
 
-## nucleus export
-
-Export your Nucleus application as a static site.
-
-### Usage
-
-```bash
-nucleus export [options]
-```
-
-### Options
-
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--output` | `-o` | `dist` | Output directory |
-| `--incremental` | `-i` | false | Only rebuild changed pages |
-| `--optimize-images` | | true | Convert images to WebP |
-| `--minify` | | true | Minify HTML, CSS, JS |
-| `--base-url` | | `/` | Base URL for the site |
-
-### Examples
-
-```bash
-# Basic export
-nucleus export
-
-# Custom output directory
-nucleus export --output build
-
-# Incremental build (faster)
-nucleus export --incremental
-
-# For subdirectory hosting
-nucleus export --base-url /my-app/
-```
-
-### What Gets Generated
-
-```
-dist/
-├── index.html
-├── about/
-│   └── index.html
-├── blog/
-│   ├── index.html
-│   └── my-post/
-│       └── index.html
-├── assets/
-│   ├── output.css
-│   ├── app.js
-│   └── images/
-│       └── hero.webp
-└── _redirects         # For Netlify/Cloudflare
-```
-
-### Features
-
-- 🖼️ **Auto WebP conversion** - Images optimized automatically
-- 📦 **Asset fingerprinting** - Cache-busting hashes
-- 🗜️ **Minification** - HTML, CSS, JS compressed
-- ⚡ **Incremental builds** - Only rebuild changed pages
-- 🔗 **Prerendered routes** - All dynamic routes static
-
----
-
-## nucleus publish
-
-One-command publishing to popular hosting platforms.
-
-### Usage
-
-```bash
-nucleus publish [platform] [options]
-```
-
-### Platforms
-
-| Platform | Command | Description |
-|----------|---------|-------------|
-| Netlify | `nucleus publish netlify` | Deploy to Netlify |
-| Vercel | `nucleus publish vercel` | Deploy to Vercel |
-| Cloudflare | `nucleus publish cloudflare` | Deploy to Cloudflare Pages |
-| GitHub Pages | `nucleus publish github` | Deploy to GitHub Pages |
-
-### Options
-
-| Option | Description |
-|--------|-------------|
-| `--prod` | Deploy to production (not preview) |
-| `--token` | Auth token (or use env var) |
-| `--project` | Project name on platform |
-
-### Examples
-
-```bash
-# Interactive mode (prompts for platform)
-nucleus publish
-
-# Deploy to Netlify
-nucleus publish netlify
-
-# Production deployment to Vercel
-nucleus publish vercel --prod
-
-# GitHub Pages
-nucleus publish github
-```
-
-### Environment Variables
-
-| Variable | Platform | Description |
-|----------|----------|-------------|
-| `NETLIFY_AUTH_TOKEN` | Netlify | Auth token |
-| `VERCEL_TOKEN` | Vercel | Auth token |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare | API token |
-| `GITHUB_TOKEN` | GitHub | Personal access token |
-
-### Workflow
-
-1. Run `nucleus export` first (or it runs automatically)
-2. Authenticate with platform (token or interactive)
-3. Upload static files
-4. Get live URL
-
-```bash
-# Full workflow
-nucleus export
-nucleus publish netlify --prod
-
-# Output:
-# ✅ Site deployed!
-# 🌐 https://my-app.netlify.app
-```
-
----
-
 ## nucleus deploy
 
 Interactive deployment wizard with multi-platform support.
@@ -454,6 +328,117 @@ railway up
 # Render
 # Push to GitHub, Render auto-deploys from render.yaml
 ```
+
+---
+
+## nucleus deploy init
+
+Generate deployment configuration files without the interactive wizard.
+
+### Usage
+
+```bash
+nucleus deploy init
+```
+
+### What Gets Generated
+
+| File | Description |
+|------|-------------|
+| `Dockerfile` | Multi-stage optimized Docker build |
+| `.dockerignore` | Excludes unnecessary files |
+| `fly.toml` | Fly.io deployment configuration |
+
+### Example
+
+```bash
+cd my-project
+nucleus deploy init
+
+# Output:
+# ✅ Generated Dockerfile
+# ✅ Generated .dockerignore
+# ✅ Generated fly.toml
+```
+
+---
+
+## nucleus export
+
+Export your application as a static site (SSG).
+
+### Usage
+
+```bash
+nucleus export [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-o, --output` | Output directory (default: `dist`) |
+| `--wizard` | Run interactive wizard |
+| `--incremental` | Only rebuild changed files |
+| `--base-url` | Base URL for generated links |
+| `--platform` | Target: `netlify`, `vercel`, `cloudflare`, `github` |
+| `--pwa` | Generate PWA assets (manifest, service worker) |
+| `--pwa-name` | Custom name for the PWA |
+
+### Examples
+
+```bash
+# Basic export
+nucleus export
+
+# With PWA support
+nucleus export --pwa --pwa-name "My App"
+
+# Incremental build
+nucleus export --incremental
+
+# For Netlify
+nucleus export --platform netlify
+
+# Custom output directory
+nucleus export -o build
+```
+
+### PWA Assets Generated
+
+When `--pwa` is used:
+
+| File | Description |
+|------|-------------|
+| `manifest.json` | Web App Manifest for install prompts |
+| `sw.js` | Service Worker with cache-first strategy |
+| `offline.html` | Offline fallback page |
+| `assets/neutron-store.js` | Client-side storage library |
+
+---
+
+## nucleus publish
+
+Publish your static site to a hosting platform.
+
+### Usage
+
+```bash
+nucleus publish [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `-p, --platform` | Target platform |
+
+### Supported Platforms
+
+- **Netlify** - Requires Netlify CLI authenticated
+- **Vercel** - Requires Vercel CLI authenticated
+- **Cloudflare Pages** - Requires Wrangler authenticated
+- **GitHub Pages** - Pushes to `gh-pages` branch
 
 ---
 
@@ -653,6 +638,56 @@ Options:
 
 ---
 
+## nucleus check
+
+Run the **Guardian Linter** to analyze your codebase for quality, security, accessibility, and performance issues.
+
+### Usage
+
+```bash
+nucleus check [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--strict` | Fail on warnings as well as errors |
+| `--fix` | Automatically fix fixable issues (e.g., indentation, sorting) |
+
+### What It Checks
+
+The Guardian engine enforces several rule sets:
+
+1.  **Accessibility (A11y)**:
+    *   `<img>` tags must have `alt` attributes
+    *   Buttons and Links must have content or `aria-label`
+    *   Form inputs must have labels
+
+2.  **Security**:
+    *   `<iframe>` tags must have `sandbox` attributes
+    *   Scripts must be sanitized
+
+3.  **Performance**:
+    *   Warns on large inline styles (>150 chars)
+    *   Detects unoptimized large assets
+
+4.  **Quality**:
+    *   Ensures `<script>` logic is paired with `<test>` or `<spec>`
+    *   Detects dead code or unused variables
+
+### Examples
+
+```bash
+# Run standard checks
+nucleus check
+
+# Run in CI (strict mode)
+nucleus check --strict
+```
+
+---
+
 ## nucleus install
 
 Install Nucleus modules and Rust crates.
@@ -674,6 +709,134 @@ nucleus install @nucleus/auth
 
 # Install from URL
 nucleus install https://github.com/user/module
+```
+
+---
+
+## nucleus console
+
+Interactive REPL for database queries and exploration.
+
+### Usage
+
+```bash
+nucleus console [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--database` | Path to SQLite database file |
+
+### Examples
+
+```bash
+# Start console with default database
+nucleus console
+
+# Specify database
+nucleus console --database site.db
+```
+
+### Console Commands
+
+| Command | Description |
+|---------|-------------|
+| `.tables` | List all tables |
+| `.schema` | Show table schemas |
+| `.quit` | Exit the console |
+| SQL query | Execute SQL and show results |
+
+### Example Session
+
+```
+nucleus> .tables
+┌─────────────────────┐
+│ Tables              │
+├─────────────────────┤
+│ users               │
+│ posts               │
+│ migrations          │
+└─────────────────────┘
+
+nucleus> SELECT * FROM users LIMIT 2;
+┌────┬───────────────┬─────────────────────┐
+│ id │ email         │ created_at          │
+├────┼───────────────┼─────────────────────┤
+│ 1  │ alice@foo.com │ 2024-01-15 10:30:00 │
+│ 2  │ bob@bar.com   │ 2024-01-16 14:22:00 │
+└────┴───────────────┴─────────────────────┘
+```
+
+---
+
+## nucleus studio
+
+Web-based database management UI with real-time editing.
+
+### Usage
+
+```bash
+nucleus studio [options]
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--database` | Path to SQLite database file |
+| `--port` | Web server port (default: 4000) |
+
+### Examples
+
+```bash
+# Start studio on default port
+nucleus studio --database site.db
+
+# Custom port
+nucleus studio --database site.db --port 8080
+```
+
+### Features
+
+- 📊 **Table browser** - View and edit data inline
+- 🔍 **SQL editor** - Execute custom queries with syntax highlighting
+- 📝 **Schema viewer** - Explore table structures
+- ➕ **CRUD operations** - Add, edit, delete rows via UI
+- 📱 **Mobile responsive** - Works on tablet and mobile
+
+---
+
+## nucleus browser
+
+Headless browser automation for testing and scraping.
+
+### Usage
+
+```bash
+nucleus browser <command> [options]
+```
+
+### Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `screenshot` | Capture a page screenshot |
+| `pdf` | Generate PDF from page |
+| `scrape` | Extract data from page |
+
+### Examples
+
+```bash
+# Screenshot a page
+nucleus browser screenshot https://example.com --output screen.png
+
+# Generate PDF
+nucleus browser pdf https://example.com --output page.pdf
+
+# Scrape with selector
+nucleus browser scrape https://example.com --selector "h1"
 ```
 
 ---

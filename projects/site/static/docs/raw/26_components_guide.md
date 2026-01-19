@@ -341,54 +341,33 @@ Use `{% if %}` and `{% for %}` inside components:
 
 ## Component Discovery
 
-### Using Components with n:include
+### Automatic Discovery
 
-Components must be explicitly imported using `<n:include>`:
-
-```html
-<!-- Import a component -->
-<n:include src="./components/Button.ncl" />
-
-<!-- Use the component -->
-<Button variant="primary">Click</Button>
-```
-
-### Recommended File Structure
-
-Organize your components in a dedicated directory:
+Nucleus automatically discovers components in the `components/` directory:
 
 ```
 src/
 ├── components/
-│   ├── Button.ncl
-│   ├── Card.ncl
+│   ├── Button.ncl      → <Button />
+│   ├── Card.ncl        → <Card />
 │   └── ui/
-│       ├── Modal.ncl
-│       └── Tabs.ncl
+│       ├── Modal.ncl   → <Modal />
+│       └── Tabs.ncl    → <Tabs />
 └── views/
-    └── index.ncl       → Imports components via n:include
+    └── index.ncl       → Uses all components
 ```
 
-### Component Import Examples
+### Manual Imports
+
+For explicit imports, use `<n:include>`:
 
 ```html
-<!-- Single component import -->
-<n:include src="components/Button.ncl" />
+<n:include src="./components/Button.ncl" />
 
-<!-- Import with props -->
-<n:include src="components/Alert.ncl" type="warning" message="Hello" />
-
-<!-- Multiple imports -->
-<n:include src="components/Header.ncl" />
-<n:include src="components/Footer.ncl" />
-<n:include src="components/Sidebar.ncl" />
+<Button variant="primary">Click</Button>
 ```
 
-> [!NOTE]
-> PascalCase component usage like `<Button />` requires that the component be defined or imported via `n:include`. The component name must match the file or `n:component name="..."` declaration.
-
 ---
-
 
 ## Islands & Hydration
 

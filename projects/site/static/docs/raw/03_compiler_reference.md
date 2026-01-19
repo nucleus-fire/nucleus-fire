@@ -163,7 +163,7 @@ Server-side Rust code for form handling.
 
 ### `<n:island>` - Reactive Islands (Neutron)
 
-Nucleus V3 uses "Neutron" for client-side interactivity, allowing fine-grained reactivity using Rust-like Signals within island components.
+Nucleus uses "Neutron" for client-side interactivity, allowing fine-grained reactivity using Rust-like Signals within island components.
 
 ```html
 <!-- components/Counter.ncl -->

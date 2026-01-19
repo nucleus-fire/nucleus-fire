@@ -361,52 +361,6 @@ Override component styles with scoped CSS or global styles:
 
 ---
 
-
----
-
-## Advanced Features
-
-### Repeater Fields (Array Support)
-
-Create dynamic forms where users can add multiple items of the same type.
-
-```rust
-Field::repeater("addresses", "address-template")
-```
-
-The repeater field renders a container that interacts with client-side logic to duplicate the template.
-
-### Field Dependencies
-
-Show or hide fields based on the values of other fields.
-
-```rust
-// Show 'company_name' only when 'account_type' is 'business'
-Field::text("company_name")
-    .depends_on("account_type:business")
-```
-
-### Conditional Validation
-
-Apply validation rules only when specific conditions are met.
-
-```rust
-Field::text("vat_number")
-    .validate_if("required_if:account_type:business")
-```
-
-### File Uploads
-
-Enhanced file upload with built-in preview support.
-
-```rust
-Field::new("profile_pic", FieldType::File)
-    .label("Profile Picture")
-    .required()
-```
-
----
-
 ## Schema Format
 
 ### JSON Schema
