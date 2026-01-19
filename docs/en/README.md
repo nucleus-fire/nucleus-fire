@@ -261,6 +261,7 @@ Nucleus includes a full component system for building reusable UI:
 | 26 | [Testing Guide](#26_testing_guide) | 270+ | Tests |
 | 27 | [Offline Sync](#27_offline_sync_guide) | 170+ | CRDTs |
 | 27 | [Social Login](#27_social_login_guide) | 350+ | OAuth |
+| 28 | [Local Storage](#28_local_storage_guide) | 200+ | Client-side storage |
 | 28 | [i18n Guide](#28_i18n_guide) | 150+ | Translations |
 | 29 | [Analytics Guide](#29_analytics_guide) | 100+ | Event tracking |
 | - | [Configuration](#configuration) | 290+ | Config system |

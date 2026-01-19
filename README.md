@@ -46,6 +46,12 @@ The first framework built for the Agentic Era.
 -   **Stream**: WebSockets made simple.
 -   **Scout**: Full-text search integration.
 
+### 5. Offline-First 📴
+Build apps that work without internet.
+-   **Gondola**: CRDT sync for multi-device collaboration (conflict-free).
+-   **Neutron.store**: Persistent client-side state (localStorage + IndexedDB).
+-   **PWA Export**: One command to generate installable apps with service workers.
+
 ---
 
 ## 🛠️ Getting Started

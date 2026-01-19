@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 pub mod generate; // Register module
 pub mod deploy;   // Deploy module with multi-platform support
 pub mod export;   // Static export and publish module
+pub mod pwa;      // PWA generation (manifest, service worker)
 pub mod console;  // Interactive REPL
 pub mod studio;   // Database Studio web UI
 pub mod animations; // CLI animations
