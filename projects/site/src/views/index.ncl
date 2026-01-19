@@ -105,12 +105,12 @@
     <!-- Main Content (Centered) - With padding for stats bar -->
     <div class="hero-content-wrapper">
         <!-- Release Badge -->
-        <div class="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full hero-badge animate-fade-in-up" style="border-color: rgba(168, 85, 247, 0.3); background: rgba(168, 85, 247, 0.1);">
+        <div class="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full hero-badge animate-fade-in-up" style="border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.1);">
             <span class="relative flex h-2 w-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
             </span>
-            <span class="text-xs font-bold tracking-wider text-purple-300" style="text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);">NEW: AI AGENTS & MCP SUPPORT</span>
+            <span class="text-xs font-bold tracking-wider text-green-300" style="text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);">V1.0.0 PRODUCTION READY</span>
         </div>
 
         <!-- Main Headline -->
@@ -182,7 +182,7 @@
     <div class="container">
         <p class="trusted-label">Powering the next generation of web apps</p>
         <div class="trusted-logos">
-            <span class="trusted-logo">🚀 10k+ Downloads</span>
+            <span class="trusted-logo">🚀 v1.0.0 Stable</span>
             <span class="trusted-logo">⭐ 2.4k GitHub Stars</span>
             <span class="trusted-logo">👥 Growing Community</span>
             <span class="trusted-logo">🔒 Production Ready</span>
