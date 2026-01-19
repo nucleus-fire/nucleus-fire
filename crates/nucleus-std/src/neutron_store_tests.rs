@@ -1,7 +1,6 @@
-
 #[cfg(test)]
 mod tests {
-    use crate::neutron::{Signal, Global, store};
+    use crate::neutron::{store, Global, Signal};
 
     #[test]
     fn test_global_state() {

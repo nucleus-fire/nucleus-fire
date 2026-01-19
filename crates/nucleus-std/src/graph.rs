@@ -33,8 +33,8 @@ use tokio::sync::RwLock;
 
 // Re-export async-graphql types for convenience
 pub use async_graphql::{
-    Context, EmptyMutation, EmptySubscription, InputObject, Interface, MergedObject,
-    Object, Schema, SimpleObject, Subscription, Union, ID,
+    Context, EmptyMutation, EmptySubscription, InputObject, Interface, MergedObject, Object,
+    Schema, SimpleObject, Subscription, Union, ID,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -188,8 +188,9 @@ impl GraphQL {
     ) -> impl Fn(
         axum::extract::State<Schema<Q, M, S>>,
         axum::Json<GraphQLRequest>,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = axum::Json<GraphQLResponse>> + Send>>
-           + Clone
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = axum::Json<GraphQLResponse>> + Send>,
+    > + Clone
            + Send
     where
         Q: async_graphql::ObjectType + 'static,
@@ -423,7 +424,11 @@ impl AuthGuard {
     }
 
     /// Check if user has a specific role
-    pub fn require_role<'a, T, F>(user: &'a Option<T>, role: &str, get_role: F) -> Result<&'a T, GraphError>
+    pub fn require_role<'a, T, F>(
+        user: &'a Option<T>,
+        role: &str,
+        get_role: F,
+    ) -> Result<&'a T, GraphError>
     where
         F: Fn(&T) -> &str,
     {
@@ -673,7 +678,9 @@ mod tests {
     async fn test_dataloader_load() {
         let loader: DataLoader<i32, String> = DataLoader::new();
 
-        let result = loader.load(1, |id| async move { Some(format!("user_{}", id)) }).await;
+        let result = loader
+            .load(1, |id| async move { Some(format!("user_{}", id)) })
+            .await;
         assert_eq!(result, Some("user_1".to_string()));
         assert_eq!(loader.len().await, 1);
     }
@@ -683,7 +690,9 @@ mod tests {
         let loader: DataLoader<i32, String> = DataLoader::new();
 
         // First load
-        let _ = loader.load(1, |id| async move { Some(format!("user_{}", id)) }).await;
+        let _ = loader
+            .load(1, |id| async move { Some(format!("user_{}", id)) })
+            .await;
 
         // Second load should use cache (loader not called)
         let result = loader.load(1, |_| async move { None }).await;
@@ -693,7 +702,9 @@ mod tests {
     #[tokio::test]
     async fn test_dataloader_clear() {
         let loader: DataLoader<i32, String> = DataLoader::new();
-        let _ = loader.load(1, |id| async move { Some(format!("user_{}", id)) }).await;
+        let _ = loader
+            .load(1, |id| async move { Some(format!("user_{}", id)) })
+            .await;
 
         assert!(!loader.is_empty().await);
         loader.clear().await;
@@ -705,7 +716,9 @@ mod tests {
         let loader1: DataLoader<i32, String> = DataLoader::new();
         let loader2 = loader1.clone();
 
-        let _ = loader1.load(1, |id| async move { Some(format!("user_{}", id)) }).await;
+        let _ = loader1
+            .load(1, |id| async move { Some(format!("user_{}", id)) })
+            .await;
 
         // Cloned loader should see the same cache
         assert_eq!(loader2.len().await, 1);

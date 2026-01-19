@@ -2,7 +2,7 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::ops::{Add, Sub, Mul};
+use std::ops::{Add, Mul, Sub};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MONEY
@@ -19,7 +19,7 @@ impl Money {
     pub fn zero() -> Self {
         Self(dec!(0))
     }
-    
+
     pub fn amount(&self) -> Decimal {
         self.0
     }
@@ -27,19 +27,19 @@ impl Money {
     pub fn from_f64(_: f64) -> ! {
         panic!("Floats are strictly forbidden in Vault engine. Use Decimal.");
     }
-    
+
     pub fn abs(&self) -> Self {
         Self(self.0.abs())
     }
-    
+
     pub fn is_positive(&self) -> bool {
         self.0 > dec!(0)
     }
-    
+
     pub fn is_negative(&self) -> bool {
         self.0 < dec!(0)
     }
-    
+
     pub fn is_zero(&self) -> bool {
         self.0 == dec!(0)
     }
@@ -72,11 +72,11 @@ impl Mul<Decimal> for Money {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AccountType {
-    Asset,      // Cash, Receivables (Normal Debit)
-    Liability,  // Payables, loans (Normal Credit)
-    Equity,     // Owner's equity (Normal Credit)
-    Revenue,    // Sales (Normal Credit)
-    Expense,    // Salaries (Normal Debit)
+    Asset,     // Cash, Receivables (Normal Debit)
+    Liability, // Payables, loans (Normal Credit)
+    Equity,    // Owner's equity (Normal Credit)
+    Revenue,   // Sales (Normal Credit)
+    Expense,   // Salaries (Normal Debit)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -96,7 +96,7 @@ pub struct Account {
 pub struct LedgerEntry {
     pub account_id: String,
     /// Debit (+) or Credit (-)
-    pub amount: Money, 
+    pub amount: Money,
     pub description: Option<String>,
 }
 
@@ -120,12 +120,10 @@ impl Transaction {
             metadata: HashMap::new(),
         }
     }
-    
+
     /// Validate that the transaction is balanced (sum = 0)
     pub fn is_balanced(&self) -> bool {
-        let sum: Decimal = self.entries.iter()
-            .map(|e| e.amount.amount())
-            .sum();
+        let sum: Decimal = self.entries.iter().map(|e| e.amount.amount()).sum();
         sum == dec!(0)
     }
 }
@@ -147,7 +145,7 @@ impl TransactionBuilder {
         });
         self
     }
-    
+
     pub fn credit(mut self, account_id: &str, amount: Money) -> Self {
         // Credits are negative
         self.entries.push(LedgerEntry {
@@ -157,7 +155,7 @@ impl TransactionBuilder {
         });
         self
     }
-    
+
     pub fn entry(mut self, account_id: &str, amount: Money) -> Self {
         self.entries.push(LedgerEntry {
             account_id: account_id.to_string(),
@@ -166,12 +164,12 @@ impl TransactionBuilder {
         });
         self
     }
-    
+
     pub fn metadata(mut self, key: &str, value: &str) -> Self {
         self.metadata.insert(key.to_string(), value.to_string());
         self
     }
-    
+
     pub fn build(self) -> Result<Transaction, String> {
         let tx = Transaction {
             id: self.id,
@@ -180,11 +178,11 @@ impl TransactionBuilder {
             date: chrono::Utc::now().to_rfc3339(),
             metadata: self.metadata,
         };
-        
+
         if !tx.is_balanced() {
             return Err("Transaction is not balanced (Debits != Credits)".to_string());
         }
-        
+
         Ok(tx)
     }
 }
@@ -203,11 +201,11 @@ impl Ledger {
     pub fn new() -> Self {
         Self::default()
     }
-    
+
     pub fn create_account(&mut self, account: Account) {
         self.accounts.insert(account.id.clone(), account);
     }
-    
+
     pub fn record(&mut self, transaction: Transaction) -> Result<(), String> {
         // Verify accounts exist
         for entry in &transaction.entries {
@@ -215,19 +213,19 @@ impl Ledger {
                 return Err(format!("Account not found: {}", entry.account_id));
             }
         }
-        
+
         if !transaction.is_balanced() {
             return Err("Transaction is not balanced".to_string());
         }
-        
+
         self.transactions.push(transaction);
         Ok(())
     }
-    
+
     /// Calculate current balance for an account
     pub fn balance(&self, account_id: &str) -> Money {
         let mut total = dec!(0);
-        
+
         for tx in &self.transactions {
             for entry in &tx.entries {
                 if entry.account_id == account_id {
@@ -235,18 +233,18 @@ impl Ledger {
                 }
             }
         }
-        
+
         Money::new(total)
     }
-    
+
     /// Get trial balance (all accounts)
     pub fn trial_balance(&self) -> HashMap<String, Money> {
         let mut balances = HashMap::new();
-        
+
         for id in self.accounts.keys() {
             balances.insert(id.clone(), self.balance(id));
         }
-        
+
         balances
     }
 }
@@ -275,43 +273,43 @@ mod tests {
             .debit("cash", Money::new(dec!(100)))
             .credit("revenue", Money::new(dec!(100)))
             .build();
-            
+
         assert!(tx.is_ok());
-        
+
         let tx = Transaction::builder("tx2", "Bad")
             .debit("cash", Money::new(dec!(100)))
             .credit("revenue", Money::new(dec!(90))) // Unbalanced
             .build();
-            
+
         assert!(tx.is_err());
     }
-    
+
     #[test]
     fn test_ledger_flow() {
         let mut ledger = Ledger::new();
-        
+
         ledger.create_account(Account {
             id: "cash".into(),
             name: "Cash".into(),
             account_type: AccountType::Asset,
             metadata: HashMap::new(),
         });
-        
+
         ledger.create_account(Account {
             id: "sales".into(),
             name: "Sales".into(),
             account_type: AccountType::Revenue,
             metadata: HashMap::new(),
         });
-        
+
         let tx = Transaction::builder("t1", "Sale of Goods")
             .debit("cash", Money::new(dec!(100)))
             .credit("sales", Money::new(dec!(100)))
             .build()
             .unwrap();
-            
+
         ledger.record(tx).unwrap();
-        
+
         assert_eq!(ledger.balance("cash").amount(), dec!(100));
         assert_eq!(ledger.balance("sales").amount(), dec!(-100)); // Credits are negative
     }
@@ -330,7 +328,7 @@ impl Vault {
             amount: amount.abs(),
             description: Some(format!("Transfer from {}", from)),
         };
-        
+
         // Credit is negative
         let credit_val = Money::new(-amount.amount().abs());
         let credit = LedgerEntry {
@@ -338,7 +336,7 @@ impl Vault {
             amount: credit_val,
             description: Some(format!("Transfer to {}", to)),
         };
-        
+
         (debit, credit)
     }
 }

@@ -119,7 +119,7 @@ impl LogConfig {
             ..Default::default()
         }
     }
-    
+
     /// Create production config (info level, JSON format)
     pub fn production() -> Self {
         Self {
@@ -131,19 +131,19 @@ impl LogConfig {
             app_name: "nucleus".to_string(),
         }
     }
-    
+
     /// Set log level
     pub fn level(mut self, level: LogLevel) -> Self {
         self.level = level;
         self
     }
-    
+
     /// Set output format
     pub fn format(mut self, format: LogFormat) -> Self {
         self.format = format;
         self
     }
-    
+
     /// Set application name
     pub fn app_name(mut self, name: &str) -> Self {
         self.app_name = name.to_string();
@@ -158,10 +158,8 @@ impl LogConfig {
 /// Initialize the logging system with the given configuration
 pub fn init(config: LogConfig) {
     let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| {
-            EnvFilter::new(format!("{}", tracing::Level::from(config.level)))
-        });
-    
+        .unwrap_or_else(|_| EnvFilter::new(format!("{}", tracing::Level::from(config.level))));
+
     match config.format {
         LogFormat::Json => {
             tracing_subscriber::registry()
@@ -171,7 +169,7 @@ pub fn init(config: LogConfig) {
                         .json()
                         .with_target(config.include_target)
                         .with_file(config.include_file)
-                        .with_line_number(config.include_file)
+                        .with_line_number(config.include_file),
                 )
                 .try_init()
                 .ok();
@@ -184,7 +182,7 @@ pub fn init(config: LogConfig) {
                         .pretty()
                         .with_target(config.include_target)
                         .with_file(config.include_file)
-                        .with_line_number(config.include_file)
+                        .with_line_number(config.include_file),
                 )
                 .try_init()
                 .ok();
@@ -197,7 +195,7 @@ pub fn init(config: LogConfig) {
                         .compact()
                         .with_target(config.include_target)
                         .with_file(config.include_file)
-                        .with_line_number(config.include_file)
+                        .with_line_number(config.include_file),
                 )
                 .try_init()
                 .ok();
@@ -242,12 +240,7 @@ macro_rules! request_span {
 }
 
 /// Log a request completion with timing
-pub fn log_request(
-    method: &str,
-    path: &str,
-    status: u16,
-    duration_ms: u128,
-) {
+pub fn log_request(method: &str, path: &str, status: u16, duration_ms: u128) {
     if status >= 500 {
         error!(
             method = %method,
@@ -293,12 +286,12 @@ impl Timer {
             operation: operation.to_string(),
         }
     }
-    
+
     /// Get elapsed duration in milliseconds
     pub fn elapsed_ms(&self) -> u128 {
         self.start.elapsed().as_millis()
     }
-    
+
     /// Log elapsed time at info level
     pub fn log_elapsed(&self) {
         info!(
@@ -338,26 +331,26 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_log_config_defaults() {
         let config = LogConfig::default();
         assert!(matches!(config.level, LogLevel::Info));
         assert!(matches!(config.format, LogFormat::Pretty));
     }
-    
+
     #[test]
     fn test_log_config_builder() {
         let config = LogConfig::default()
             .level(LogLevel::Debug)
             .format(LogFormat::Json)
             .app_name("test");
-        
+
         assert!(matches!(config.level, LogLevel::Debug));
         assert!(matches!(config.format, LogFormat::Json));
         assert_eq!(config.app_name, "test");
     }
-    
+
     #[test]
     fn test_timer() {
         let timer = Timer::start("test_op");

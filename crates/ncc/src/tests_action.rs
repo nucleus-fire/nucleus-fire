@@ -1,8 +1,7 @@
-
 #[cfg(test)]
 mod tests {
-    use crate::parser::{parse_node, parse_root};
     use crate::ast::Node;
+    use crate::parser::{parse_node, parse_root};
 
     #[test]
     fn test_parse_action_simple() {
@@ -31,19 +30,23 @@ mod tests {
                 let x = 1;
             </n:action>
         </n:view>"#;
-        
+
         // Parsing root usually returns list of nodes.
         // But here we test parse_node on the view.
         // Actually parse_root is better.
         let (_, nodes) = parse_root(input).expect("Failed to parse root");
         let view = &nodes[0];
-        
+
         match view {
             Node::Element(el) => {
                 assert_eq!(el.tag_name, "n:view");
                 let action_node = el.children.iter().find(|n| matches!(n, Node::Action(_)));
-                assert!(action_node.is_some(), "Action node not found in children: {:?}", el.children);
-            },
+                assert!(
+                    action_node.is_some(),
+                    "Action node not found in children: {:?}",
+                    el.children
+                );
+            }
             _ => panic!("Root is not element"),
         }
     }
@@ -59,18 +62,26 @@ mod tests {
                 let a = 1;
             </n:action>
         </n:view>"#;
-        
+
         let (_, nodes) = parse_root(input).expect("Failed to parse root");
         let view = &nodes[0];
-        
+
         match view {
             Node::Element(el) => {
                 let loader = el.children.iter().find(|n| matches!(n, Node::Loader(_)));
                 let action = el.children.iter().find(|n| matches!(n, Node::Action(_)));
-                
-                assert!(loader.is_some(), "Loader not found. Children: {:?}", el.children);
-                assert!(action.is_some(), "Action not found. Children: {:?}", el.children);
-            },
+
+                assert!(
+                    loader.is_some(),
+                    "Loader not found. Children: {:?}",
+                    el.children
+                );
+                assert!(
+                    action.is_some(),
+                    "Action not found. Children: {:?}",
+                    el.children
+                );
+            }
             _ => panic!("Root is not element"),
         }
     }

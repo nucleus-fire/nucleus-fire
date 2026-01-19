@@ -1,6 +1,6 @@
 use crate::config::GLOBAL_CONFIG;
 use hmac::{Hmac, Mac};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use std::collections::HashMap;
 
@@ -12,7 +12,7 @@ pub struct LineItem {
     pub quantity: u64,
 }
 
-use crate::errors::{Result, NucleusError};
+use crate::errors::{NucleusError, Result};
 use serde::de::Error; // For custom TOML errors
 
 /// Stripe API error response
@@ -74,14 +74,19 @@ pub struct PortalSession {
 
 impl Stripe {
     fn get_key() -> Result<String> {
-        GLOBAL_CONFIG.payments.as_ref()
+        GLOBAL_CONFIG
+            .payments
+            .as_ref()
             .map(|p| p.stripe_key.clone())
-            .ok_or(NucleusError::ConfigError(toml::de::Error::custom("Stripe key not configured in nucleus.config")))
+            .ok_or(NucleusError::ConfigError(toml::de::Error::custom(
+                "Stripe key not configured in nucleus.config",
+            )))
     }
 
     /// Get key from environment variable (for testing)
     fn get_key_from_env() -> Option<String> {
-        std::env::var("STRIPE_TEST_SECRET_KEY").ok()
+        std::env::var("STRIPE_TEST_SECRET_KEY")
+            .ok()
             .or_else(|| std::env::var("STRIPE_SECRET_KEY").ok())
     }
 
@@ -113,7 +118,7 @@ impl Stripe {
     ) -> Result<String> {
         let api_key = Stripe::api_key()?;
         let client = reqwest::Client::new();
-        
+
         let mut form_data = Vec::new();
         form_data.push(("success_url".to_string(), success_url.to_string()));
         form_data.push(("cancel_url".to_string(), cancel_url.to_string()));
@@ -126,20 +131,24 @@ impl Stripe {
             if let Some(price) = &item.price {
                 form_data.push((format!("line_items[{}][price]", i), price.clone()));
             }
-            form_data.push((format!("line_items[{}][quantity]", i), item.quantity.to_string()));
+            form_data.push((
+                format!("line_items[{}][quantity]", i),
+                item.quantity.to_string(),
+            ));
         }
 
-        let mut req = client.post("https://api.stripe.com/v1/checkout/sessions")
+        let mut req = client
+            .post("https://api.stripe.com/v1/checkout/sessions")
             .basic_auth(api_key, None::<String>)
             .form(&form_data);
-            
+
         if let Some(key) = idempotency_key {
             req = req.header("Idempotency-Key", key);
         }
 
-        let res = req.send().await?; 
+        let res = req.send().await?;
         let json: serde_json::Value = res.json().await?;
-        
+
         if let Some(url) = json["url"].as_str() {
             Ok(url.to_string())
         } else {
@@ -150,21 +159,22 @@ impl Stripe {
     pub async fn create_customer(email: &str, name: Option<&str>) -> Result<Customer> {
         let api_key = Stripe::api_key()?;
         let client = reqwest::Client::new();
-        
+
         let mut params = Vec::new();
         params.push(("email", email));
         if let Some(n) = name {
             params.push(("name", n));
         }
 
-        let res = client.post("https://api.stripe.com/v1/customers")
+        let res = client
+            .post("https://api.stripe.com/v1/customers")
             .basic_auth(api_key, None::<String>)
             .form(&params)
             .send()
             .await?;
 
         let json: serde_json::Value = res.json().await?;
-        
+
         if let Some(id) = json["id"].as_str() {
             Ok(Customer {
                 id: id.to_string(),
@@ -181,14 +191,18 @@ impl Stripe {
     pub async fn get_customer(customer_id: &str) -> Result<Customer> {
         let api_key = Stripe::api_key()?;
         let client = reqwest::Client::new();
-        
-        let res = client.get(format!("https://api.stripe.com/v1/customers/{}", customer_id))
+
+        let res = client
+            .get(format!(
+                "https://api.stripe.com/v1/customers/{}",
+                customer_id
+            ))
             .basic_auth(api_key, None::<String>)
             .send()
             .await?;
 
         let json: serde_json::Value = res.json().await?;
-        
+
         if let Some(id) = json["id"].as_str() {
             Ok(Customer {
                 id: id.to_string(),
@@ -205,21 +219,23 @@ impl Stripe {
     pub async fn list_prices(limit: Option<u32>) -> Result<Vec<Price>> {
         let api_key = Stripe::api_key()?;
         let client = reqwest::Client::new();
-        
+
         let mut url = "https://api.stripe.com/v1/prices?active=true".to_string();
         if let Some(l) = limit {
             url.push_str(&format!("&limit={}", l));
         }
 
-        let res = client.get(&url)
+        let res = client
+            .get(&url)
             .basic_auth(api_key, None::<String>)
             .send()
             .await?;
 
         let json: serde_json::Value = res.json().await?;
-        
+
         if let Some(data) = json["data"].as_array() {
-            let prices: Vec<Price> = data.iter()
+            let prices: Vec<Price> = data
+                .iter()
                 .filter_map(|p| serde_json::from_value(p.clone()).ok())
                 .collect();
             Ok(prices)
@@ -231,20 +247,18 @@ impl Stripe {
     pub async fn create_subscription(customer_id: &str, price_id: &str) -> Result<Subscription> {
         let api_key = Stripe::api_key()?;
         let client = reqwest::Client::new();
-        
-        let params = [
-            ("customer", customer_id),
-            ("items[0][price]", price_id),
-        ];
 
-        let res = client.post("https://api.stripe.com/v1/subscriptions")
+        let params = [("customer", customer_id), ("items[0][price]", price_id)];
+
+        let res = client
+            .post("https://api.stripe.com/v1/subscriptions")
             .basic_auth(api_key, None::<String>)
             .form(&params)
             .send()
             .await?;
 
         let json: serde_json::Value = res.json().await?;
-        
+
         if let Some(id) = json["id"].as_str() {
             Ok(Subscription {
                 id: id.to_string(),
@@ -262,17 +276,21 @@ impl Stripe {
     pub async fn cancel_subscription(subscription_id: &str) -> Result<Subscription> {
         let api_key = Stripe::api_key()?;
         let client = reqwest::Client::new();
-        
+
         let params = [("cancel_at_period_end", "true")];
 
-        let res = client.post(format!("https://api.stripe.com/v1/subscriptions/{}", subscription_id))
+        let res = client
+            .post(format!(
+                "https://api.stripe.com/v1/subscriptions/{}",
+                subscription_id
+            ))
             .basic_auth(api_key, None::<String>)
             .form(&params)
             .send()
             .await?;
 
         let json: serde_json::Value = res.json().await?;
-        
+
         if let Some(id) = json["id"].as_str() {
             Ok(Subscription {
                 id: id.to_string(),
@@ -287,23 +305,24 @@ impl Stripe {
     }
 
     /// Create a billing portal session for self-service subscription management
-    pub async fn create_portal_session(customer_id: &str, return_url: &str) -> Result<PortalSession> {
+    pub async fn create_portal_session(
+        customer_id: &str,
+        return_url: &str,
+    ) -> Result<PortalSession> {
         let api_key = Stripe::api_key()?;
         let client = reqwest::Client::new();
-        
-        let params = [
-            ("customer", customer_id),
-            ("return_url", return_url),
-        ];
 
-        let res = client.post("https://api.stripe.com/v1/billing_portal/sessions")
+        let params = [("customer", customer_id), ("return_url", return_url)];
+
+        let res = client
+            .post("https://api.stripe.com/v1/billing_portal/sessions")
             .basic_auth(api_key, None::<String>)
             .form(&params)
             .send()
             .await?;
 
         let json: serde_json::Value = res.json().await?;
-        
+
         if let Some(url) = json["url"].as_str() {
             Ok(PortalSession {
                 id: json["id"].as_str().unwrap_or("").to_string(),
@@ -324,19 +343,26 @@ impl Stripe {
             })
             .collect();
 
-        let timestamp = parts.get("t").ok_or(NucleusError::PaymentError("Missing timestamp in webhook signature".to_string()))?;
-        let signature = parts.get("v1").ok_or(NucleusError::PaymentError("Missing v1 signature in webhook header".to_string()))?;
+        let timestamp = parts.get("t").ok_or(NucleusError::PaymentError(
+            "Missing timestamp in webhook signature".to_string(),
+        ))?;
+        let signature = parts.get("v1").ok_or(NucleusError::PaymentError(
+            "Missing v1 signature in webhook header".to_string(),
+        ))?;
 
         let signed_payload = format!("{}.{}", timestamp, payload);
-        
-        let sig_bytes = hex::decode(signature).map_err(|_| NucleusError::PaymentError("Invalid signature hex".to_string()))?;
-        
+
+        let sig_bytes = hex::decode(signature)
+            .map_err(|_| NucleusError::PaymentError("Invalid signature hex".to_string()))?;
+
         type HmacSha256 = Hmac<Sha256>;
         let mut verify_mac = HmacSha256::new_from_slice(secret.as_bytes())
             .map_err(|_| NucleusError::PaymentError("Invalid webhook secret".to_string()))?;
         verify_mac.update(signed_payload.as_bytes());
-        
-        verify_mac.verify_slice(&sig_bytes).map_err(|_| NucleusError::PaymentError("Signature verification failed".to_string()))?;
+
+        verify_mac
+            .verify_slice(&sig_bytes)
+            .map_err(|_| NucleusError::PaymentError("Signature verification failed".to_string()))?;
 
         Ok(true)
     }
@@ -351,16 +377,16 @@ mod tests {
         let secret = "whsec_test_secret";
         let payload = r#"{"id": "evt_123", "object": "event"}"#;
         let timestamp = "1612345678";
-        
+
         // Compute valid signature
         let signed_payload = format!("{}.{}", timestamp, payload);
         type HmacSha256 = Hmac<Sha256>;
         let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).unwrap();
         mac.update(signed_payload.as_bytes());
         let signature = hex::encode(mac.finalize().into_bytes());
-        
+
         let header = format!("t={},v1={}", timestamp, signature);
-        
+
         let result = Stripe::verify_webhook(payload, &header, secret);
         assert!(result.is_ok());
         assert!(result.unwrap());
@@ -372,14 +398,14 @@ mod tests {
         let payload = r#"{"id": "evt_123"}"#;
         let timestamp = "1612345678";
         let header = format!("t={},v1=bad_signature", timestamp);
-        
+
         let result = Stripe::verify_webhook(payload, &header, secret);
         assert!(result.is_err());
     }
-    
+
     #[test]
     fn test_verify_webhook_bad_header() {
-         let secret = "whsec_test_secret";
+        let secret = "whsec_test_secret";
         let payload = "{}";
         let header = "bad_header_format";
         let result = Stripe::verify_webhook(payload, header, secret);
@@ -395,7 +421,7 @@ mod tests {
                 "code": "card_declined"
             }
         });
-        
+
         let err = Stripe::parse_error(&json);
         let msg = err.to_string();
         assert!(msg.contains("card_error"));
@@ -406,11 +432,14 @@ mod tests {
     fn test_api_key_from_env() {
         // Save original
         let original = std::env::var("STRIPE_TEST_SECRET_KEY").ok();
-        
+
         // Test with env var set
         std::env::set_var("STRIPE_TEST_SECRET_KEY", "sk_test_example");
-        assert_eq!(Stripe::get_key_from_env(), Some("sk_test_example".to_string()));
-        
+        assert_eq!(
+            Stripe::get_key_from_env(),
+            Some("sk_test_example".to_string())
+        );
+
         // Restore
         if let Some(val) = original {
             std::env::set_var("STRIPE_TEST_SECRET_KEY", val);
@@ -427,7 +456,7 @@ mod tests {
             "name": "Test User",
             "created": 1234567890
         });
-        
+
         let customer: Customer = serde_json::from_value(json).unwrap();
         assert_eq!(customer.id, "cus_123");
         assert_eq!(customer.email, Some("test@example.com".to_string()));
@@ -442,7 +471,7 @@ mod tests {
             "current_period_end": 1234567890,
             "cancel_at_period_end": false
         });
-        
+
         let sub: Subscription = serde_json::from_value(json).unwrap();
         assert_eq!(sub.id, "sub_123");
         assert_eq!(sub.status, "active");
@@ -474,24 +503,35 @@ mod integration_tests {
     #[tokio::test]
     async fn test_create_and_get_customer() {
         require_stripe_key!();
-        
+
         // Create a test customer
-        let email = format!("test_{}@nucleus-test.com", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_millis());
-        
+        let email = format!(
+            "test_{}@nucleus-test.com",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+        );
+
         let customer = Stripe::create_customer(&email, Some("Nucleus Test")).await;
-        assert!(customer.is_ok(), "Failed to create customer: {:?}", customer.err());
-        
+        assert!(
+            customer.is_ok(),
+            "Failed to create customer: {:?}",
+            customer.err()
+        );
+
         let customer = customer.unwrap();
         assert!(customer.id.starts_with("cus_"));
         assert_eq!(customer.email, Some(email.clone()));
-        
+
         // Retrieve the customer
         let retrieved = Stripe::get_customer(&customer.id).await;
-        assert!(retrieved.is_ok(), "Failed to get customer: {:?}", retrieved.err());
-        
+        assert!(
+            retrieved.is_ok(),
+            "Failed to get customer: {:?}",
+            retrieved.err()
+        );
+
         let retrieved = retrieved.unwrap();
         assert_eq!(retrieved.id, customer.id);
         assert_eq!(retrieved.email, Some(email));
@@ -500,10 +540,10 @@ mod integration_tests {
     #[tokio::test]
     async fn test_list_prices() {
         require_stripe_key!();
-        
+
         let prices = Stripe::list_prices(Some(10)).await;
         assert!(prices.is_ok(), "Failed to list prices: {:?}", prices.err());
-        
+
         // We just verify the API call works - may have 0 prices in test account
         let prices = prices.unwrap();
         eprintln!("📋 Found {} active prices", prices.len());
@@ -512,27 +552,32 @@ mod integration_tests {
     #[tokio::test]
     async fn test_invalid_customer_id_returns_error() {
         require_stripe_key!();
-        
+
         let result = Stripe::get_customer("cus_invalid_123456").await;
         assert!(result.is_err());
-        
+
         let err = result.unwrap_err().to_string();
         // Should get a proper Stripe error, not a parse error
-        assert!(err.contains("No such customer") || err.contains("resource_missing") || err.contains("invalid_request_error"),
-            "Unexpected error: {}", err);
+        assert!(
+            err.contains("No such customer")
+                || err.contains("resource_missing")
+                || err.contains("invalid_request_error"),
+            "Unexpected error: {}",
+            err
+        );
     }
 
     #[tokio::test]
     async fn test_checkout_session_creation() {
         require_stripe_key!();
-        
+
         // Need a real price ID for this test
         let price_id = std::env::var("STRIPE_TEST_PRICE_ID");
         if price_id.is_err() {
             eprintln!("⏭️  Skipping checkout test: STRIPE_TEST_PRICE_ID not set");
             return;
         }
-        
+
         let result = Stripe::checkout(
             "https://example.com/success",
             "https://example.com/cancel",
@@ -543,9 +588,14 @@ mod integration_tests {
             "subscription",
             None,
             Some("test@example.com"),
-        ).await;
-        
-        assert!(result.is_ok(), "Failed to create checkout session: {:?}", result.err());
+        )
+        .await;
+
+        assert!(
+            result.is_ok(),
+            "Failed to create checkout session: {:?}",
+            result.err()
+        );
         let url = result.unwrap();
         assert!(url.starts_with("https://checkout.stripe.com/"));
     }
@@ -553,40 +603,53 @@ mod integration_tests {
     #[tokio::test]
     async fn test_full_subscription_flow() {
         require_stripe_key!();
-        
+
         let price_id = std::env::var("STRIPE_TEST_PRICE_ID");
         if price_id.is_err() {
             eprintln!("⏭️  Skipping subscription flow test: STRIPE_TEST_PRICE_ID not set");
             return;
         }
         let price_id = price_id.unwrap();
-        
+
         // 1. Create customer
-        let email = format!("flow_test_{}@nucleus-test.com", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_millis());
-        
-        let customer = Stripe::create_customer(&email, Some("Flow Test")).await.unwrap();
+        let email = format!(
+            "flow_test_{}@nucleus-test.com",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+        );
+
+        let customer = Stripe::create_customer(&email, Some("Flow Test"))
+            .await
+            .unwrap();
         eprintln!("✅ Created customer: {}", customer.id);
-        
+
         // 2. Create subscription (requires a payment method in production, but test mode may allow it)
         let sub_result = Stripe::create_subscription(&customer.id, &price_id).await;
-        
+
         // Note: This may fail in strict test mode without a payment method
         // That's expected - we're testing the API integration, not mocking
         if let Ok(sub) = sub_result {
-            eprintln!("✅ Created subscription: {} (status: {})", sub.id, sub.status);
-            
+            eprintln!(
+                "✅ Created subscription: {} (status: {})",
+                sub.id, sub.status
+            );
+
             // 3. Cancel the subscription
             let cancel_result = Stripe::cancel_subscription(&sub.id).await;
             if let Ok(cancelled) = cancel_result {
-                assert!(cancelled.cancel_at_period_end, "Subscription should be marked for cancellation");
+                assert!(
+                    cancelled.cancel_at_period_end,
+                    "Subscription should be marked for cancellation"
+                );
                 eprintln!("✅ Subscription marked for cancellation");
             }
         } else {
-            eprintln!("⚠️  Subscription creation failed (may require payment method): {:?}", sub_result.err());
+            eprintln!(
+                "⚠️  Subscription creation failed (may require payment method): {:?}",
+                sub_result.err()
+            );
         }
     }
 }
-

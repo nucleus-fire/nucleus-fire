@@ -1,8 +1,8 @@
-use serde::Deserialize;
-use std::fs;
-use std::env;
 use lazy_static::lazy_static;
 use regex::Regex;
+use serde::Deserialize;
+use std::env;
+use std::fs;
 
 #[derive(Debug, Deserialize, Default, Clone)]
 pub struct Config {
@@ -14,7 +14,7 @@ pub struct Config {
     pub app: AppConfig,
     #[serde(default)]
     pub performance: PerformanceConfig,
-    
+
     pub payments: Option<PaymentsConfig>,
     pub chain: Option<ChainConfig>,
 }
@@ -42,9 +42,15 @@ impl Default for ServerConfig {
     }
 }
 
-fn default_host() -> String { "0.0.0.0".to_string() }
-fn default_port() -> u16 { 3000 }
-fn default_env() -> String { "development".to_string() }
+fn default_host() -> String {
+    "0.0.0.0".to_string()
+}
+fn default_port() -> u16 {
+    3000
+}
+fn default_env() -> String {
+    "development".to_string()
+}
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct DatabaseConfig {
@@ -63,8 +69,12 @@ impl Default for DatabaseConfig {
     }
 }
 
-fn default_db_url() -> String { "sqlite:nucleus.db".to_string() }
-fn default_max_connections() -> u32 { 5 }
+fn default_db_url() -> String {
+    "sqlite:nucleus.db".to_string()
+}
+fn default_max_connections() -> u32 {
+    5
+}
 
 #[derive(Debug, Deserialize, Default, Clone)]
 pub struct AppConfig {
@@ -147,11 +157,21 @@ impl Default for CacheConfig {
     }
 }
 
-fn default_css_max_age() -> u32 { 31536000 }  // 1 year
-fn default_js_max_age() -> u32 { 31536000 }   // 1 year
-fn default_font_max_age() -> u32 { 31536000 } // 1 year
-fn default_image_max_age() -> u32 { 604800 }  // 1 week
-fn default_true() -> bool { true }
+fn default_css_max_age() -> u32 {
+    31536000
+} // 1 year
+fn default_js_max_age() -> u32 {
+    31536000
+} // 1 year
+fn default_font_max_age() -> u32 {
+    31536000
+} // 1 year
+fn default_image_max_age() -> u32 {
+    604800
+} // 1 week
+fn default_true() -> bool {
+    true
+}
 
 /// Font loading optimization settings
 #[derive(Debug, Deserialize, Clone)]
@@ -193,7 +213,7 @@ pub struct ChainConfig {
     pub chain_id: u64,
 }
 
-use crate::errors::{Result, NucleusError};
+use crate::errors::{NucleusError, Result};
 
 impl Config {
     pub fn load() -> Config {
@@ -209,7 +229,7 @@ impl Config {
         toml::from_str(&interpolated).unwrap_or_else(|e| {
             // Best practice: tracing::error! and let the app handle subscriber.
             tracing::error!("Nucleus Config Error: {}", NucleusError::ConfigError(e));
-            
+
             // Fallback to default mostly safe for dev, but critical for prod?
             // For now keeping existing behavior but using proper error formatting in log
             Self::default()
@@ -218,7 +238,7 @@ impl Config {
 
     /// Load with explicit error handling (preferred for CLI tools)
     pub fn try_load() -> Result<Self> {
-         let content = if let Ok(c) = fs::read_to_string("nucleus.config") {
+        let content = if let Ok(c) = fs::read_to_string("nucleus.config") {
             c
         } else if let Ok(c) = fs::read_to_string("nucleus.toml") {
             c
@@ -233,16 +253,17 @@ impl Config {
     /// Interpolates environment variables: ${VAR} or ${VAR|default}
     fn interpolate_env(content: &str) -> String {
         let re = Regex::new(r"\$\{([A-Z0-9_]+)(?:\|([^}]+))?\}").unwrap();
-        
+
         re.replace_all(content, |caps: &regex::Captures| {
             let var_name = &caps[1];
             let default_val = caps.get(2).map(|m| m.as_str());
-            
+
             match env::var(var_name) {
                 Ok(val) => val,
                 Err(_) => default_val.unwrap_or("").to_string(),
             }
-        }).to_string()
+        })
+        .to_string()
     }
 }
 

@@ -1,20 +1,20 @@
 use axum::{
-    extract::{Json},
-    response::{IntoResponse},
-    routing::{post, get},
+    extract::Json,
+    http::{header, HeaderMap, StatusCode},
+    response::IntoResponse,
+    routing::{get, post},
     Router,
-    http::{StatusCode, HeaderMap, header},
 };
 use nucleus_std::{photon::Model, sqlx::Row};
-use serde::{Deserialize, Serialize};
 use regex::Regex;
+use serde::{Deserialize, Serialize};
 
 // 1. Data Model: Subscriber
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Subscriber {
     pub id: i64,
     pub email: String,
-    pub created_at: String, 
+    pub created_at: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -31,12 +31,17 @@ pub struct AdminData {
 pub async fn fetch_admin_data() -> AdminData {
     let subscribers = list_subscribers().await;
     let templates = list_templates().await;
-    AdminData { subscribers, templates }
+    AdminData {
+        subscribers,
+        templates,
+    }
 }
 
 // Manual implementation to avoid macro/crate version potential conflicts
 impl<'r> nucleus_std::sqlx::FromRow<'r, nucleus_std::sqlx::sqlite::SqliteRow> for Subscriber {
-    fn from_row(row: &'r nucleus_std::sqlx::sqlite::SqliteRow) -> Result<Self, nucleus_std::sqlx::Error> {
+    fn from_row(
+        row: &'r nucleus_std::sqlx::sqlite::SqliteRow,
+    ) -> Result<Self, nucleus_std::sqlx::Error> {
         Ok(Self {
             id: row.try_get("id")?,
             email: row.try_get("email")?,
@@ -59,7 +64,9 @@ pub struct EmailTemplate {
 }
 
 impl<'r> nucleus_std::sqlx::FromRow<'r, nucleus_std::sqlx::sqlite::SqliteRow> for EmailTemplate {
-    fn from_row(row: &'r nucleus_std::sqlx::sqlite::SqliteRow) -> Result<Self, nucleus_std::sqlx::Error> {
+    fn from_row(
+        row: &'r nucleus_std::sqlx::sqlite::SqliteRow,
+    ) -> Result<Self, nucleus_std::sqlx::Error> {
         Ok(Self {
             id: row.try_get("id")?,
             name: row.try_get("name")?,
@@ -71,7 +78,6 @@ impl<'r> nucleus_std::sqlx::FromRow<'r, nucleus_std::sqlx::sqlite::SqliteRow> fo
 }
 
 nucleus_std::impl_model!(EmailTemplate, "email_templates");
-
 
 // 3. Request Payload
 #[derive(Debug, Deserialize)]
@@ -98,7 +104,7 @@ pub async fn subscribe(Json(payload): Json<SubscribeRequest>) -> impl IntoRespon
 
     match existing {
         Ok(Some(_)) => return (StatusCode::CONFLICT, "Email already subscribed").into_response(),
-        Ok(None) => {}, // Not found, proceed
+        Ok(None) => {} // Not found, proceed
         Err(e) => {
             eprintln!("Database check error: {}", e);
             return (StatusCode::INTERNAL_SERVER_ERROR, "Database check failed").into_response();
@@ -106,10 +112,7 @@ pub async fn subscribe(Json(payload): Json<SubscribeRequest>) -> impl IntoRespon
     }
 
     // Insert
-    let insert_result = Subscriber::create()
-        .value("email", email)
-        .execute() 
-        .await;
+    let insert_result = Subscriber::create().value("email", email).execute().await;
 
     match insert_result {
         Ok(_) => (StatusCode::OK, "Subscribed successfully").into_response(),
@@ -154,8 +157,11 @@ pub async fn list_templates() -> Vec<EmailTemplate> {
 
 pub async fn delete_subscriber(id: i64) -> Result<(), String> {
     // Model::delete_by_id is available if Model trait is in scope
-    use nucleus_std::photon::Model; 
-    Subscriber::delete_by_id(id).await.map(|_| ()).map_err(|e| e.to_string())
+    use nucleus_std::photon::Model;
+    Subscriber::delete_by_id(id)
+        .await
+        .map(|_| ())
+        .map_err(|e| e.to_string())
 }
 
 pub async fn create_template(name: String, subject: String, body: String) -> Result<(), String> {
@@ -171,31 +177,41 @@ pub async fn create_template(name: String, subject: String, body: String) -> Res
 
 pub async fn delete_template(id: i64) -> Result<(), String> {
     use nucleus_std::photon::Model;
-    EmailTemplate::delete_by_id(id).await.map(|_| ()).map_err(|e| e.to_string())
+    EmailTemplate::delete_by_id(id)
+        .await
+        .map(|_| ())
+        .map_err(|e| e.to_string())
 }
 
 pub async fn export_subscribers() -> impl IntoResponse {
     let subscribers = list_subscribers().await;
     let mut wtr = csv::Writer::from_writer(vec![]);
-    
+
     // Header
     let _ = wtr.write_record(["ID", "Email", "Joined At"]);
-    
+
     for sub in subscribers {
-        let _ = wtr.write_record(&[
-            sub.id.to_string(),
-            sub.email,
-            sub.created_at,
-        ]);
+        let _ = wtr.write_record(&[sub.id.to_string(), sub.email, sub.created_at]);
     }
-    
+
     let data = wtr.into_inner().unwrap_or_default();
-    let file_name = format!("subscribers_{}.csv", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
+    let file_name = format!(
+        "subscribers_{}.csv",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+    );
 
     let mut headers = HeaderMap::new();
     headers.insert(header::CONTENT_TYPE, "text/csv".parse().unwrap());
-    headers.insert(header::CONTENT_DISPOSITION, format!("attachment; filename=\"{}\"", file_name).parse().unwrap());
-    
+    headers.insert(
+        header::CONTENT_DISPOSITION,
+        format!("attachment; filename=\"{}\"", file_name)
+            .parse()
+            .unwrap(),
+    );
+
     (headers, data)
 }
 
@@ -214,18 +230,18 @@ pub async fn broadcast_template(template_id: i64) -> Result<String, String> {
         .r#where("id", template_id)
         .first::<EmailTemplate>()
         .await;
-        
+
     match tmpl {
         Ok(Some(t)) => {
             let subscribers = list_subscribers().await;
             let sub_count = subscribers.len();
-            
+
             let sub_list = subscribers;
-            
+
             // Compile MJML before sending!
             // If the template is raw HTML, we might need a fallback or assume MJML entirely now.
             // Requirement says "integrate this or something similar", implying migration.
-            // For safety, let's try compile, if it fails (not mjml), use as is? 
+            // For safety, let's try compile, if it fails (not mjml), use as is?
             // Better to enforce MJML for "Exemplary UX".
             let tmpl_body = match compile_mjml(&t.body) {
                 Ok(html) => html,
@@ -241,26 +257,32 @@ pub async fn broadcast_template(template_id: i64) -> Result<String, String> {
 
                 let mut sent = 0;
                 let mut failed = 0;
-                
-                for sub in sub_list {
-                     let mut vars = std::collections::HashMap::new();
-                     vars.insert("email".to_string(), sub.email.clone());
-                     // Support unsubscribe link var replacement in MJML too if needed, 
-                     // usually standard handlebar syntax `{{email}}` passes through MJML fine if not stripped.
 
-                     match pm.send_template(&sub.email, &tmpl_subject, &tmpl_name, &vars).await {
-                         Ok(_) => sent += 1,
-                         Err(e) => {
-                             eprintln!("Failed to send to {}: {}", sub.email, e);
-                             failed += 1;
-                         }
-                     }
+                for sub in sub_list {
+                    let mut vars = std::collections::HashMap::new();
+                    vars.insert("email".to_string(), sub.email.clone());
+                    // Support unsubscribe link var replacement in MJML too if needed,
+                    // usually standard handlebar syntax `{{email}}` passes through MJML fine if not stripped.
+
+                    match pm
+                        .send_template(&sub.email, &tmpl_subject, &tmpl_name, &vars)
+                        .await
+                    {
+                        Ok(_) => sent += 1,
+                        Err(e) => {
+                            eprintln!("Failed to send to {}: {}", sub.email, e);
+                            failed += 1;
+                        }
+                    }
                 }
-                println!("Background Broadcast Complete: {} sent, {} failed.", sent, failed);
+                println!(
+                    "Background Broadcast Complete: {} sent, {} failed.",
+                    sent, failed
+                );
             });
 
             Ok(format!("Broadcast started for {} subscribers.", sub_count))
-        },
+        }
         Ok(None) => Err("Template not found".to_string()),
         Err(e) => Err(e.to_string()),
     }
@@ -274,17 +296,17 @@ mod tests {
         body::Body,
         http::{Request, StatusCode},
     };
-    use tower::ServiceExt; 
     use nucleus_std::photon;
-    
+    use tower::ServiceExt;
+
     async fn setup_test_db() {
         if !photon::is_db_initialized() {
             let _ = photon::init_db("sqlite::memory:").await;
         }
-        
+
         let pool = photon::db();
         if let Some(sqlite) = pool.as_sqlite() {
-             let sql_subs = r#"
+            let sql_subs = r#"
             CREATE TABLE IF NOT EXISTS subscribers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 email TEXT NOT NULL UNIQUE,
@@ -310,65 +332,87 @@ mod tests {
     async fn test_subscribe_flow() {
         setup_test_db().await;
         let app = router();
-        
+
         // 1. Success
-        let email = format!("flow_{}@test.com", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_micros());
+        let email = format!(
+            "flow_{}@test.com",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_micros()
+        );
         let body = format!(r#"{{"email": "{}"}}"#, email);
 
-        let res = app.clone().oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/api/newsletter")
-                .header("content-type", "application/json")
-                .body(Body::from(body.clone()))
-                .unwrap(),
-        ).await.unwrap();
+        let res = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/newsletter")
+                    .header("content-type", "application/json")
+                    .body(Body::from(body.clone()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
         assert_eq!(res.status(), StatusCode::OK);
 
         // 2. Duplicate
-        let res_dup = app.clone().oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/api/newsletter")
-                .header("content-type", "application/json")
-                .body(Body::from(body))
-                .unwrap(),
-        ).await.unwrap();
+        let res_dup = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/newsletter")
+                    .header("content-type", "application/json")
+                    .body(Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
         assert_eq!(res_dup.status(), StatusCode::CONFLICT);
 
         // 3. Invalid
-        let res_inv = app.oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/api/newsletter")
-                .header("content-type", "application/json")
-                .body(Body::from(r#"{"email": "not-an-email"}"#))
-                .unwrap(),
-        ).await.unwrap();
+        let res_inv = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/newsletter")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"email": "not-an-email"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
         assert_eq!(res_inv.status(), StatusCode::BAD_REQUEST);
     }
-    
+
     #[tokio::test]
     async fn test_admin_helpers() {
         setup_test_db().await;
-        
+
         // Templates - Use MJML now!
         let mjml = r#"<mjml><mj-body><mj-section><mj-column><mj-text>Hello</mj-text></mj-column></mj-section></mj-body></mjml>"#;
-        create_template("T1".into(), "S1".into(), mjml.into()).await.unwrap();
+        create_template("T1".into(), "S1".into(), mjml.into())
+            .await
+            .unwrap();
         let templates = list_templates().await;
         assert!(!templates.is_empty());
         let t1 = &templates[0];
         assert_eq!(t1.name, "T1");
 
-        // Broadcast 
-        let _ = Subscriber::create().value("email", "admin_helper_test@test.com").execute().await;
-        
+        // Broadcast
+        let _ = Subscriber::create()
+            .value("email", "admin_helper_test@test.com")
+            .execute()
+            .await;
+
         let count = broadcast_template(t1.id).await.unwrap();
         assert!(count.contains("Broadcast started"));
-        
+
         // Delete
         delete_template(t1.id).await.unwrap();
-        let _ = delete_subscriber(1).await; 
+        let _ = delete_subscriber(1).await;
     }
 
     #[tokio::test]
@@ -376,7 +420,11 @@ mod tests {
         setup_test_db().await;
         let data = super::fetch_admin_data().await;
         // Just verify we got a result struct back
-        println!("Fetched {} subscribers and {} templates", data.subscribers.len(), data.templates.len());
+        println!(
+            "Fetched {} subscribers and {} templates",
+            data.subscribers.len(),
+            data.templates.len()
+        );
     }
 
     #[test]

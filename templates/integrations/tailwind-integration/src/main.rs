@@ -1,8 +1,4 @@
-use axum::{
-    response::Html,
-    routing::get,
-    Router,
-};
+use axum::{response::Html, routing::get, Router};
 use tower_http::services::ServeDir;
 
 #[tokio::main]
@@ -18,7 +14,8 @@ async fn main() {
 }
 
 async fn index() -> Html<&'static str> {
-    Html(r#"
+    Html(
+        r#"
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -46,5 +43,6 @@ async fn index() -> Html<&'static str> {
     </div>
 </body>
 </html>
-    "#)
+    "#,
+    )
 }

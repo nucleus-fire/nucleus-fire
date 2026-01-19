@@ -104,24 +104,24 @@ impl Polyglot {
 
     /// Load translations from JSON string
     pub fn load_json(&mut self, json: &str) -> Result<(), String> {
-        let value: Value = serde_json::from_str(json)
-            .map_err(|e| format!("Invalid JSON: {}", e))?;
-        
+        let value: Value =
+            serde_json::from_str(json).map_err(|e| format!("Invalid JSON: {}", e))?;
+
         self.load_value("", &value);
         Ok(())
     }
 
     /// Load translations from TOML string
     pub fn load_toml(&mut self, toml_str: &str) -> Result<(), String> {
-        let value: toml::Value = toml::from_str(toml_str)
-            .map_err(|e| format!("Invalid TOML: {}", e))?;
-        
+        let value: toml::Value =
+            toml::from_str(toml_str).map_err(|e| format!("Invalid TOML: {}", e))?;
+
         // Convert TOML to JSON Value for unified processing
-        let json_str = serde_json::to_string(&value)
-            .map_err(|e| format!("Conversion error: {}", e))?;
-        let json_value: Value = serde_json::from_str(&json_str)
-            .map_err(|e| format!("Parse error: {}", e))?;
-        
+        let json_str =
+            serde_json::to_string(&value).map_err(|e| format!("Conversion error: {}", e))?;
+        let json_value: Value =
+            serde_json::from_str(&json_str).map_err(|e| format!("Parse error: {}", e))?;
+
         self.load_value("", &json_value);
         Ok(())
     }
@@ -133,7 +133,8 @@ impl Polyglot {
 
     /// Get translation by key
     pub fn t(&self, key: &str) -> String {
-        self.translations.get(key)
+        self.translations
+            .get(key)
             .or_else(|| self.fallback_translations.get(key))
             .cloned()
             .unwrap_or_else(|| format!("[{}]", key))
@@ -169,7 +170,8 @@ impl Polyglot {
         };
 
         // Try specific key, fall back to .many, then base key
-        self.translations.get(&plural_key)
+        self.translations
+            .get(&plural_key)
             .or_else(|| self.translations.get(&format!("{}.many", key)))
             .or_else(|| self.translations.get(key))
             .cloned()
@@ -188,7 +190,10 @@ impl Polyglot {
                 format!("{}{}", self.currency_symbol(), formatted)
             }
             NumberStyle::Percent => {
-                format!("{}%", format_with_separators(n * 100.0, self.thousands_sep(), self.decimal_sep()))
+                format!(
+                    "{}%",
+                    format_with_separators(n * 100.0, self.thousands_sep(), self.decimal_sep())
+                )
             }
         }
     }
@@ -287,40 +292,57 @@ impl Polyglot {
     }
 
     fn month_name(&self, month: u32, short: bool) -> &'static str {
-        let months_short = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
-                           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        let months_long = ["January", "February", "March", "April", "May", "June",
-                          "July", "August", "September", "October", "November", "December"];
-        
+        let months_short = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        ];
+        let months_long = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ];
+
         let idx = (month.saturating_sub(1) as usize).min(11);
-        if short { months_short[idx] } else { months_long[idx] }
+        if short {
+            months_short[idx]
+        } else {
+            months_long[idx]
+        }
     }
 }
 
 fn format_with_separators(n: f64, thousands: char, decimal: char) -> String {
     let int_part = n.trunc() as i64;
     let frac_part = (n.fract().abs() * 100.0).round() as i64;
-    
+
     let int_str = int_part.abs().to_string();
     let len = int_str.len();
-    
+
     let mut result = String::new();
     if int_part < 0 {
         result.push('-');
     }
-    
+
     for (i, c) in int_str.chars().enumerate() {
         if i > 0 && (len - i).is_multiple_of(3) {
             result.push(thousands);
         }
         result.push(c);
     }
-    
+
     if frac_part > 0 {
         result.push(decimal);
         result.push_str(&format!("{:02}", frac_part));
     }
-    
+
     result
 }
 
@@ -355,7 +377,8 @@ mod tests {
     #[test]
     fn test_load_nested_json() {
         let mut p = Polyglot::new("en");
-        p.load_json(r#"{"user": {"welcome": "Welcome back"}}"#).unwrap();
+        p.load_json(r#"{"user": {"welcome": "Welcome back"}}"#)
+            .unwrap();
         assert_eq!(p.t("user.welcome"), "Welcome back");
     }
 
@@ -469,7 +492,7 @@ mod tests {
         let en = Polyglot::new("en");
         let ar = Polyglot::new("ar");
         let he = Polyglot::new("he");
-        
+
         assert!(!en.is_rtl());
         assert!(ar.is_rtl());
         assert!(he.is_rtl());
@@ -480,9 +503,9 @@ mod tests {
         let mut p = Polyglot::new("fr");
         let mut fallback = HashMap::new();
         fallback.insert("greeting".to_string(), "Hello".to_string());
-        
+
         p.set_fallback("en", fallback);
-        
+
         // Missing in fr, falls back to en
         assert_eq!(p.t("greeting"), "Hello");
     }
@@ -492,7 +515,7 @@ mod tests {
         let mut p = Polyglot::new("en");
         p.add("a", "A");
         p.add("b", "B");
-        
+
         let keys = p.keys();
         assert_eq!(keys.len(), 2);
     }
@@ -508,7 +531,8 @@ mod tests {
     #[test]
     fn test_load_json_boolean() {
         let mut p = Polyglot::new("en");
-        p.load_json(r#"{"enabled": true, "disabled": false}"#).unwrap();
+        p.load_json(r#"{"enabled": true, "disabled": false}"#)
+            .unwrap();
         assert_eq!(p.t("enabled"), "true");
         assert_eq!(p.t("disabled"), "false");
     }
@@ -534,7 +558,7 @@ mod tests {
         let mut p = Polyglot::new("en");
         p.add("items.few", "{{count}} items (few)");
         p.add("items.many", "{{count}} items");
-        
+
         // 2-4 should use "few" if available
         assert_eq!(p.plural("items", 3), "3 items (few)");
     }
@@ -559,7 +583,7 @@ mod tests {
         let de = Polyglot::new("de");
         let ja = Polyglot::new("ja");
         let unknown = Polyglot::new("xx");
-        
+
         assert_eq!(gb.format_number(100.0, NumberStyle::Currency), "£100");
         assert_eq!(de.format_number(100.0, NumberStyle::Currency), "€100");
         assert_eq!(ja.format_number(100.0, NumberStyle::Currency), "¥100");
@@ -599,7 +623,7 @@ mod tests {
         let mut p = Polyglot::new("en");
         // Only set base key, no .one or .many
         p.add("items", "{{count}} item(s)");
-        
+
         // Should fall back to base key
         assert_eq!(p.plural("items", 5), "5 item(s)");
     }

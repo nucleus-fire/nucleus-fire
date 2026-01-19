@@ -1,8 +1,8 @@
 #![allow(dead_code)]
-use nucleus_std::neutron::{create_effect, batch};
-use serde::{Serialize, Deserialize};
+use nucleus_std::neutron::{batch, create_effect};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use serde::{Deserialize, Serialize};
 
 // Domain Model
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -35,31 +35,50 @@ impl ShopStore {
     pub fn demo() -> Self {
         // Initialize with dummy products
         let products = vec![
-            Product { id: 1, name: "Nucleus Pro".to_string(), price: dec!(99.00), image: "cpu".to_string() },
-            Product { id: 2, name: "Atom Reactor".to_string(), price: dec!(299.00), image: "server".to_string() },
-            Product { id: 3, name: "Neutron Star".to_string(), price: dec!(499.00), image: "star".to_string() },
+            Product {
+                id: 1,
+                name: "Nucleus Pro".to_string(),
+                price: dec!(99.00),
+                image: "cpu".to_string(),
+            },
+            Product {
+                id: 2,
+                name: "Atom Reactor".to_string(),
+                price: dec!(299.00),
+                image: "server".to_string(),
+            },
+            Product {
+                id: 3,
+                name: "Neutron Star".to_string(),
+                price: dec!(499.00),
+                image: "star".to_string(),
+            },
         ];
 
         let store = Self::new(products, Vec::new(), dec!(0.0), 0);
-        
+
         // Setup automatic derived state updates using effects
         // This effect will run whenever cart changes
         let cart = store.cart.clone();
         let total = store.cart_total.clone();
         let count = store.cart_count.clone();
-        
+
         create_effect(move || {
             let items = cart.get();
-            let new_total: Decimal = items.iter().map(|i| i.product.price * Decimal::from(i.quantity)).sum();
+            let new_total: Decimal = items
+                .iter()
+                .map(|i| i.product.price * Decimal::from(i.quantity))
+                .sum();
             let new_count: u32 = items.iter().map(|i| i.quantity).sum();
-            
+
             // Batch updates so dependents only run once
             batch(|| {
                 total.set(new_total);
                 count.set(new_count);
             });
-        }).forget(); // Effect lives for app lifetime
-        
+        })
+        .forget(); // Effect lives for app lifetime
+
         store
     }
 
@@ -79,13 +98,13 @@ impl ShopStore {
             // No need to call recalculate - effect handles it automatically!
         }
     }
-    
+
     pub fn remove_from_cart(&self, product_id: u32) {
         self.cart.modify(|cart| {
             cart.retain(|i| i.product.id != product_id);
         });
     }
-    
+
     pub fn clear_cart(&self) {
         self.cart.set(Vec::new());
     }
@@ -107,13 +126,13 @@ mod tests {
     fn test_add_to_cart() {
         let store = ShopStore::demo();
         let product_id = 1; // 99.00
-        
+
         store.add_to_cart(product_id);
-        
+
         assert_eq!(store.cart.get().len(), 1);
         assert_eq!(store.cart_count.get(), 1);
         assert_eq!(store.cart_total.get(), dec!(99.0));
-        
+
         // Add same item again (quantity increase)
         store.add_to_cart(product_id);
         assert_eq!(store.cart.get().len(), 1);
@@ -126,7 +145,7 @@ mod tests {
         let store = ShopStore::demo();
         store.add_to_cart(1); // 99.0
         store.add_to_cart(2); // 299.0
-        
+
         assert_eq!(store.cart.get().len(), 2);
         assert_eq!(store.cart_count.get(), 2);
         assert_eq!(store.cart_total.get(), dec!(398.0));

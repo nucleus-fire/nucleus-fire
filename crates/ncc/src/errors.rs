@@ -30,21 +30,18 @@ pub enum NucleusError {
         code(nucleus::component::missing_prop),
         help("Add the required prop: <{name} {prop}=\"value\" />")
     )]
-    MissingRequiredProp {
-        name: String,
-        prop: String,
-    },
+    MissingRequiredProp { name: String, prop: String },
 
     #[error("Unknown component '{name}'")]
     #[diagnostic(
         code(nucleus::component::unknown),
         help("Did you mean one of: Button, Card, Badge, FeatureCard? Or create the component at components/{name}.ncl")
     )]
-    UnknownComponent {
-        name: String,
-    },
+    UnknownComponent { name: String },
 
-    #[error("Invalid prop type for '{prop}' in component '{component}': expected {expected}, got {got}")]
+    #[error(
+        "Invalid prop type for '{prop}' in component '{component}': expected {expected}, got {got}"
+    )]
     #[diagnostic(
         code(nucleus::component::invalid_prop_type),
         help("Change the prop value to match the expected type: {expected}")
@@ -57,42 +54,32 @@ pub enum NucleusError {
     },
 
     #[error("Component '{name}' is not properly closed")]
-    #[diagnostic(
-        code(nucleus::component::unclosed),
-        help("Add closing tag: </{name}>")
-    )]
-    UnclosedComponent {
-        name: String,
-    },
+    #[diagnostic(code(nucleus::component::unclosed), help("Add closing tag: </{name}>"))]
+    UnclosedComponent { name: String },
 
     #[error("Invalid component name '{name}': components must use PascalCase")]
     #[diagnostic(
         code(nucleus::component::invalid_name),
         help("Rename to PascalCase, e.g., 'MyComponent' instead of '{name}'")
     )]
-    InvalidComponentName {
-        name: String,
-    },
+    InvalidComponentName { name: String },
 
     // ═══ Slot Errors ═══
     #[error("Named slot '{slot}' not found in component '{component}'")]
     #[diagnostic(
         code(nucleus::slot::not_found),
-        help("Available slots: default. Add <n:slot name=\"{slot}\" /> to the component definition.")
+        help(
+            "Available slots: default. Add <n:slot name=\"{slot}\" /> to the component definition."
+        )
     )]
-    SlotNotFound {
-        component: String,
-        slot: String,
-    },
+    SlotNotFound { component: String, slot: String },
 
     #[error("Multiple default slots in component '{component}'")]
     #[diagnostic(
         code(nucleus::slot::duplicate_default),
         help("Use named slots instead: <n:slot name=\"header\" /> and <n:slot name=\"footer\" />")
     )]
-    DuplicateDefaultSlot {
-        component: String,
-    },
+    DuplicateDefaultSlot { component: String },
 
     // ═══ Props Errors ═══
     #[error("Invalid props syntax in component '{component}'")]
@@ -100,19 +87,14 @@ pub enum NucleusError {
         code(nucleus::props::invalid_syntax),
         help("Use format: <n:props>\n  propName: Type = \"default\"\n</n:props>")
     )]
-    InvalidPropsSyntax {
-        component: String,
-    },
+    InvalidPropsSyntax { component: String },
 
     #[error("Duplicate prop '{prop}' in component '{component}'")]
     #[diagnostic(
         code(nucleus::props::duplicate),
         help("Remove the duplicate prop definition")
     )]
-    DuplicateProp {
-        component: String,
-        prop: String,
-    },
+    DuplicateProp { component: String, prop: String },
 
     // ═══ Style Errors ═══
     #[error("Invalid scoped style in component '{component}'")]
@@ -120,9 +102,7 @@ pub enum NucleusError {
         code(nucleus::style::invalid_scoped),
         help("Use: <style scoped>...</style>")
     )]
-    InvalidScopedStyle {
-        component: String,
-    },
+    InvalidScopedStyle { component: String },
 
     // ═══ Validation Errors ═══
     #[error("{0}")]
@@ -135,9 +115,7 @@ pub enum NucleusError {
         code(nucleus::component::load_failed),
         help("Check that the file exists at: {path}")
     )]
-    ComponentLoadError {
-        path: String,
-    },
+    ComponentLoadError { path: String },
 
     // ═══ Circular Dependency ═══
     #[error("Circular dependency detected: {chain}")]
@@ -145,9 +123,7 @@ pub enum NucleusError {
         code(nucleus::component::circular_dep),
         help("Break the cycle by refactoring one of the components")
     )]
-    CircularDependency {
-        chain: String,
-    },
+    CircularDependency { chain: String },
 }
 
 impl NucleusError {

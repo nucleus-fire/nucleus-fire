@@ -40,7 +40,7 @@ impl DatabaseType {
             None
         }
     }
-    
+
     /// Get the placeholder style for this database
     pub fn placeholder(&self, index: usize) -> String {
         match self {
@@ -48,7 +48,7 @@ impl DatabaseType {
             Self::MySql | Self::Sqlite => "?".to_string(),
         }
     }
-    
+
     /// Get the display name
     pub fn name(&self) -> &'static str {
         match self {
@@ -89,11 +89,10 @@ impl DatabasePool {
     /// - `mysql://` or `mariadb://` → MySQL
     /// - `sqlite://` or `sqlite:` → SQLite
     pub async fn connect(url: &str) -> Result<Self, sqlx::Error> {
-        let db_type = DatabaseType::from_url(url)
-            .ok_or_else(|| sqlx::Error::Configuration(
-                format!("Unknown database URL format: {}", url).into()
-            ))?;
-        
+        let db_type = DatabaseType::from_url(url).ok_or_else(|| {
+            sqlx::Error::Configuration(format!("Unknown database URL format: {}", url).into())
+        })?;
+
         match db_type {
             DatabaseType::Postgres => {
                 let pool = sqlx::PgPool::connect(url).await?;
@@ -107,14 +106,16 @@ impl DatabasePool {
                 use sqlx::sqlite::SqliteConnectOptions;
                 use std::str::FromStr;
                 let options = SqliteConnectOptions::from_str(url)
-                    .map_err(|e| sqlx::Error::Configuration(format!("Invalid SQLite URL: {}", e).into()))?
+                    .map_err(|e| {
+                        sqlx::Error::Configuration(format!("Invalid SQLite URL: {}", e).into())
+                    })?
                     .create_if_missing(true);
                 let pool = sqlx::SqlitePool::connect_with(options).await?;
                 Ok(Self::Sqlite(pool))
             }
         }
     }
-    
+
     /// Get the database type
     pub fn db_type(&self) -> DatabaseType {
         match self {
@@ -123,12 +124,12 @@ impl DatabasePool {
             Self::Sqlite(_) => DatabaseType::Sqlite,
         }
     }
-    
+
     /// Get placeholder for query parameter
     pub fn placeholder(&self, index: usize) -> String {
         self.db_type().placeholder(index)
     }
-    
+
     /// Get the SQLite pool (if this is a SQLite connection)
     pub fn as_sqlite(&self) -> Option<&sqlx::SqlitePool> {
         match self {
@@ -136,7 +137,7 @@ impl DatabasePool {
             _ => None,
         }
     }
-    
+
     /// Get the PostgreSQL pool (if this is a Postgres connection)
     pub fn as_postgres(&self) -> Option<&sqlx::PgPool> {
         match self {
@@ -144,7 +145,7 @@ impl DatabasePool {
             _ => None,
         }
     }
-    
+
     /// Get the MySQL pool (if this is a MySQL connection)
     pub fn as_mysql(&self) -> Option<&sqlx::MySqlPool> {
         match self {
@@ -152,7 +153,7 @@ impl DatabasePool {
             _ => None,
         }
     }
-    
+
     /// Close the connection pool
     pub async fn close(&self) {
         match self {
@@ -180,9 +181,9 @@ static GLOBAL_DB: OnceLock<DatabasePool> = OnceLock::new();
 /// ```
 pub async fn init_db(url: &str) -> Result<(), sqlx::Error> {
     let pool = DatabasePool::connect(url).await?;
-    GLOBAL_DB.set(pool).map_err(|_| {
-        sqlx::Error::Configuration("Database already initialized".into())
-    })?;
+    GLOBAL_DB
+        .set(pool)
+        .map_err(|_| sqlx::Error::Configuration("Database already initialized".into()))?;
     Ok(())
 }
 
@@ -192,7 +193,9 @@ pub async fn init_db(url: &str) -> Result<(), sqlx::Error> {
 ///
 /// Panics if the database has not been initialized with `init_db()`.
 pub fn db() -> &'static DatabasePool {
-    GLOBAL_DB.get().expect("Database not initialized. Call init_db() first.")
+    GLOBAL_DB
+        .get()
+        .expect("Database not initialized. Call init_db() first.")
 }
 
 /// Check if the database has been initialized
@@ -216,35 +219,51 @@ pub enum QueryValue {
 }
 
 impl From<&str> for QueryValue {
-    fn from(v: &str) -> Self { QueryValue::Text(v.to_string()) }
+    fn from(v: &str) -> Self {
+        QueryValue::Text(v.to_string())
+    }
 }
 
 impl From<String> for QueryValue {
-    fn from(v: String) -> Self { QueryValue::Text(v) }
+    fn from(v: String) -> Self {
+        QueryValue::Text(v)
+    }
 }
 
 impl From<i64> for QueryValue {
-    fn from(v: i64) -> Self { QueryValue::Int(v) }
+    fn from(v: i64) -> Self {
+        QueryValue::Int(v)
+    }
 }
 
 impl From<i32> for QueryValue {
-    fn from(v: i32) -> Self { QueryValue::Int(v as i64) }
+    fn from(v: i32) -> Self {
+        QueryValue::Int(v as i64)
+    }
 }
 
 impl From<u32> for QueryValue {
-    fn from(v: u32) -> Self { QueryValue::Int(v as i64) }
+    fn from(v: u32) -> Self {
+        QueryValue::Int(v as i64)
+    }
 }
 
 impl From<f64> for QueryValue {
-    fn from(v: f64) -> Self { QueryValue::Float(v) }
+    fn from(v: f64) -> Self {
+        QueryValue::Float(v)
+    }
 }
 
 impl From<f32> for QueryValue {
-    fn from(v: f32) -> Self { QueryValue::Float(v as f64) }
+    fn from(v: f32) -> Self {
+        QueryValue::Float(v as f64)
+    }
 }
 
 impl From<bool> for QueryValue {
-    fn from(v: bool) -> Self { QueryValue::Bool(v) }
+    fn from(v: bool) -> Self {
+        QueryValue::Bool(v)
+    }
 }
 
 impl<T> From<Option<T>> for QueryValue
@@ -266,18 +285,36 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_database_type_from_url() {
-        assert_eq!(DatabaseType::from_url("postgres://localhost/db"), Some(DatabaseType::Postgres));
-        assert_eq!(DatabaseType::from_url("postgresql://localhost/db"), Some(DatabaseType::Postgres));
-        assert_eq!(DatabaseType::from_url("mysql://localhost/db"), Some(DatabaseType::MySql));
-        assert_eq!(DatabaseType::from_url("mariadb://localhost/db"), Some(DatabaseType::MySql));
-        assert_eq!(DatabaseType::from_url("sqlite://./data.db"), Some(DatabaseType::Sqlite));
-        assert_eq!(DatabaseType::from_url("sqlite:./data.db"), Some(DatabaseType::Sqlite));
+        assert_eq!(
+            DatabaseType::from_url("postgres://localhost/db"),
+            Some(DatabaseType::Postgres)
+        );
+        assert_eq!(
+            DatabaseType::from_url("postgresql://localhost/db"),
+            Some(DatabaseType::Postgres)
+        );
+        assert_eq!(
+            DatabaseType::from_url("mysql://localhost/db"),
+            Some(DatabaseType::MySql)
+        );
+        assert_eq!(
+            DatabaseType::from_url("mariadb://localhost/db"),
+            Some(DatabaseType::MySql)
+        );
+        assert_eq!(
+            DatabaseType::from_url("sqlite://./data.db"),
+            Some(DatabaseType::Sqlite)
+        );
+        assert_eq!(
+            DatabaseType::from_url("sqlite:./data.db"),
+            Some(DatabaseType::Sqlite)
+        );
         assert_eq!(DatabaseType::from_url("unknown://localhost"), None);
     }
-    
+
     #[test]
     fn test_placeholder_style() {
         assert_eq!(DatabaseType::Postgres.placeholder(1), "$1");
@@ -286,22 +323,28 @@ mod tests {
         assert_eq!(DatabaseType::MySql.placeholder(5), "?");
         assert_eq!(DatabaseType::Sqlite.placeholder(1), "?");
     }
-    
+
     #[test]
     fn test_database_type_name() {
         assert_eq!(DatabaseType::Postgres.name(), "PostgreSQL");
         assert_eq!(DatabaseType::MySql.name(), "MySQL");
         assert_eq!(DatabaseType::Sqlite.name(), "SQLite");
     }
-    
+
     #[test]
     fn test_query_value_from() {
         assert!(matches!(QueryValue::from("hello"), QueryValue::Text(_)));
         assert!(matches!(QueryValue::from(42i64), QueryValue::Int(42)));
         assert!(matches!(QueryValue::from(42i32), QueryValue::Int(42)));
-        assert!(matches!(QueryValue::from(std::f64::consts::PI), QueryValue::Float(_)));
+        assert!(matches!(
+            QueryValue::from(std::f64::consts::PI),
+            QueryValue::Float(_)
+        ));
         assert!(matches!(QueryValue::from(true), QueryValue::Bool(true)));
-        assert!(matches!(QueryValue::from(Option::<i64>::None), QueryValue::Null));
+        assert!(matches!(
+            QueryValue::from(Option::<i64>::None),
+            QueryValue::Null
+        ));
         assert!(matches!(QueryValue::from(Some(42i64)), QueryValue::Int(42)));
     }
 }

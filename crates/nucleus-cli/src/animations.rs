@@ -1,11 +1,11 @@
 //! Nucleus CLI Animations
-//! 
+//!
 //! Advanced terminal animations for startup, builds, and status updates.
 
-use std::io::{Write, stdout};
-use std::time::Duration;
+use std::io::{stdout, Write};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 
 /// ANSI color codes
 pub mod colors {
@@ -14,12 +14,12 @@ pub mod colors {
     pub const DIM: &str = "\x1b[2m";
     pub const RED: &str = "\x1b[31m";
     pub const GREEN: &str = "\x1b[32m";
-    pub const YELLOW: &str = "\x1b[33m";      
+    pub const YELLOW: &str = "\x1b[33m";
     pub const BLUE: &str = "\x1b[34m";
     pub const MAGENTA: &str = "\x1b[35m";
     pub const CYAN: &str = "\x1b[36m";
     pub const WHITE: &str = "\x1b[37m";
-    
+
     // Backgrounds
     pub const BG_CYAN: &str = "\x1b[46m";
 }
@@ -33,11 +33,11 @@ pub fn clear_line() {
 /// Display the animated Nucleus startup banner
 pub fn show_startup_banner() {
     use colors::*;
-    
+
     // Clear screen
     print!("\x1b[2J\x1b[H");
     stdout().flush().unwrap();
-    
+
     let frames = [
         format!("{CYAN}       ⚛      {RESET}"),
         format!("{CYAN}      ╭⚛╮     {RESET}"),
@@ -45,7 +45,7 @@ pub fn show_startup_banner() {
         format!("{CYAN}    ╭──⚛──╮   {RESET}"),
         format!("{CYAN}   ╭───⚛───╮  {RESET}"),
     ];
-    
+
     for frame in frames {
         print!("\x1b[H\n\n");
         println!("     {}", frame);
@@ -53,13 +53,15 @@ pub fn show_startup_banner() {
         std::thread::sleep(Duration::from_millis(60));
     }
 
-    let logo = format!(r#"
+    let logo = format!(
+        r#"
 {CYAN}   ╭───⚛───╮   {MAGENTA}{BOLD}N U C L E U S{RESET}
 {CYAN}  ╭─────────╮  {RESET}{DIM}High-Performance Framework{RESET}
 {CYAN}  │    {WHITE}●{CYAN}    │  {RESET}{DIM}v3.5.0{RESET}
 {CYAN}  ╰────┬────╯  {RESET}
 {CYAN}       │       {RESET}
-"#);
+"#
+    );
 
     print!("\x1b[H\n\n");
     println!("{}", logo);
@@ -68,16 +70,17 @@ pub fn show_startup_banner() {
 }
 
 /// Run a spinner for a closure task
-pub fn with_spinner<F, T>(message: &str, f: F) -> T 
-where F: FnOnce() -> T
+pub fn with_spinner<F, T>(message: &str, f: F) -> T
+where
+    F: FnOnce() -> T,
 {
     use colors::*;
-    print!("{RESET}"); 
+    print!("{RESET}");
     let spinner_frames = vec!["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
     let done = Arc::new(AtomicBool::new(false));
     let done_clone = done.clone();
     let msg = message.to_string();
-    
+
     let handle = std::thread::spawn(move || {
         let mut i = 0;
         while !done_clone.load(Ordering::Relaxed) {
@@ -92,7 +95,7 @@ where F: FnOnce() -> T
     let result = f();
     done.store(true, Ordering::Relaxed);
     handle.join().unwrap();
-    
+
     clear_line();
     println!("\r{GREEN}✔{RESET} {}", message);
     result
@@ -112,11 +115,11 @@ pub fn build_step(icon: &str, message: &str) {
 /// Dev server startup animation
 pub fn show_dev_server_start(port: u16) {
     use colors::*;
-    
+
     println!();
     println!("{BOLD}🚀 Reactor Online{RESET}");
     println!();
-    
+
     // Status Box
     println!("  {DIM}╭──────────────────────────────────────────────╮{RESET}");
     println!("  {DIM}│{RESET}  {BOLD}{GREEN}●{RESET} {BOLD}Server Active{RESET}                           {DIM}│{RESET}");
@@ -130,7 +133,7 @@ pub fn show_dev_server_start(port: u16) {
     println!("  {DIM}Watching for changes...{RESET}");
 }
 
-/// File change notification 
+/// File change notification
 pub fn show_file_change(path: &str) {
     use colors::*;
     clear_line();

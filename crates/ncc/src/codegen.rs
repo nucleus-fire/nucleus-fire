@@ -4,7 +4,7 @@ pub fn generate_rust(nodes: &[Node]) -> String {
     // Debug logging removed for production
     // std::fs::write("/tmp/debug_ast.txt", format!("{:#?}", nodes)).ok();
     let mut code = String::new();
-    
+
     // Header
     code.push_str("use axum::{Router, routing::get, extract::{Form, Query}};\n");
     code.push_str("use serde::{Deserialize, Serialize};\n\n");
@@ -15,29 +15,29 @@ pub fn generate_rust(nodes: &[Node]) -> String {
     // Generate Handlers & Types
     for node in nodes {
         match node {
-             Node::Element(el) if el.tag_name == "n:view" => {
-                 code.push_str(&generate_view_handler_fn(el, "root_handler"));
-                 // Check for action and generate handler
-                 if el.children.iter().any(|c| matches!(c, Node::Action(_))) {
-                     code.push_str(&generate_action_handler_fn(el, "action_handler"));
-                 }
-             },
-             Node::Model(model) => {
-                 code.push_str(&generate_model(model));
-             },
-             _ => {}
+            Node::Element(el) if el.tag_name == "n:view" => {
+                code.push_str(&generate_view_handler_fn(el, "root_handler"));
+                // Check for action and generate handler
+                if el.children.iter().any(|c| matches!(c, Node::Action(_))) {
+                    code.push_str(&generate_action_handler_fn(el, "action_handler"));
+                }
+            }
+            Node::Model(model) => {
+                code.push_str(&generate_model(model));
+            }
+            _ => {}
         }
     }
-    
+
     code
 }
 
 pub fn generate_model(model: &crate::ast::Model) -> String {
     let mut code = String::new();
-    
+
     // Always add allow(dead_code) to suppress warnings for unused models
     code.push_str("#[allow(dead_code)]\n");
-    
+
     // 1. Attributes (Implicit Defaults if empty)
     if model.attributes.is_empty() {
         code.push_str("#[derive(Debug, Clone, Serialize, Deserialize)]\n");
@@ -47,14 +47,14 @@ pub fn generate_model(model: &crate::ast::Model) -> String {
             code.push('\n');
         }
     }
-    
+
     // 2. Struct Definition
     code.push_str(&format!("pub struct {} {{\n", model.name));
     for (name, ty) in &model.fields {
         code.push_str(&format!("    pub {}: {},\n", name, ty));
     }
     code.push_str("}\n\n");
-    
+
     // 3. Impl Block (Methods)
     if !model.methods.is_empty() {
         code.push_str(&format!("impl {} {{\n", model.name));
@@ -64,7 +64,7 @@ pub fn generate_model(model: &crate::ast::Model) -> String {
         }
         code.push_str("}\n\n");
     }
-    
+
     code
 }
 
@@ -74,12 +74,15 @@ fn generate_router(nodes: &[Node]) -> String {
         if let Node::Element(el) = node {
             if el.tag_name == "n:view" {
                 // Simplified routing: /view_name -> handler
-                let path = "/"; 
+                let path = "/";
                 routes.push_str(&format!(".route(\"{}\", get(root_handler))", path));
-                
+
                 // Add POST handler if Action exists
                 if el.children.iter().any(|c| matches!(c, Node::Action(_))) {
-                    routes.push_str(&format!(".route(\"{}\", axum::routing::post(action_handler))", path));
+                    routes.push_str(&format!(
+                        ".route(\"{}\", axum::routing::post(action_handler))",
+                        path
+                    ));
                 }
                 routes.push('\n');
             }
@@ -106,15 +109,15 @@ pub fn generate_nodes_handler_body(nodes: &[Node], fn_name: &str) -> String {
 pub fn find_action_recursive(nodes: &[Node]) -> Option<String> {
     for node in nodes {
         match node {
-             Node::Action(code) => {
-                 return Some(code.clone());
-             },
-             Node::Element(el) => {
-                 if let Some(code) = find_action_recursive(&el.children) {
-                     return Some(code);
-                 }
-             },
-             _ => {}
+            Node::Action(code) => {
+                return Some(code.clone());
+            }
+            Node::Element(el) => {
+                if let Some(code) = find_action_recursive(&el.children) {
+                    return Some(code);
+                }
+            }
+            _ => {}
         }
     }
     None
@@ -124,14 +127,14 @@ pub fn find_loaders_recursive(nodes: &[Node]) -> String {
     let mut code = String::new();
     for node in nodes {
         match node {
-             Node::Loader(c) => {
-                 code.push_str(c);
-                 code.push('\n');
-             },
-             Node::Element(el) => {
-                 code.push_str(&find_loaders_recursive(&el.children));
-             },
-             _ => {}
+            Node::Loader(c) => {
+                code.push_str(c);
+                code.push('\n');
+            }
+            Node::Element(el) => {
+                code.push_str(&find_loaders_recursive(&el.children));
+            }
+            _ => {}
         }
     }
     code
@@ -139,9 +142,12 @@ pub fn find_loaders_recursive(nodes: &[Node]) -> String {
 
 pub fn render_html(nodes: &[Node]) -> String {
     let mut body = String::new();
-    
+
     // Find root view
-    if let Some(Node::Element(el)) = nodes.iter().find(|n| matches!(n, Node::Element(e) if e.tag_name == "n:view")) {
+    if let Some(Node::Element(el)) = nodes
+        .iter()
+        .find(|n| matches!(n, Node::Element(e) if e.tag_name == "n:view"))
+    {
         // Check if the view has an n:layout wrapper
         if let Some(layout_element) = el.children.iter().find_map(|child| {
             if let Node::Element(e) = child {
@@ -152,11 +158,13 @@ pub fn render_html(nodes: &[Node]) -> String {
             None
         }) {
             // Get layout name from attribute
-            let layout_name = layout_element.attributes.iter()
+            let layout_name = layout_element
+                .attributes
+                .iter()
                 .find(|(k, _)| k == "name")
                 .map(|(_, v)| v.as_str())
                 .unwrap_or("layout");
-            
+
             // Load layout file
             let layout_path = format!("src/views/{}.ncl", layout_name);
             if let Ok(layout_content) = std::fs::read_to_string(&layout_path) {
@@ -168,7 +176,7 @@ pub fn render_html(nodes: &[Node]) -> String {
                     return body;
                 }
             }
-            
+
             // Fallback: if layout file not found, render view content directly
             for child in &layout_element.children {
                 static_render_node(child, &mut body);
@@ -177,17 +185,24 @@ pub fn render_html(nodes: &[Node]) -> String {
             body.push_str("<script src=\"/static/js/router.js\" defer></script>");
             return body;
         }
-        
+
         // No layout - use default HTML shell
-        let title = el.attributes.iter()
+        let title = el
+            .attributes
+            .iter()
             .find(|(k, _)| k == "title")
             .map(|(_, v)| v.as_str())
             .unwrap_or("Nucleus App");
-            
+
         let mut description = "Built with Nucleus";
         let mut extra_head = String::new();
-            
-        if let Some(desc) = el.attributes.iter().find(|(k, _)| k == "description").map(|(_, v)| v.as_str()) {
+
+        if let Some(desc) = el
+            .attributes
+            .iter()
+            .find(|(k, _)| k == "description")
+            .map(|(_, v)| v.as_str())
+        {
             description = desc;
         }
 
@@ -201,15 +216,21 @@ pub fn render_html(nodes: &[Node]) -> String {
                 }
             }
         }
-            
+
         // Auto-SEO: OpenGraph & Twitter Cards
-        extra_head.push_str(&format!("<meta property=\"og:title\" content=\"{}\">", title));
-        extra_head.push_str(&format!("<meta property=\"og:description\" content=\"{}\">", description));
+        extra_head.push_str(&format!(
+            "<meta property=\"og:title\" content=\"{}\">",
+            title
+        ));
+        extra_head.push_str(&format!(
+            "<meta property=\"og:description\" content=\"{}\">",
+            description
+        ));
         extra_head.push_str("<meta property=\"og:type\" content=\"website\">");
         extra_head.push_str("<meta name=\"twitter:card\" content=\"summary_large_image\">");
-            
+
         body.push_str(&format!("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>{}</title><meta name=\"description\" content=\"{}\">{}</head><body>", title, description, extra_head));
-        
+
         // Pass 2: Render body (skip meta/link tags we already moved to head)
         for child in &el.children {
             if let Node::Element(child_el) = child {
@@ -229,10 +250,10 @@ pub fn render_html(nodes: &[Node]) -> String {
     } else {
         // Just render generic nodes (for layout files, partials, etc.)
         for node in nodes {
-             static_render_node(node, &mut body);
+            static_render_node(node, &mut body);
         }
     }
-    
+
     body
 }
 
@@ -250,7 +271,7 @@ fn render_layout_node(node: &Node, content: &[Node], body: &mut String) {
             for child in content {
                 static_render_node(child, body);
             }
-        },
+        }
         Node::Element(el) => {
             // Check for n:slot as element (fallback, shouldn't happen with proper parsing)
             if el.tag_name == "n:slot" {
@@ -259,7 +280,7 @@ fn render_layout_node(node: &Node, content: &[Node], body: &mut String) {
                 }
                 return;
             }
-            
+
             // Skip n:view wrapper in layouts
             if el.tag_name == "n:view" {
                 for child in &el.children {
@@ -267,28 +288,34 @@ fn render_layout_node(node: &Node, content: &[Node], body: &mut String) {
                 }
                 return;
             }
-            
+
             // Regular element - render with layout context
             body.push_str(&format!("<{}", el.tag_name));
             for (k, v) in &el.attributes {
                 body.push_str(&format!(" {}=\"{}\"", k, v));
             }
             body.push('>');
-            
+
             for child in &el.children {
                 render_layout_node(child, content, body);
             }
-            
+
             body.push_str(&format!("</{}>", el.tag_name));
-        },
+        }
         Node::Text(t) => body.push_str(t),
         Node::Style(css) => {
             body.push_str("<style>");
             body.push_str(css);
             body.push_str("</style>");
-        },
-        Node::Script { content: script_content, attributes } => {
-            let lang = attributes.iter().find(|(k, _)| k == "lang").map(|(_, v)| v.as_str());
+        }
+        Node::Script {
+            content: script_content,
+            attributes,
+        } => {
+            let lang = attributes
+                .iter()
+                .find(|(k, _)| k == "lang")
+                .map(|(_, v)| v.as_str());
             if lang != Some("rust") {
                 body.push_str("<script");
                 for (k, v) in attributes {
@@ -300,22 +327,22 @@ fn render_layout_node(node: &Node, content: &[Node], body: &mut String) {
                 body.push_str(script_content);
                 body.push_str("</script>");
             }
-        },
+        }
         _ => {}
     }
 }
 
-
-
 pub fn generate_view_handler_fn(el: &Element, fn_name: &str) -> String {
     // 1. Extract Scripts (Code Injection)
     let mut injected_code = String::new();
-    
+
     // We build the function body as a String of Rust statements
     let mut func_body = String::from("let mut html_body = String::new();\n");
 
     // SEO
-    let title = el.attributes.iter()
+    let title = el
+        .attributes
+        .iter()
         .find(|(k, _)| k == "title")
         .map(|(_, v)| v.as_str())
         .unwrap_or("Nucleus App");
@@ -329,16 +356,23 @@ pub fn generate_view_handler_fn(el: &Element, fn_name: &str) -> String {
 
     for child in &el.children {
         match child {
-             Node::Script { content, attributes } => {
-                 let is_rust = attributes.iter().find(|(k, _)| k == "lang").map(|(_, v)| v == "rust").unwrap_or(true);
-                 if is_rust {
-                     injected_code.push_str(content);
-                     injected_code.push('\n');
-                 }
-             },
-             Node::Loader(_) => {}, // Handled above
-             Node::Action(_) => {}, // Handled separately (POST handler)
-             _ => render_node_to_body(child, &mut func_body) // Appends Rust statements to func_body
+            Node::Script {
+                content,
+                attributes,
+            } => {
+                let is_rust = attributes
+                    .iter()
+                    .find(|(k, _)| k == "lang")
+                    .map(|(_, v)| v == "rust")
+                    .unwrap_or(true);
+                if is_rust {
+                    injected_code.push_str(content);
+                    injected_code.push('\n');
+                }
+            }
+            Node::Loader(_) => {}                            // Handled above
+            Node::Action(_) => {}                            // Handled separately (POST handler)
+            _ => render_node_to_body(child, &mut func_body), // Appends Rust statements to func_body
         }
     }
     // Inject Nucleus Router for client-side navigation (SPA-like behavior)
@@ -352,7 +386,10 @@ pub fn generate_view_handler_fn(el: &Element, fn_name: &str) -> String {
         "".to_string()
     };
 
-    let protected = el.attributes.iter().any(|(k, v)| k == "protected" && v == "true");
+    let protected = el
+        .attributes
+        .iter()
+        .any(|(k, v)| k == "protected" && v == "true");
     let guard_code = if protected {
         r#"
         let cookie_header = headers.get("cookie").and_then(|h| h.to_str().ok()).unwrap_or("");
@@ -373,16 +410,16 @@ pub fn generate_view_handler_fn(el: &Element, fn_name: &str) -> String {
 pub fn generate_action_handler_fn(el: &Element, fn_name: &str) -> String {
     let mut action_code = String::new();
     let mut has_action = false;
-    
+
     // Find Action Node
     for child in &el.children {
         if let Node::Action(code) = child {
-             action_code.push_str(code);
-             action_code.push('\n');
-             has_action = true;
+            action_code.push_str(code);
+            action_code.push('\n');
+            has_action = true;
         }
     }
-    
+
     if !has_action {
         return String::new();
     }
@@ -409,14 +446,32 @@ fn static_render_element(el: &Element, body: &mut String) {
     }
 
     if el.tag_name == "n:image" {
-        let src = el.attributes.iter().find(|(k,_)| k == "src").map(|(_,v)| v.as_str()).unwrap_or("");
-        let alt = el.attributes.iter().find(|(k,_)| k == "alt").map(|(_,v)| v.as_str()).unwrap_or("");
-        body.push_str(&format!("<img src=\"{}\" alt=\"{}\" loading=\"lazy\" decoding=\"async\" />", src, alt));
+        let src = el
+            .attributes
+            .iter()
+            .find(|(k, _)| k == "src")
+            .map(|(_, v)| v.as_str())
+            .unwrap_or("");
+        let alt = el
+            .attributes
+            .iter()
+            .find(|(k, _)| k == "alt")
+            .map(|(_, v)| v.as_str())
+            .unwrap_or("");
+        body.push_str(&format!(
+            "<img src=\"{}\" alt=\"{}\" loading=\"lazy\" decoding=\"async\" />",
+            src, alt
+        ));
         return;
     }
-    
+
     if el.tag_name == "n:link" {
-        let href = el.attributes.iter().find(|(k,_)| k == "href").map(|(_,v)| v.as_str()).unwrap_or("#");
+        let href = el
+            .attributes
+            .iter()
+            .find(|(k, _)| k == "href")
+            .map(|(_, v)| v.as_str())
+            .unwrap_or("#");
         body.push_str(&format!("<a href=\"{}\" data-nucleus-link=\"true\">", href));
         for child in &el.children {
             static_render_node(child, body);
@@ -427,18 +482,18 @@ fn static_render_element(el: &Element, body: &mut String) {
 
     // Standard Element
     body.push_str(&format!("<{}", el.tag_name));
-    
+
     // Attributes
     for (k, v) in &el.attributes {
         body.push_str(&format!(" {}=\"{}\"", k, v));
     }
-    
+
     body.push('>');
-    
+
     for child in &el.children {
         static_render_node(child, body);
     }
-    
+
     body.push_str(&format!("</{}>", el.tag_name));
 }
 
@@ -450,10 +505,16 @@ fn static_render_node(node: &Node, body: &mut String) {
             body.push_str("<style>");
             body.push_str(css);
             body.push_str("</style>");
-        },
-        Node::Script { content, attributes } => {
+        }
+        Node::Script {
+            content,
+            attributes,
+        } => {
             // Only render client-side scripts (not Rust server code)
-            let lang = attributes.iter().find(|(k, _)| k == "lang").map(|(_, v)| v.as_str());
+            let lang = attributes
+                .iter()
+                .find(|(k, _)| k == "lang")
+                .map(|(_, v)| v.as_str());
             if lang != Some("rust") {
                 body.push_str("<script");
                 for (k, v) in attributes {
@@ -465,35 +526,37 @@ fn static_render_node(node: &Node, body: &mut String) {
                 body.push_str(content);
                 body.push_str("</script>");
             }
-        },
-        Node::Include { path, attributes } => {
-            match std::fs::read_to_string(path) {
-                Ok(mut content) => {
-                    for (key, val) in attributes {
-                        content = content.replace(&format!("{{{{ {} }}}}", key), val);
-                        content = content.replace(&format!("{{{{{}}}}}", key), val);
-                    }
-                    match crate::parser::parse_root(&content) {
-                        Ok((_, nodes)) => {
-                            for child in nodes {
-                                static_render_node(&child, body);
-                            }
-                        },
-                        Err(_) => {
-                            body.push_str(&format!("<!-- Error parsing included file: {} -->", path));
+        }
+        Node::Include { path, attributes } => match std::fs::read_to_string(path) {
+            Ok(mut content) => {
+                for (key, val) in attributes {
+                    content = content.replace(&format!("{{{{ {} }}}}", key), val);
+                    content = content.replace(&format!("{{{{{}}}}}", key), val);
+                }
+                match crate::parser::parse_root(&content) {
+                    Ok((_, nodes)) => {
+                        for child in nodes {
+                            static_render_node(&child, body);
                         }
                     }
-                },
-                Err(_) => {
-                    body.push_str(&format!("<!-- Error reading included file: {} -->", path));
+                    Err(_) => {
+                        body.push_str(&format!("<!-- Error parsing included file: {} -->", path));
+                    }
                 }
+            }
+            Err(_) => {
+                body.push_str(&format!("<!-- Error reading included file: {} -->", path));
             }
         },
         Node::Outlet => {
             body.push_str("<!-- Outlet -->");
-        },
+        }
         // Skip server-only nodes in static render
-        Node::Loader(_) | Node::Action(_) | Node::For { .. } | Node::If { .. } | Node::Interpolation(_) => {},
+        Node::Loader(_)
+        | Node::Action(_)
+        | Node::For { .. }
+        | Node::If { .. }
+        | Node::Interpolation(_) => {}
         _ => {}
     }
 }
@@ -503,17 +566,35 @@ fn static_render_node(node: &Node, body: &mut String) {
 
 fn generate_element_html(el: &Element, body: &mut String) {
     if el.tag_name == "n:image" {
-        let src = el.attributes.iter().find(|(k,_)| k == "src").map(|(_,v)| v.as_str()).unwrap_or("");
-        let alt = el.attributes.iter().find(|(k,_)| k == "alt").map(|(_,v)| v.as_str()).unwrap_or("");
+        let src = el
+            .attributes
+            .iter()
+            .find(|(k, _)| k == "src")
+            .map(|(_, v)| v.as_str())
+            .unwrap_or("");
+        let alt = el
+            .attributes
+            .iter()
+            .find(|(k, _)| k == "alt")
+            .map(|(_, v)| v.as_str())
+            .unwrap_or("");
         body.push_str(&format!("html_body.push_str(\"<img src=\\\"{}\\\" alt=\\\"{}\\\" loading=\\\"lazy\\\" decoding=\\\"async\\\" />\");\n", src, alt));
         return;
     }
-    
+
     if el.tag_name == "n:link" {
-        let href = el.attributes.iter().find(|(k,_)| k == "href").map(|(_,v)| v.as_str()).unwrap_or("#");
-        body.push_str(&format!("html_body.push_str(\"<a href=\\\"{}\\\" data-nucleus-link=\\\"true\\\">\");\n", href));
+        let href = el
+            .attributes
+            .iter()
+            .find(|(k, _)| k == "href")
+            .map(|(_, v)| v.as_str())
+            .unwrap_or("#");
+        body.push_str(&format!(
+            "html_body.push_str(\"<a href=\\\"{}\\\" data-nucleus-link=\\\"true\\\">\");\n",
+            href
+        ));
         for child in &el.children {
-             render_node_to_body(child, body);
+            render_node_to_body(child, body);
         }
         body.push_str("html_body.push_str(\"</a>\");\n");
         return;
@@ -521,120 +602,149 @@ fn generate_element_html(el: &Element, body: &mut String) {
 
     // Standard Element
     body.push_str(&format!("html_body.push_str(\"<{}\");\n", el.tag_name));
-    
+
     // Attributes
     for (k, v) in &el.attributes {
         let mut fmt_str = String::new();
         let mut args = Vec::new();
-        
+
         let mut remaining = v.as_str();
         while let Some(start) = remaining.find("{{") {
             // Escape any quotes in the text part for the format string
-            fmt_str.push_str(&remaining[..start].replace("\"", "\\\"")); 
-            
+            fmt_str.push_str(&remaining[..start].replace("\"", "\\\""));
+
             if let Some(end) = remaining[start..].find("}}") {
-                let expr = &remaining[start+2 .. start+end];
+                let expr = &remaining[start + 2..start + end];
                 args.push(expr.trim().to_string());
                 fmt_str.push_str("{}");
-                remaining = &remaining[start+end+2..];
+                remaining = &remaining[start + end + 2..];
             } else {
                 // Unclosed or broken
                 fmt_str.push_str("{{");
-                remaining = &remaining[start+2..];
+                remaining = &remaining[start + 2..];
             }
         }
         fmt_str.push_str(&remaining.replace("\"", "\\\""));
-        
+
         if args.is_empty() {
-             body.push_str(&format!("html_body.push_str(\" {}=\\\"{}\\\"\");\n", k, fmt_str));
+            body.push_str(&format!(
+                "html_body.push_str(\" {}=\\\"{}\\\"\");\n",
+                k, fmt_str
+            ));
         } else {
-             let args_str = args.join(", ");
-             body.push_str(&format!("html_body.push_str(&format!(\" {}=\\\"{}\\\"\", {}));\n", k, fmt_str, args_str));
+            let args_str = args.join(", ");
+            body.push_str(&format!(
+                "html_body.push_str(&format!(\" {}=\\\"{}\\\"\", {}));\n",
+                k, fmt_str, args_str
+            ));
         }
     }
-    
+
     body.push_str("html_body.push_str(\">\");\n");
-    
+
     for child in &el.children {
         render_node_to_body(child, body);
     }
-    
+
     body.push_str(&format!("html_body.push_str(\"</{}>\");\n", el.tag_name));
 }
 
 fn render_node_to_body(node: &Node, body: &mut String) {
     match node {
-         Node::Element(e) => generate_element_html(e, body),
-         Node::Interpolation(expr) => {
-             // Generate: html_body.push_str(&(expr).to_string());
-             body.push_str(&format!("html_body.push_str(&({}).to_string());\n", expr));
-         },
-         Node::Text(t) => {
-             // Use Debug formatting to generate a valid Rust string literal with correct escaping
-             body.push_str(&format!("html_body.push_str({:?});\n", t));
-         },
-         Node::Style(css) => {
-             let safe_css = css.replace("\"", "\\\"");
-             body.push_str(&format!("html_body.push_str(\"<style>{}</style>\");\n", safe_css));
-         },
-         Node::For { variable, iterable, children } => {
-             // Generate: for var in iterable { ... }
-             body.push_str(&format!("for {} in {} {{\n", variable, iterable));
-             for child in children {
-                 render_node_to_body(child, body);
-             }
-             body.push_str("}\n");
-         },
-         Node::If { condition, children } => {
-             // Generate: if condition { ... }
-             body.push_str(&format!("if {} {{\n", condition));
-             for child in children {
-                 render_node_to_body(child, body);
-             }
-             body.push_str("}\n");
-         },
-         Node::Model(model) => {
-             body.push_str(&generate_model(model));
-         },
-          Node::Include { path, attributes } => {
-             // ... existing include logic ...
-             // (omitted for brevity in replacement, essentially keeping logical flow)
-             // Actually, I will just append the Outlet match arm after Include
-             match std::fs::read_to_string(path) {
-                 Ok(mut content) => {
-                     for (key, val) in attributes {
-                         content = content.replace(&format!("{{{{ {} }}}}", key), val);
-                         content = content.replace(&format!("{{{{{}}}}}", key), val);
-                     }
-                     match crate::parser::parse_root(&content) {
-                         Ok((_, nodes)) => {
-                             body.push_str(&format!("html_body.push_str(\"<!-- Begin Include: {} -->\");\n", path));
-                             for child in nodes {
-                                 render_node_to_body(&child, body);
-                             }
-                             body.push_str(&format!("html_body.push_str(\"<!-- End Include: {} -->\");\n", path));
-                         },
-                         Err(_e) => {
-                              body.push_str(&format!("html_body.push_str(\"<!-- Error parsing included file: {} -->\");\n", path));
-                         }
-                     }
-                 },
-                 Err(_) => {
-                      body.push_str(&format!("html_body.push_str(\"<!-- Error reading included file: {} -->\");\n", path));
-                 }
-             }
-         },
-         Node::Outlet => {
-             body.push_str("html_body.push_str(\"<!-- Outlet -->\");\n");
-         },
-         Node::Island { path: _, directive: _, attributes: _ } => {
-             // ... (Keep existing Island logic) ...
-             // Re-instating checks to ensure I don't overwrite logic.
-             // Actually, I just need to add the new match arms.
-             // I will replace the end of the function.
-        }, // End Island
-        Node::Loader(_) => {},
-        Node::Action(_) => {},
+        Node::Element(e) => generate_element_html(e, body),
+        Node::Interpolation(expr) => {
+            // Generate: html_body.push_str(&(expr).to_string());
+            body.push_str(&format!("html_body.push_str(&({}).to_string());\n", expr));
+        }
+        Node::Text(t) => {
+            // Use Debug formatting to generate a valid Rust string literal with correct escaping
+            body.push_str(&format!("html_body.push_str({:?});\n", t));
+        }
+        Node::Style(css) => {
+            let safe_css = css.replace("\"", "\\\"");
+            body.push_str(&format!(
+                "html_body.push_str(\"<style>{}</style>\");\n",
+                safe_css
+            ));
+        }
+        Node::For {
+            variable,
+            iterable,
+            children,
+        } => {
+            // Generate: for var in iterable { ... }
+            body.push_str(&format!("for {} in {} {{\n", variable, iterable));
+            for child in children {
+                render_node_to_body(child, body);
+            }
+            body.push_str("}\n");
+        }
+        Node::If {
+            condition,
+            children,
+        } => {
+            // Generate: if condition { ... }
+            body.push_str(&format!("if {} {{\n", condition));
+            for child in children {
+                render_node_to_body(child, body);
+            }
+            body.push_str("}\n");
+        }
+        Node::Model(model) => {
+            body.push_str(&generate_model(model));
+        }
+        Node::Include { path, attributes } => {
+            // ... existing include logic ...
+            // (omitted for brevity in replacement, essentially keeping logical flow)
+            // Actually, I will just append the Outlet match arm after Include
+            match std::fs::read_to_string(path) {
+                Ok(mut content) => {
+                    for (key, val) in attributes {
+                        content = content.replace(&format!("{{{{ {} }}}}", key), val);
+                        content = content.replace(&format!("{{{{{}}}}}", key), val);
+                    }
+                    match crate::parser::parse_root(&content) {
+                        Ok((_, nodes)) => {
+                            body.push_str(&format!(
+                                "html_body.push_str(\"<!-- Begin Include: {} -->\");\n",
+                                path
+                            ));
+                            for child in nodes {
+                                render_node_to_body(&child, body);
+                            }
+                            body.push_str(&format!(
+                                "html_body.push_str(\"<!-- End Include: {} -->\");\n",
+                                path
+                            ));
+                        }
+                        Err(_e) => {
+                            body.push_str(&format!("html_body.push_str(\"<!-- Error parsing included file: {} -->\");\n", path));
+                        }
+                    }
+                }
+                Err(_) => {
+                    body.push_str(&format!(
+                        "html_body.push_str(\"<!-- Error reading included file: {} -->\");\n",
+                        path
+                    ));
+                }
+            }
+        }
+        Node::Outlet => {
+            body.push_str("html_body.push_str(\"<!-- Outlet -->\");\n");
+        }
+        Node::Island {
+            path: _,
+            directive: _,
+            attributes: _,
+        } => {
+            // ... (Keep existing Island logic) ...
+            // Re-instating checks to ensure I don't overwrite logic.
+            // Actually, I just need to add the new match arms.
+            // I will replace the end of the function.
+        } // End Island
+        Node::Loader(_) => {}
+        Node::Action(_) => {}
         _ => {}
     }
 }
@@ -711,14 +821,12 @@ mod tests {
 
     #[test]
     fn test_router_generation() {
-        let nodes = vec![
-            Node::Element(Element {
-                tag_name: "n:view".to_string(),
-                attributes: vec![],
-                children: vec![],
-            })
-        ];
-        
+        let nodes = vec![Node::Element(Element {
+            tag_name: "n:view".to_string(),
+            attributes: vec![],
+            children: vec![],
+        })];
+
         let code = generate_router(&nodes);
         assert!(code.contains("Router::new()"));
         assert!(code.contains(".route(\"/\", get(root_handler))"));
@@ -729,13 +837,11 @@ mod tests {
         let form = Element {
             tag_name: "n:form".to_string(),
             attributes: vec![],
-            children: vec![
-                Node::Element(Element {
-                    tag_name: "n:input".to_string(),
-                    attributes: vec![("name".to_string(), "email".to_string())],
-                    children: vec![],
-                })
-            ],
+            children: vec![Node::Element(Element {
+                tag_name: "n:input".to_string(),
+                attributes: vec![("name".to_string(), "email".to_string())],
+                children: vec![],
+            })],
         };
 
         let code = generate_form_struct(&form);

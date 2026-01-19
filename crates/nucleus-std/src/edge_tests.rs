@@ -1,6 +1,6 @@
 use crate::fortress::Fortress;
+use crate::sonar::{Document, InvertedIndex};
 use crate::vault::{Money, Vault};
-use crate::sonar::{InvertedIndex, Document};
 use rust_decimal_macros::dec;
 
 #[test]
@@ -8,7 +8,7 @@ fn test_fortress_token_tampering() {
     let secret = "my_secret_key";
     let user_id = "user_123";
     let valid_token = Fortress::generate_token(user_id, secret);
-    
+
     // Test 1: Valid
     assert!(Fortress::verify_token(&valid_token, user_id, secret));
 
@@ -17,8 +17,12 @@ fn test_fortress_token_tampering() {
     assert!(!Fortress::verify_token(&tampered_token, user_id, secret));
 
     // Test 3: Wrong Secret
-    assert!(!Fortress::verify_token(&valid_token, user_id, "wrong_secret"));
-    
+    assert!(!Fortress::verify_token(
+        &valid_token,
+        user_id,
+        "wrong_secret"
+    ));
+
     // Test 4: Wrong User
     assert!(!Fortress::verify_token(&valid_token, "user_456", secret));
 }
@@ -27,7 +31,7 @@ fn test_fortress_token_tampering() {
 fn test_vault_edge_cases() {
     let amount = Money::new(dec!(0.00));
     let (debit, credit) = Vault::transfer("Alice", "Bob", amount);
-    
+
     // Zero transfer should result in 0 movements
     assert_eq!(debit.amount.amount(), dec!(0));
     assert_eq!(credit.amount.amount(), dec!(0));
@@ -59,9 +63,9 @@ fn test_sonar_unicode() {
     assert_eq!(results_en[0].id, "1");
 
     let results_jp = index.search("こんにちは"); // Ensure tokenizer handles it (might fail if using split_whitespace purely, let's see)
-    // Actually split_whitespace works on unicode spaces, but "こんにちは" is one word in simple tokenizer.
-    // If it fails, our tokenizer is too simple for CJK, which is a valid finding.
-    
+                                                 // Actually split_whitespace works on unicode spaces, but "こんにちは" is one word in simple tokenizer.
+                                                 // If it fails, our tokenizer is too simple for CJK, which is a valid finding.
+
     if results_jp.is_empty() {
         println!("Edge Case Note: Simple tokenizer might not handle unspaced CJK correctly without a proper segmenter.");
     } else {

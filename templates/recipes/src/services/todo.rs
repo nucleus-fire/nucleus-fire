@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
-use nucleus_std::photon::query::Model;
-use nucleus_std::impl_model;
-use nucleus_std::server;
 use nucleus_std::errors::Result;
+use nucleus_std::impl_model;
+use nucleus_std::photon::query::Model;
+use nucleus_std::server;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Todo {
@@ -17,10 +17,7 @@ impl_model!(Todo, "todos");
 #[server]
 pub async fn list_todos() -> Result<Vec<Todo>> {
     // 2. Beautiful Usage
-    let todos = Todo::query()
-        .order_by("id", "DESC")
-        .all()
-        .await?;
+    let todos = Todo::query().order_by("id", "DESC").all().await?;
     Ok(todos)
 }
 

@@ -1,23 +1,21 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, ItemFn};
+use syn::{ItemFn, parse_macro_input};
 
 #[proc_macro_attribute]
 pub fn server(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input_fn = parse_macro_input!(item as ItemFn);
-    
+
     let fn_attrs = &input_fn.attrs;
     let fn_vis = &input_fn.vis;
     let fn_sig = &input_fn.sig;
     let fn_name = &fn_sig.ident;
     let fn_body = &input_fn.block;
-    
+
     // Extract arguments for the RPC call
-    let args = fn_sig.inputs.iter().map(|arg| {
-        match arg {
-            syn::FnArg::Typed(pat) => &pat.pat,
-            _ => panic!("Self arguments not supported in server actions"),
-        }
+    let args = fn_sig.inputs.iter().map(|arg| match arg {
+        syn::FnArg::Typed(pat) => &pat.pat,
+        _ => panic!("Self arguments not supported in server actions"),
     });
 
     let args_tuple = quote! { (#(#args),*) };
@@ -72,7 +70,7 @@ pub fn store(_attr: TokenStream, item: TokenStream) -> TokenStream {
         // A proc_macro on a standard struct definition `struct Foo { x: i32 }` doesn't have defaults.
         // We will just assume Default::default() or require user to call new() with all args?
         // To strictly match "Easy syntax", we can generate a constructor that takes initial values.
-        
+
         signal_fields.push(quote! {
             #field_vis #field_name: nucleus_std::neutron::Signal<#field_ty>
         });
@@ -80,12 +78,12 @@ pub fn store(_attr: TokenStream, item: TokenStream) -> TokenStream {
         init_logic.push(quote! {
             #field_name: nucleus_std::neutron::Signal::new(#field_name)
         });
-        
+
         default_logic.push(quote! {
              #field_name: nucleus_std::neutron::Signal::new(Default::default())
         });
     }
-    
+
     // Extract constructor args
     let ctor_args = fields.named.iter().map(|f| {
         let name = &f.ident;
@@ -113,7 +111,7 @@ pub fn store(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 <Self as nucleus_std::neutron::Store>::init()
             }
         }
-        
+
         impl nucleus_std::neutron::Store for #struct_name {
              fn init() -> Self {
                  Self {

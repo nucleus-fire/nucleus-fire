@@ -1,5 +1,5 @@
-use serde::Serialize;
 use nucleus_std::impl_model;
+use serde::Serialize;
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct Album {

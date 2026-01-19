@@ -5,16 +5,16 @@
 //! - Maintain conversation history
 //! - Reason and plan (ReAct loop)
 
-use crate::neural::{Neural, ChatMessage, NeuralError};
 use crate::mcp::Tool; // Removed unused Content
+use crate::neural::{ChatMessage, Neural, NeuralError};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 use thiserror::Error;
-use tracing::{info, warn, debug, instrument}; // Add tracing
+use tokio::sync::Mutex;
+use tracing::{debug, info, instrument, warn}; // Add tracing
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ERRORS
@@ -24,13 +24,13 @@ use tracing::{info, warn, debug, instrument}; // Add tracing
 pub enum ImportError {
     #[error("Neural error: {0}")]
     Neural(#[from] NeuralError),
-    
+
     #[error("Tool error: {0}")]
     Tool(String),
-    
+
     #[error("Task limit reached ({0} steps)")]
     TaskLimitReached(usize),
-    
+
     #[error("Configuration error: {0}")]
     Config(String),
 }
@@ -39,7 +39,9 @@ pub enum ImportError {
 // AGENT
 // ═══════════════════════════════════════════════════════════════════════════
 
-type AgentToolHandler = Box<dyn Fn(Value) -> Pin<Box<dyn Future<Output = Result<String, String>> + Send >> + Send + Sync>;
+type AgentToolHandler = Box<
+    dyn Fn(Value) -> Pin<Box<dyn Future<Output = Result<String, String>> + Send>> + Send + Sync,
+>;
 
 #[derive(Clone)]
 pub struct Agent {
@@ -74,7 +76,7 @@ impl AgentBuilder {
         self.system_prompt = prompt.to_string();
         self
     }
-    
+
     pub fn max_steps(mut self, steps: usize) -> Self {
         self.max_steps = steps;
         self
@@ -94,7 +96,7 @@ impl AgentBuilder {
             let fut = handler(args);
             Box::pin(fut) as Pin<Box<dyn Future<Output = Result<String, String>> + Send>>
         }) as AgentToolHandler;
-        
+
         self.tools.insert(tool.name.clone(), (tool, boxed_handler));
         self
     }
@@ -128,7 +130,7 @@ impl Agent {
     }
 
     /// Register a tool dynamically (post-build)
-    pub async fn register_tool<F, Fut>(&self, tool: Tool, handler: F) 
+    pub async fn register_tool<F, Fut>(&self, tool: Tool, handler: F)
     where
         F: Fn(Value) -> Fut + Send + Sync + 'static,
         Fut: Future<Output = Result<String, String>> + Send + 'static,
@@ -138,7 +140,7 @@ impl Agent {
             let fut = handler(args);
             Box::pin(fut) as Pin<Box<dyn Future<Output = Result<String, String>> + Send>>
         }) as AgentToolHandler;
-        
+
         info!(tool = %tool.name, "Registering dynamic tool");
         tools.insert(tool.name.clone(), (tool, boxed_handler));
     }
@@ -147,7 +149,7 @@ impl Agent {
     #[instrument(skip(self), fields(prompt_len = prompt.len()))]
     pub async fn run(&self, prompt: &str) -> Result<String, ImportError> {
         let mut history = self.history.lock().await;
-        
+
         // Initialize history if empty
         if history.is_empty() {
             debug!("Initializing conversation with system prompt");
@@ -167,7 +169,7 @@ impl Agent {
             // call LLM
             let response = self.neural.chat(history.clone()).await?;
             history.push(ChatMessage::assistant(&response));
-            
+
             info!(response_len = response.len(), "Agent response received");
 
             // Check if tool call is needed
@@ -175,14 +177,13 @@ impl Agent {
                 let tools = self.tools.lock().await;
                 if let Some((_, handler)) = tools.get(&tool_name) {
                     info!(tool = %tool_name, "Calling tool");
-                    let args: Value = serde_json::from_str(&args_str)
-                        .unwrap_or(Value::Null); 
-                    
+                    let args: Value = serde_json::from_str(&args_str).unwrap_or(Value::Null);
+
                     let result = match handler(args).await {
                         Ok(res) => {
                             debug!("Tool success");
                             res
-                        },
+                        }
                         Err(e) => {
                             warn!(error = %e, "Tool failed");
                             format!("Error: {}", e)
@@ -192,7 +193,11 @@ impl Agent {
                     history.push(ChatMessage::user(&format!("Observation: {}", result)));
                 } else {
                     warn!(tool = %tool_name, "Tool not found");
-                    history.push(ChatMessage::user(&format!("Error: Tool '{}' not found. Available tools: {:?}", tool_name, tools.keys())));
+                    history.push(ChatMessage::user(&format!(
+                        "Error: Tool '{}' not found. Available tools: {:?}",
+                        tool_name,
+                        tools.keys()
+                    )));
                 }
             } else {
                 debug!("No action detected, task complete");
@@ -209,7 +214,7 @@ impl Agent {
             if let Some(open_paren) = rest.find('(') {
                 let name = &rest[..open_paren];
                 if let Some(close_paren) = rest.rfind(')') {
-                    let args = &rest[open_paren+1..close_paren];
+                    let args = &rest[open_paren + 1..close_paren];
                     return Some((name.trim().to_string(), args.trim().to_string()));
                 }
             }
@@ -232,9 +237,10 @@ mod tests {
     async fn test_agent_loop() {
         // 1. Setup Mock LLM
         let server = MockServer::start().await.unwrap();
-        
+
         // Response 1: Tool Call
-        server.expect("POST", "/chat/completions")
+        server
+            .expect("POST", "/chat/completions")
             .times(1)
             .respond_with_json(json!({
                 "choices": [{
@@ -243,10 +249,12 @@ mod tests {
                     }
                 }]
             }))
-            .mount().await;
+            .mount()
+            .await;
 
         // Response 2: Final Answer
-        server.expect("POST", "/chat/completions")
+        server
+            .expect("POST", "/chat/completions")
             .times(1)
             .respond_with_json(json!({
                 "choices": [{
@@ -255,32 +263,33 @@ mod tests {
                     }
                 }]
             }))
-            .mount().await;
+            .mount()
+            .await;
 
         // 2. Setup Agent
-        let neural = Neural::new("test-key")
-            .with_base_url(&server.url());
-            
-        let agent = Agent::builder(neural)
-            .build();
-        
+        let neural = Neural::new("test-key").with_base_url(&server.url());
+
+        let agent = Agent::builder(neural).build();
+
         // 3. Register Tool
-        agent.register_tool(
-            Tool {
-                name: "reverse_string".into(),
-                description: "Reverses a string".into(),
-                input_schema: json!({})
-            },
-            |args| async move {
-                let input = args["input"].as_str().unwrap();
-                let reversed: String = input.chars().rev().collect();
-                Ok(reversed)
-            }
-        ).await;
+        agent
+            .register_tool(
+                Tool {
+                    name: "reverse_string".into(),
+                    description: "Reverses a string".into(),
+                    input_schema: json!({}),
+                },
+                |args| async move {
+                    let input = args["input"].as_str().unwrap();
+                    let reversed: String = input.chars().rev().collect();
+                    Ok(reversed)
+                },
+            )
+            .await;
 
         // 4. Run
         let result = agent.run("Reverse 'hello'").await.unwrap();
-        
+
         assert_eq!(result, "olleh");
     }
 }

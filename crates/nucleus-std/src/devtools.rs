@@ -1,4 +1,3 @@
-
 pub fn get_script() -> &'static str {
     r#"
     (function() {

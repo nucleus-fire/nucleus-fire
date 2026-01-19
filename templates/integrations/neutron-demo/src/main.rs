@@ -1,13 +1,13 @@
 mod logic;
-use logic::store::TodoStore;
-use std::sync::Arc;
 use axum::{
-    extract::{Path, State, Form},
+    extract::{Form, Path, State},
     response::{Html, IntoResponse, Redirect},
     routing::{get, post},
     Router,
 };
+use logic::store::TodoStore;
 use serde::Deserialize;
+use std::sync::Arc;
 use tower_http::services::ServeDir;
 
 // Start: Shared State
@@ -20,7 +20,7 @@ async fn main() {
     println!("⚛️  Neutron Web Demo starting on http://0.0.0.0:3000");
 
     let store = Arc::new(TodoStore::new(Vec::new(), "all".to_string()));
-    
+
     // Seed some data
     store.add_todo("Learn Nucleus".to_string());
     store.add_todo("Build something cool".to_string());
@@ -59,10 +59,7 @@ async fn add_todo(
     Redirect::to("/")
 }
 
-async fn toggle_todo(
-    State(state): State<Arc<AppState>>,
-    Path(id): Path<u64>,
-) -> impl IntoResponse {
+async fn toggle_todo(State(state): State<Arc<AppState>>, Path(id): Path<u64>) -> impl IntoResponse {
     state.store.toggle(id);
     Redirect::to("/")
 }
@@ -82,7 +79,7 @@ async fn set_filter(
 fn render_page(store: &TodoStore) -> String {
     let todos = store.filtered_todos();
     let current_filter = store.filter.get();
-    
+
     let list_html: String = todos.iter().map(|todo| {
         let class = if todo.completed { "todo-item completed" } else { "todo-item" };
         // We wrap the item in a form to support "click to toggle" via POST
@@ -100,10 +97,15 @@ fn render_page(store: &TodoStore) -> String {
     }).collect();
 
     let tab_class = |name: &str| {
-        if current_filter == name { "tab active" } else { "tab" }
+        if current_filter == name {
+            "tab active"
+        } else {
+            "tab"
+        }
     };
 
-    format!(r#"
+    format!(
+        r#"
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -140,11 +142,11 @@ fn render_page(store: &TodoStore) -> String {
     </div>
 </body>
 </html>
-"#, 
-    list=list_html, 
-    active_all=tab_class("all"), 
-    active_active=tab_class("active"), 
-    active_completed=tab_class("completed"),
-    count=todos.len()
+"#,
+        list = list_html,
+        active_all = tab_class("all"),
+        active_active = tab_class("active"),
+        active_completed = tab_class("completed"),
+        count = todos.len()
     )
 }

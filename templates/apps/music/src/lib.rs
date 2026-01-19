@@ -1,9 +1,9 @@
 #![cfg(target_arch = "wasm32")]
-use wasm_bindgen::prelude::*;
-use web_sys::{console, WebSocket, MessageEvent, Storage};
 use std::cell::RefCell;
 use std::rc::Rc;
+use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
+use web_sys::{console, MessageEvent, Storage, WebSocket};
 
 #[wasm_bindgen(start)]
 pub fn start() -> Result<(), JsValue> {
@@ -17,13 +17,12 @@ pub fn start() -> Result<(), JsValue> {
     // Common HMR Logic (Optional, can be conditionally added)
     // For now we expose these variables to user blocks.
     {
-
         {
             let id = "{{ id }}"; // Injected at build time? No, interpolation happens at runtime/compile time.
-            // Wait, n:client is extracted at compile time. Interpolation inside `n:client` might NOT work if generic.
-            // BUT `nucleus-cli` logic for `n:client` is raw extraction.
-            // So we can't interpolate into Rust code easily unless we macro it or use data attributes.
-            
+                                 // Wait, n:client is extracted at compile time. Interpolation inside `n:client` might NOT work if generic.
+                                 // BUT `nucleus-cli` logic for `n:client` is raw extraction.
+                                 // So we can't interpolate into Rust code easily unless we macro it or use data attributes.
+
             // Better approach: Select by ID or single class (Demo limitation: Only binds first button)
             let window = web_sys::window().expect("window");
             let document = window.document().expect("document");
@@ -33,17 +32,18 @@ pub fn start() -> Result<(), JsValue> {
                 let span = btn.query_selector("span").unwrap().unwrap();
                 let initial_count = 0;
                 let count = std::rc::Rc::new(std::cell::RefCell::new(initial_count));
-                
+
                 let cb = wasm_bindgen::closure::Closure::wrap(Box::new(move || {
                     *count.borrow_mut() += 1;
                     span.set_inner_html(&count.borrow().to_string());
-                }) as Box<dyn FnMut()>);
-                
-                btn.add_event_listener_with_callback("click", cb.as_ref().unchecked_ref()).unwrap();
+                })
+                    as Box<dyn FnMut()>);
+
+                btn.add_event_listener_with_callback("click", cb.as_ref().unchecked_ref())
+                    .unwrap();
                 cb.forget();
             }
         }
-    
     }
 
     Ok(())

@@ -1,6 +1,6 @@
 use crate::ast::{Element, Node};
-use std::collections::HashMap;
 use std::collections::hash_map::DefaultHasher;
+use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
 pub struct AtomicCompiler {
@@ -40,7 +40,7 @@ impl AtomicCompiler {
         if let Some(pos) = el.attributes.iter().position(|(k, _)| k == "style") {
             let (_, style_val) = el.attributes.remove(pos);
             let class_name = self.register_rule(&style_val);
-            
+
             // Add or append to class attribute
             if let Some(class_pos) = el.attributes.iter().position(|(k, _)| k == "class") {
                 el.attributes[class_pos].1.push(' ');
@@ -67,7 +67,7 @@ impl AtomicCompiler {
         property.hash(&mut hasher);
         let hash = hasher.finish();
         let class_name = format!("c-{:x}", hash);
-        
+
         self.rules.insert(property.to_string(), class_name.clone());
         class_name
     }
@@ -89,16 +89,14 @@ mod tests {
     #[test]
     fn test_compile_atomic_css() {
         let mut compiler = AtomicCompiler::new();
-        let mut nodes = vec![
-            Node::Element(Element {
-                tag_name: "div".to_string(),
-                attributes: vec![("style".to_string(), "color: red".to_string())],
-                children: vec![],
-            })
-        ];
+        let mut nodes = vec![Node::Element(Element {
+            tag_name: "div".to_string(),
+            attributes: vec![("style".to_string(), "color: red".to_string())],
+            children: vec![],
+        })];
 
         let css = compiler.compile(&mut nodes);
-        
+
         // Check CSS generation
         assert!(css.contains("color: red"));
         assert!(css.contains(".c-"));
@@ -108,7 +106,11 @@ mod tests {
             // Style should be removed
             assert!(!el.attributes.iter().any(|(k, _)| k == "style"));
             // Class should be added
-            let class_attr = el.attributes.iter().find(|(k, _)| k == "class").expect("Class attribute missing");
+            let class_attr = el
+                .attributes
+                .iter()
+                .find(|(k, _)| k == "class")
+                .expect("Class attribute missing");
             assert!(class_attr.1.starts_with("c-"));
         } else {
             panic!("Node compiled incorrectly");
@@ -128,19 +130,19 @@ mod tests {
                 tag_name: "span".to_string(),
                 attributes: vec![("style".to_string(), "color: blue".to_string())],
                 children: vec![],
-            })
+            }),
         ];
 
         compiler.compile(&mut nodes);
-        
+
         // Should only have 1 rule
         assert_eq!(compiler.rules.len(), 1);
-        
+
         // Both elements should have the same class
         if let (Node::Element(el1), Node::Element(el2)) = (&nodes[0], &nodes[1]) {
-             let c1 = &el1.attributes.iter().find(|(k, _)| k == "class").unwrap().1;
-             let c2 = &el2.attributes.iter().find(|(k, _)| k == "class").unwrap().1;
-             assert_eq!(c1, c2);
+            let c1 = &el1.attributes.iter().find(|(k, _)| k == "class").unwrap().1;
+            let c2 = &el2.attributes.iter().find(|(k, _)| k == "class").unwrap().1;
+            assert_eq!(c1, c2);
         }
     }
 }

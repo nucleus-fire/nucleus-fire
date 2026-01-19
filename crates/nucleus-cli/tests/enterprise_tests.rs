@@ -1,6 +1,6 @@
+use nucleus_cli::{generate_pwa, generate_sitemap};
 use std::fs;
 use std::path::Path;
-use nucleus_cli::{generate_sitemap, generate_pwa};
 
 use std::sync::Mutex;
 
@@ -13,7 +13,7 @@ fn test_sitemap_generation() {
     let test_dir = "test_sitemap_out";
     let static_dir = format!("{}/static", test_dir);
     fs::create_dir_all(&static_dir).unwrap();
-    
+
     // Switch CWD (Critical for CLI relative path logic)
     // Note: This is hacky for tests, normally we'd pass paths to functions.
     // But since we are testing the actual CLI logic which assumes CWD...
@@ -44,7 +44,7 @@ fn test_pwa_generation() {
     let test_dir = "test_pwa_out";
     let static_dir = format!("{}/static", test_dir);
     fs::create_dir_all(&static_dir).unwrap();
-    
+
     let original_cwd = std::env::current_dir().unwrap();
     std::env::set_current_dir(test_dir).unwrap();
 
@@ -53,7 +53,7 @@ fn test_pwa_generation() {
 
     // Verify
     assert!(result.is_ok());
-    
+
     let manifest_path = Path::new("static/manifest.json");
     assert!(manifest_path.exists());
     let manifest = fs::read_to_string(manifest_path).unwrap();

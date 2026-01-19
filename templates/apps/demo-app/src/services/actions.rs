@@ -1,5 +1,5 @@
+use nucleus_std::errors::{NucleusError, Result};
 use nucleus_std::server;
-use nucleus_std::errors::{Result, NucleusError};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -17,13 +17,15 @@ pub struct User {
 pub async fn get_secure_user(id: i64) -> Result<User> {
     // 🛡️ Guard Clause illustrating NucleusError
     if id < 1 {
-        return Err(NucleusError::ValidationError("User ID must be positive".into()));
+        return Err(NucleusError::ValidationError(
+            "User ID must be positive".into(),
+        ));
     }
 
     // 🔒 Server-only logic (Environment Variable access)
     // This string literal will NOT exist in the client bundle
     let api_secret = std::env::var("STRIPE_KEY").unwrap_or("dev_secret".to_string());
-    
+
     // Simulate DB fetch
     Ok(User {
         id,

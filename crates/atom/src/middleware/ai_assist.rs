@@ -3,13 +3,7 @@
 //! Intercepts errors in development mode and uses AI to suggest fixes.
 //! Uses the Neural module to analyze errors and provide actionable suggestions.
 
-use axum::{
-    body::{Body},
-    extract::Request,
-    http::StatusCode,
-    middleware::Next,
-    response::{Response},
-};
+use axum::{body::Body, extract::Request, http::StatusCode, middleware::Next, response::Response};
 use nucleus_std::neural::Neural;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -194,7 +188,7 @@ impl ErrorAnalysis {
 /// Analyze error without AI, using pattern matching
 pub fn analyze_error_sync(error: &str, status: StatusCode) -> ErrorAnalysis {
     let mut analysis = ErrorAnalysis::new(error, status);
-    
+
     // Column not found patterns
     if error.contains("column") && error.contains("not found") {
         if let Some(col) = extract_quoted(error) {
@@ -206,7 +200,9 @@ pub fn analyze_error_sync(error: &str, status: StatusCode) -> ErrorAnalysis {
         }
     }
     // Table not found
-    else if error.contains("no such table") || error.contains("table") && error.contains("does not exist") {
+    else if error.contains("no such table")
+        || error.contains("table") && error.contains("does not exist")
+    {
         if let Some(table) = extract_quoted(error) {
             analysis.suggestion = Some(format!(
                 "Table '{}' not found. Run migrations or check the table name.",
@@ -217,15 +213,17 @@ pub fn analyze_error_sync(error: &str, status: StatusCode) -> ErrorAnalysis {
     }
     // Connection errors
     else if error.contains("connection refused") || error.contains("ECONNREFUSED") {
-        analysis.suggestion = Some("Database connection refused. Is the database running?".to_string());
+        analysis.suggestion =
+            Some("Database connection refused. Is the database running?".to_string());
         analysis.fix_command = Some("nucleus db status".to_string());
     }
     // Auth errors
     else if status == StatusCode::UNAUTHORIZED {
-        analysis.suggestion = Some("Authentication required. Token missing or invalid.".to_string());
-    }
-    else if status == StatusCode::FORBIDDEN {
-        analysis.suggestion = Some("Permission denied. User lacks required role or capability.".to_string());
+        analysis.suggestion =
+            Some("Authentication required. Token missing or invalid.".to_string());
+    } else if status == StatusCode::FORBIDDEN {
+        analysis.suggestion =
+            Some("Permission denied. User lacks required role or capability.".to_string());
     }
     // Not found
     else if status == StatusCode::NOT_FOUND {
@@ -233,9 +231,10 @@ pub fn analyze_error_sync(error: &str, status: StatusCode) -> ErrorAnalysis {
     }
     // Validation errors
     else if error.contains("validation") || error.contains("invalid") {
-        analysis.suggestion = Some("Validation failed. Check the request payload format.".to_string());
+        analysis.suggestion =
+            Some("Validation failed. Check the request payload format.".to_string());
     }
-    
+
     analysis
 }
 
@@ -254,15 +253,15 @@ fn extract_quoted(s: &str) -> Option<String> {
 pub fn log_error_analysis(analysis: &ErrorAnalysis) {
     println!("\n  \x1b[31m❌ Error {}\x1b[0m", analysis.status);
     println!("     {}", analysis.error);
-    
+
     if let Some(ref suggestion) = analysis.suggestion {
         println!("  \x1b[33m💡 Suggestion:\x1b[0m {}", suggestion);
     }
-    
+
     if let Some(ref cmd) = analysis.fix_command {
         println!("  \x1b[36m🔧 Fix:\x1b[0m {}", cmd);
     }
-    
+
     println!();
 }
 
@@ -303,10 +302,8 @@ mod tests {
 
     #[test]
     fn test_error_analysis_table_not_found() {
-        let analysis = analyze_error_sync(
-            "no such table: 'users'",
-            StatusCode::INTERNAL_SERVER_ERROR,
-        );
+        let analysis =
+            analyze_error_sync("no such table: 'users'", StatusCode::INTERNAL_SERVER_ERROR);
         assert!(analysis.suggestion.is_some());
         assert!(analysis.fix_command.is_some());
         assert_eq!(analysis.fix_command.unwrap(), "nucleus db migrate");
@@ -314,17 +311,17 @@ mod tests {
 
     #[test]
     fn test_error_analysis_auth() {
-        let analysis = analyze_error_sync(
-            "Unauthorized",
-            StatusCode::UNAUTHORIZED,
-        );
+        let analysis = analyze_error_sync("Unauthorized", StatusCode::UNAUTHORIZED);
         assert!(analysis.suggestion.is_some());
         assert!(analysis.suggestion.unwrap().contains("Authentication"));
     }
 
     #[test]
     fn test_extract_quoted() {
-        assert_eq!(extract_quoted("column 'foo' not found"), Some("foo".to_string()));
+        assert_eq!(
+            extract_quoted("column 'foo' not found"),
+            Some("foo".to_string())
+        );
         assert_eq!(extract_quoted("no quotes"), None);
     }
 }

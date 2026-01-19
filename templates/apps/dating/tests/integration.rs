@@ -1,6 +1,6 @@
-use tokio::net::TcpListener;
 #[allow(unused_imports)]
 use std::net::SocketAddr;
+use tokio::net::TcpListener;
 
 #[tokio::test]
 async fn test_dating_startup() {

@@ -1,29 +1,28 @@
-use axum::{
-    extract::Request,
-    middleware::Next,
-    response::IntoResponse,
-};
-use std::panic::AssertUnwindSafe;
+use axum::{extract::Request, middleware::Next, response::IntoResponse};
 use futures::FutureExt;
+use std::panic::AssertUnwindSafe;
 
-use std::sync::OnceLock;
 use axum::http::{HeaderName, HeaderValue};
+use std::sync::OnceLock;
 
 static SECURITY_HEADERS: OnceLock<Vec<(HeaderName, HeaderValue)>> = OnceLock::new();
 
 fn get_security_headers() -> &'static Vec<(HeaderName, HeaderValue)> {
     SECURITY_HEADERS.get_or_init(|| {
-        use nucleus_std::fortress::{Fortress, CspConfig};
+        use nucleus_std::fortress::{CspConfig, Fortress};
         // FUTURE: Support loading CSP from nucleus.config
         // Currently uses safe defaults.
         let csp = CspConfig::default();
         let headers = Fortress::security_headers(&csp);
-        
-        headers.into_iter().filter_map(|(k, v)| {
-            let name = HeaderName::from_bytes(k.as_bytes()).ok()?;
-            let value = HeaderValue::from_str(&v).ok()?;
-            Some((name, value))
-        }).collect()
+
+        headers
+            .into_iter()
+            .filter_map(|(k, v)| {
+                let name = HeaderName::from_bytes(k.as_bytes()).ok()?;
+                let value = HeaderValue::from_str(&v).ok()?;
+                Some((name, value))
+            })
+            .collect()
     })
 }
 
@@ -35,7 +34,7 @@ pub async fn fortress(req: Request, next: Next) -> impl IntoResponse {
             // Security Hardening: Inject Pre-Computed Headers (Zero Allocation)
             let security_headers = get_security_headers();
             let headers = response.headers_mut();
-            
+
             for (k, v) in security_headers {
                 headers.insert(k.clone(), v.clone());
             }
@@ -51,23 +50,23 @@ pub async fn fortress(req: Request, next: Next) -> impl IntoResponse {
             // Web Standards Compliance (Global)
             // 1. Date Header (RFC 7231)
             if !headers.contains_key(axum::http::header::DATE) {
-                 // Fast Path: Calculate on demand if cached isn't available easily here without complexity.
-                 // Actually, let's use the cached one if we can access it, but middleware is separate.
-                 // For now, simple chrono is fast enough for middleware or we can use lazy_static
-                 let now = chrono::Utc::now().to_rfc2822().replace("+0000", "GMT");
-                 if let Ok(val) = HeaderValue::from_str(&now) {
-                     headers.insert(axum::http::header::DATE, val);
-                 }
+                // Fast Path: Calculate on demand if cached isn't available easily here without complexity.
+                // Actually, let's use the cached one if we can access it, but middleware is separate.
+                // For now, simple chrono is fast enough for middleware or we can use lazy_static
+                let now = chrono::Utc::now().to_rfc2822().replace("+0000", "GMT");
+                if let Ok(val) = HeaderValue::from_str(&now) {
+                    headers.insert(axum::http::header::DATE, val);
+                }
             }
 
             // 2. Content-Type (Sniffing prevention)
             // If body is present but no content-type, default to application/octet-stream or specific text
-            // Benchmarks need text/plain but that's handled in the handler. 
+            // Benchmarks need text/plain but that's handled in the handler.
             // We just ensure we don't send without *some* type if possible, or let browser sniff (bad).
             // Actually, for this task, the handler level fix is better for content-type.
-            
+
             response
-        },
+        }
         Err(err) => {
             let error_msg = if let Some(s) = err.downcast_ref::<&str>() {
                 s.to_string()
@@ -78,7 +77,7 @@ pub async fn fortress(req: Request, next: Next) -> impl IntoResponse {
             };
 
             eprintln!("💥 ORBITAL BREACH DETECTED (Panic): {}", error_msg);
-            
+
             // Render interactive error overlay
             let template = include_str!("../error_overlay.html");
             let html = template.replace("{{error_message}}", &error_msg);
@@ -96,9 +95,9 @@ pub async fn fortress(req: Request, next: Next) -> impl IntoResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::http::Request;
     use axum::{body::Body, routing::get, Router};
     use tower::ServiceExt; // for oneshot
-    use axum::http::Request;
 
     #[tokio::test]
     async fn test_security_headers_injection() {
@@ -112,15 +111,18 @@ mod tests {
             .unwrap();
 
         let headers = res.headers();
-        
+
         // Assert Headers Exist
         assert!(headers.contains_key("content-security-policy"));
         assert!(headers.contains_key("x-frame-options"));
-        
+
         // Assert Values
         assert_eq!(headers["x-frame-options"], "DENY");
-        assert!(headers["content-security-policy"].to_str().unwrap().contains("script-src 'self'"));
-        
+        assert!(headers["content-security-policy"]
+            .to_str()
+            .unwrap()
+            .contains("script-src 'self'"));
+
         // Assert Framework Signature (Default: Present)
         assert_eq!(headers["x-powered-by"], "Nucleus");
     }
@@ -128,22 +130,36 @@ mod tests {
     #[tokio::test]
     async fn test_panic_overlay() {
         let app = Router::new()
-            .route("/panic", get(|| async { panic!("Simulated meltdown"); #[allow(unreachable_code)] "Unreachable" }))
+            .route(
+                "/panic",
+                get(|| async {
+                    panic!("Simulated meltdown");
+                    #[allow(unreachable_code)]
+                    "Unreachable"
+                }),
+            )
             .layer(axum::middleware::from_fn(fortress));
 
         let res = app
-            .oneshot(Request::builder().uri("/panic").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/panic")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
 
         assert_eq!(res.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
-        
+
         let headers = res.headers();
         assert_eq!(headers["content-type"], "text/html");
-        
-        let body_bytes = axum::body::to_bytes(res.into_body(), usize::MAX).await.unwrap();
+
+        let body_bytes = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap();
         let body_str = String::from_utf8(body_bytes.to_vec()).unwrap();
-        
+
         // Assert it's our overlay
         assert!(body_str.contains("Orbital Hull Breach"));
         assert!(body_str.contains("Simulated meltdown"));

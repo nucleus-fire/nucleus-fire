@@ -1,28 +1,30 @@
 use axum::{
-    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, State},
+    body::Bytes,
+    extract::{
+        ws::{Message, WebSocket, WebSocketUpgrade},
+        State,
+    },
     response::{Html, IntoResponse},
     routing::get,
     Router,
-    body::Bytes,
 };
+use futures::{SinkExt, StreamExt};
+use std::collections::HashMap;
+use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use tower_http::compression::CompressionLayer;
-use std::collections::HashMap;
-use std::sync::Arc;
-use futures::{SinkExt, StreamExt};
 
-#[cfg(feature = "middleware-arena")]
-use crate::memory::arena_middleware;
 #[cfg(feature = "hot-reload")]
 use crate::hot_swap::HotSwapListener;
+#[cfg(feature = "middleware-arena")]
+use crate::memory::arena_middleware;
 #[cfg(feature = "middleware-fortress")]
 use crate::middleware::fortress; // Fortress
 use nucleus_std::stream::{SocketMessage, StreamHandler, StreamHub, WebSocket as NucleusWebSocket};
 
-use arc_swap::ArcSwap;
 use ahash::AHashMap;
-
+use arc_swap::ArcSwap;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -60,11 +62,12 @@ impl NucleusRuntime {
         extra_router: Option<Router>,
     ) {
         // Optimize: Convert String -> Bytes for zero-copy cloning
-        let optimized_routes: AHashMap<String, Bytes> = routes.unwrap_or_default()
+        let optimized_routes: AHashMap<String, Bytes> = routes
+            .unwrap_or_default()
             .into_iter()
             .map(|(k, v)| (k, Bytes::from(v)))
             .collect();
-            
+
         // Use ArcSwap for Wait-Free Reads + HMR Support (Enhanced Safe Mode)
         let routes = Arc::new(ArcSwap::from_pointee(optimized_routes));
 
@@ -74,7 +77,7 @@ impl NucleusRuntime {
         // Date Header Optimization (RFC 7231) - Cached update every 1s
         let now = chrono::Utc::now().to_rfc2822().replace("+0000", "GMT");
         let cached_date = Arc::new(ArcSwap::from_pointee(now));
-        
+
         let date_clone = cached_date.clone();
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(std::time::Duration::from_millis(1000));
@@ -110,7 +113,7 @@ impl NucleusRuntime {
 
         // Initialize Router
         let mut app = Self::make_router(state);
-        
+
         // Merge extra router if provided (before layers to ensure consistency)
         if let Some(router) = extra_router {
             app = app.merge(router);
@@ -125,14 +128,21 @@ impl NucleusRuntime {
         let app = app.layer(axum::middleware::from_fn(arena_middleware));
 
         // Developer Tools Middleware
-        let app = app.layer(axum::middleware::from_fn(crate::middleware::profiler::profile));
-        let app = app.layer(axum::middleware::from_fn(crate::middleware::ai_assist::error_assistant));
+        let app = app.layer(axum::middleware::from_fn(
+            crate::middleware::profiler::profile,
+        ));
+        let app = app.layer(axum::middleware::from_fn(
+            crate::middleware::ai_assist::error_assistant,
+        ));
 
         // Start Reactor
         println!("Atom Reactor starting on 0.0.0.0:3000");
-        let listener = TcpListener::bind("0.0.0.0:3000").await
+        let listener = TcpListener::bind("0.0.0.0:3000")
+            .await
             .expect("Failed to bind to port 3000. Is the port already in use?");
-        axum::serve(listener, app).await.expect("Server failed to start");
+        axum::serve(listener, app)
+            .await
+            .expect("Server failed to start");
     }
 
     pub fn make_router(state: AppState) -> Router {
@@ -152,23 +162,23 @@ static PLAINTEXT_RESPONSE: &[u8] = b"Hello, World!";
 async fn plaintext_handler() -> impl IntoResponse {
     (
         [
-            (axum::http::header::CONTENT_TYPE, "text/plain; charset=utf-8"),
+            (
+                axum::http::header::CONTENT_TYPE,
+                "text/plain; charset=utf-8",
+            ),
             (axum::http::header::CONTENT_LENGTH, "13"),
         ],
-        PLAINTEXT_RESPONSE
+        PLAINTEXT_RESPONSE,
     )
 }
 
-async fn dynamic_handler(
-    State(state): State<AppState>,
-    uri: axum::http::Uri,
-) -> impl IntoResponse {
+async fn dynamic_handler(State(state): State<AppState>, uri: axum::http::Uri) -> impl IntoResponse {
     let path = uri.path();
-    
+
     // Optimization: ArcSwap load (Wait-Free)
     // Returns a Guard that derefs to AHashMap
     let routes = state.routes.load();
-    
+
     let key = if path == "/" { "home" } else { &path[1..] };
     if let Some(content) = routes.get(key).or_else(|| routes.get(path)) {
         // HOT PATH OPTIMIZATION:
@@ -180,7 +190,10 @@ async fn dynamic_handler(
             let (content_type, cache_control) = if key.ends_with(".css") {
                 ("text/css", "public, max-age=31536000, immutable") // 1 year for CSS
             } else if key.ends_with(".js") {
-                ("application/javascript", "public, max-age=31536000, immutable") // 1 year for JS
+                (
+                    "application/javascript",
+                    "public, max-age=31536000, immutable",
+                ) // 1 year for JS
             } else if key.ends_with(".json") {
                 ("application/json", "public, max-age=3600") // 1 hour for JSON
             } else if key.ends_with(".ico") {
@@ -190,7 +203,10 @@ async fn dynamic_handler(
             } else if key == "plaintext" {
                 ("text/plain; charset=utf-8", "no-cache") // Benchmark compliance
             } else {
-                ("text/html; charset=utf-8", "no-cache, no-store, must-revalidate") // HTML should not be cached
+                (
+                    "text/html; charset=utf-8",
+                    "no-cache, no-store, must-revalidate",
+                ) // HTML should not be cached
             };
 
             return (
@@ -198,8 +214,9 @@ async fn dynamic_handler(
                     (axum::http::header::CONTENT_TYPE, content_type),
                     (axum::http::header::CACHE_CONTROL, cache_control),
                 ],
-                content.clone()
-            ).into_response();
+                content.clone(),
+            )
+                .into_response();
         }
 
         // DEVELOPMENT MODE SLOW PATH:
@@ -217,9 +234,9 @@ async fn dynamic_handler(
         } else {
             "text/html; charset=utf-8"
         };
-        
+
         let mut body = String::from_utf8_lossy(content).to_string();
-        
+
         // Inject DevTools (Only for HTML)
         if content_type.starts_with("text/html") {
             let script = nucleus_std::devtools::get_script();
@@ -227,23 +244,24 @@ async fn dynamic_handler(
             return Html(body).into_response();
         }
 
-        return (
-            [(axum::http::header::CONTENT_TYPE, content_type)],
-            body
-        ).into_response();
+        return ([(axum::http::header::CONTENT_TYPE, content_type)], body).into_response();
     }
 
     (axum::http::StatusCode::NOT_FOUND, "404 Not Found").into_response()
 }
 
-async fn ws_handler(
-    ws: WebSocketUpgrade,
-    State(state): State<AppState>,
-) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| handle_socket(socket, state.stream_handler, state.stream_hub, state.tx))
+async fn ws_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl IntoResponse {
+    ws.on_upgrade(move |socket| {
+        handle_socket(socket, state.stream_handler, state.stream_hub, state.tx)
+    })
 }
 
-async fn handle_socket(mut socket: WebSocket, handler: Option<Arc<dyn StreamHandler>>, hub: Arc<StreamHub>, tx: tokio::sync::broadcast::Sender<String>) {
+async fn handle_socket(
+    mut socket: WebSocket,
+    handler: Option<Arc<dyn StreamHandler>>,
+    hub: Arc<StreamHub>,
+    tx: tokio::sync::broadcast::Sender<String>,
+) {
     // 1. Subscribe to HMR events
     let mut hmr_rx = tx.subscribe();
 
@@ -254,11 +272,11 @@ async fn handle_socket(mut socket: WebSocket, handler: Option<Arc<dyn StreamHand
         // Create Nucleus WebSocket wrapper with unique ID
         let socket_id = uuid::Uuid::new_v4().to_string();
         let n_socket = NucleusWebSocket::new(socket_id.clone(), msg_tx);
-        
+
         let n_socket_clone = n_socket.clone();
         let handler_clone = handler.clone();
         let hub_clone = hub.clone();
-        
+
         // Notify connect
         handler.on_connect(&hub, &n_socket).await;
 
@@ -293,18 +311,20 @@ async fn handle_socket(mut socket: WebSocket, handler: Option<Arc<dyn StreamHand
         // Loop to receive messages from Client -> Nucleus
         let mut recv_task = tokio::spawn(async move {
             while let Some(Ok(msg)) = receiver.next().await {
-               let n_msg = match msg {
-                   Message::Text(t) => Some(SocketMessage::Text(t)),
-                   Message::Binary(b) => Some(SocketMessage::Binary(b)),
-                   Message::Ping(b) => Some(SocketMessage::Ping(b)),
-                   Message::Pong(b) => Some(SocketMessage::Pong(b)),
-                   Message::Close(_) => Some(SocketMessage::Close),
-                   // _ => None, // Unreachable
-               };
-               
-               if let Some(m) = n_msg {
-                   handler_clone.on_message(&hub_clone, &n_socket_clone, m).await;
-               }
+                let n_msg = match msg {
+                    Message::Text(t) => Some(SocketMessage::Text(t)),
+                    Message::Binary(b) => Some(SocketMessage::Binary(b)),
+                    Message::Ping(b) => Some(SocketMessage::Ping(b)),
+                    Message::Pong(b) => Some(SocketMessage::Pong(b)),
+                    Message::Close(_) => Some(SocketMessage::Close),
+                    // _ => None, // Unreachable
+                };
+
+                if let Some(m) = n_msg {
+                    handler_clone
+                        .on_message(&hub_clone, &n_socket_clone, m)
+                        .await;
+                }
             }
         });
 
@@ -312,9 +332,8 @@ async fn handle_socket(mut socket: WebSocket, handler: Option<Arc<dyn StreamHand
             _ = (&mut send_task) => recv_task.abort(),
             _ = (&mut recv_task) => send_task.abort(),
         };
-        
-        handler.on_disconnect(&hub, &socket_id).await;
 
+        handler.on_disconnect(&hub, &socket_id).await;
     } else {
         // Echo fallback if no handler (Still support HMR?)
         // Ideally checking for HMR here too, but for now focusing on app mode

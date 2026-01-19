@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use nucleus_std::photon::query::Model;
 use nucleus_std::impl_model;
+use nucleus_std::photon::query::Model;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Tag {

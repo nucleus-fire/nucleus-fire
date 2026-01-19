@@ -11,9 +11,9 @@ use web_sys::console;
 pub fn start() -> Result<(), JsValue> {
     console_error_panic_hook::set_once();
     console::log_1(&"Nucleus WASM hydration ready.".into());
-    
+
     // Future WASM-based hydration logic can go here
     // (e.g., Neutron signals, n:island components)
-    
+
     Ok(())
 }

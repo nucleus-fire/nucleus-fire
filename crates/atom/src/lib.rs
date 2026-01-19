@@ -1,8 +1,8 @@
-pub mod memory;
-pub mod runtime;
 #[cfg(feature = "hot-reload")]
 pub mod hot_swap;
+pub mod memory;
 pub mod middleware;
+pub mod runtime;
 
 pub use runtime::NucleusRuntime;
 

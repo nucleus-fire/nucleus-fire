@@ -1,11 +1,11 @@
-use std::fs;
-use std::path::Path;
+use crate::ast::Node;
+use crate::codegen::generate_rust;
 use crate::css::AtomicCompiler;
 use crate::db::generate_sql; // Ensure db is pub
 use crate::guardian::Guardian;
-use crate::codegen::generate_rust;
 use crate::parser::parse_root;
-use crate::ast::Node;
+use std::fs;
+use std::path::Path;
 
 #[test]
 fn test_kitchen_sink_compilation() {
@@ -14,8 +14,8 @@ fn test_kitchen_sink_compilation() {
     // Try to find the file from expected locations
     let possible_paths = vec![
         "kitchen-sink/src/views/all_features.ncl",
-        "../../kitchen-sink/src/views/all_features.ncl", 
-        "../kitchen-sink/src/views/all_features.ncl"
+        "../../kitchen-sink/src/views/all_features.ncl",
+        "../kitchen-sink/src/views/all_features.ncl",
     ];
 
     let mut content = String::new();
@@ -28,7 +28,7 @@ fn test_kitchen_sink_compilation() {
             break;
         }
     }
-    
+
     if !found {
         println!("Kitchen sink file not found, skipping test.");
         return;
@@ -41,7 +41,11 @@ fn test_kitchen_sink_compilation() {
     // 2. Guardian Check
     let guardian = Guardian::new();
     let validation = guardian.validate(&nodes);
-    assert!(validation.is_ok(), "Guardian validation failed: {:?}", validation.err());
+    assert!(
+        validation.is_ok(),
+        "Guardian validation failed: {:?}",
+        validation.err()
+    );
 
     // 3. CSS Compilation
     let mut compiler = AtomicCompiler::new();

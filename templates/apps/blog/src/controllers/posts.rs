@@ -1,11 +1,11 @@
 use nucleus_std::axum::{
+    extract::Path,
+    response::{Html, IntoResponse},
     routing::get,
     Router,
-    response::{Html, IntoResponse},
-    extract::Path,
 };
+use pulldown_cmark::{html, Options, Parser};
 use std::fs;
-use pulldown_cmark::{Parser, Options, html};
 
 pub fn router() -> Router {
     Router::new()
@@ -15,7 +15,7 @@ pub fn router() -> Router {
 
 async fn show_post(Path(slug): Path<String>) -> impl IntoResponse {
     let filepath = format!("content/{}.md", slug);
-    
+
     match fs::read_to_string(&filepath) {
         Ok(markdown_input) => {
             let mut options = Options::empty();
@@ -26,7 +26,8 @@ async fn show_post(Path(slug): Path<String>) -> impl IntoResponse {
             html::push_html(&mut html_output, parser);
 
             // Wrap in layout (simplified for demo)
-            let page = format!(r#"
+            let page = format!(
+                r#"
                 <!DOCTYPE html>
                 <html lang="en">
                 <head>
@@ -58,11 +59,13 @@ async fn show_post(Path(slug): Path<String>) -> impl IntoResponse {
                     </footer>
                 </body>
                 </html>
-            "#, slug, html_output);
+            "#,
+                slug, html_output
+            );
 
             Html(page)
-        },
-        Err(_) => Html("<h1>Post not found</h1>".to_string())
+        }
+        Err(_) => Html("<h1>Post not found</h1>".to_string()),
     }
 }
 
@@ -85,8 +88,10 @@ async fn sitemap() -> impl IntoResponse {
    </url>
 </urlset>"#;
     (
-        [(nucleus_std::axum::http::header::CONTENT_TYPE, "application/xml")],
-        xml
+        [(
+            nucleus_std::axum::http::header::CONTENT_TYPE,
+            "application/xml",
+        )],
+        xml,
     )
 }
-

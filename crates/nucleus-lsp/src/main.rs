@@ -1,9 +1,9 @@
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::sync::Mutex;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
-use std::collections::HashMap;
-use std::sync::Mutex;
-use std::path::PathBuf;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TAG DEFINITIONS - Complete NCL Tag Reference
@@ -86,7 +86,7 @@ fn get_all_tags() -> Vec<TagDefinition> {
             snippet: "n:include path=\"${1:path/to/file.ncl}\" />",
             self_closing: true,
         },
-        
+
         // ─────────────────────────────────────────────────────────────────────
         // CONTROL FLOW TAGS
         // ─────────────────────────────────────────────────────────────────────
@@ -120,7 +120,7 @@ fn get_all_tags() -> Vec<TagDefinition> {
             snippet: "n:else>\n\t$0\n</n:else>",
             self_closing: false,
         },
-        
+
         // ─────────────────────────────────────────────────────────────────────
         // DATA TAGS
         // ─────────────────────────────────────────────────────────────────────
@@ -150,9 +150,9 @@ fn get_all_tags() -> Vec<TagDefinition> {
             snippet: "n:load>\n\t$0\n</n:load>",
             self_closing: false,
         },
-        
+
         // ─────────────────────────────────────────────────────────────────────
-        // CONTENT TAGS  
+        // CONTENT TAGS
         // ─────────────────────────────────────────────────────────────────────
         TagDefinition {
             name: "n:text",
@@ -172,7 +172,7 @@ fn get_all_tags() -> Vec<TagDefinition> {
             snippet: "n:outlet />",
             self_closing: true,
         },
-        
+
         // ─────────────────────────────────────────────────────────────────────
         // CLIENT-SIDE TAGS
         // ─────────────────────────────────────────────────────────────────────
@@ -194,7 +194,7 @@ fn get_all_tags() -> Vec<TagDefinition> {
             snippet: "n:script>\n\t$0\n</n:script>",
             self_closing: false,
         },
-        
+
         // ─────────────────────────────────────────────────────────────────────
         // FORM TAGS
         // ─────────────────────────────────────────────────────────────────────
@@ -229,57 +229,62 @@ impl Backend {
         if position.line as usize >= lines.len() {
             return None;
         }
-        
+
         let line = lines[position.line as usize];
         let col = position.character as usize;
-        
+
         // Find the tag name before the cursor
         let before = &line[..col.min(line.len())];
-        
+
         // Look for <n:tagname pattern
         if let Some(tag_start) = before.rfind("<n:") {
             let tag_part = &before[tag_start + 3..];
-            let tag_name = tag_part.split(|c: char| c.is_whitespace() || c == '>' || c == '/')
+            let tag_name = tag_part
+                .split(|c: char| c.is_whitespace() || c == '>' || c == '/')
                 .next()
                 .unwrap_or("");
             if !tag_name.is_empty() {
                 return Some(format!("n:{}", tag_name));
             }
         }
-        
+
         None
     }
-    
+
     fn get_completion_context(&self, content: &str, position: Position) -> CompletionContext {
         let lines: Vec<&str> = content.lines().collect();
         if position.line as usize >= lines.len() {
             return CompletionContext::Unknown;
         }
-        
+
         let line = lines[position.line as usize];
         let col = position.character as usize;
         let before = &line[..col.min(line.len())];
-        
+
         // Check if we're inside a tag (after < but before >)
         let last_open = before.rfind('<');
         let last_close = before.rfind('>');
-        
+
         match (last_open, last_close) {
             (Some(open), Some(close)) if open > close => {
                 // We're inside a tag
                 let tag_content = &before[open..];
-                
+
                 // Check if we're after a space (attribute position)
-                if tag_content.contains(' ') && !tag_content.ends_with('=') && !tag_content.ends_with('"') {
+                if tag_content.contains(' ')
+                    && !tag_content.ends_with('=')
+                    && !tag_content.ends_with('"')
+                {
                     if let Some(tag_start) = tag_content.find("<n:") {
                         let tag_part = &tag_content[tag_start + 3..];
-                        let tag_name = tag_part.split(|c: char| c.is_whitespace())
+                        let tag_name = tag_part
+                            .split(|c: char| c.is_whitespace())
                             .next()
                             .unwrap_or("");
                         return CompletionContext::Attribute(format!("n:{}", tag_name));
                     }
                 }
-                
+
                 // Check if we just typed <n: or similar
                 if tag_content.ends_with("<n:") || tag_content.contains("<n:") {
                     return CompletionContext::TagName;
@@ -293,33 +298,34 @@ impl Backend {
             }
             _ => {}
         }
-        
+
         // Check if we're after a < at the end
         if before.trim_end().ends_with('<') {
             return CompletionContext::TagName;
         }
-        
+
         CompletionContext::Unknown
     }
-    
+
     fn validate_document(&self, content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
         let tags = get_all_tags();
         let tag_names: Vec<&str> = tags.iter().map(|t| t.name).collect();
-        
+
         for (line_num, line) in content.lines().enumerate() {
             // Check for invalid n: tags
             let mut search_start = 0;
             while let Some(tag_start) = line[search_start..].find("<n:") {
                 let abs_start = search_start + tag_start;
                 let after_prefix = &line[abs_start + 3..];
-                
+
                 // Extract tag name
-                let tag_end = after_prefix.find(|c: char| c.is_whitespace() || c == '>' || c == '/')
+                let tag_end = after_prefix
+                    .find(|c: char| c.is_whitespace() || c == '>' || c == '/')
                     .unwrap_or(after_prefix.len());
                 let tag_name = &after_prefix[..tag_end];
                 let full_tag = format!("n:{}", tag_name);
-                
+
                 if !tag_names.contains(&full_tag.as_str()) && !tag_name.is_empty() {
                     diagnostics.push(Diagnostic {
                         range: Range {
@@ -333,18 +339,24 @@ impl Backend {
                         ..Default::default()
                     });
                 }
-                
+
                 search_start = abs_start + 3 + tag_end;
             }
-            
+
             // Check for unclosed braces in interpolations
             let open_braces = line.matches('{').count();
             let close_braces = line.matches('}').count();
             if open_braces != close_braces {
                 diagnostics.push(Diagnostic {
                     range: Range {
-                        start: Position { line: line_num as u32, character: 0 },
-                        end: Position { line: line_num as u32, character: line.len() as u32 },
+                        start: Position {
+                            line: line_num as u32,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: line_num as u32,
+                            character: line.len() as u32,
+                        },
                     },
                     severity: Some(DiagnosticSeverity::WARNING),
                     code: Some(NumberOrString::String("unbalanced-braces".to_string())),
@@ -354,7 +366,7 @@ impl Backend {
                 });
             }
         }
-        
+
         // Check for required attributes
         for (line_num, line) in content.lines().enumerate() {
             for tag in &tags {
@@ -364,20 +376,31 @@ impl Backend {
                     let after = &line[tag_start..];
                     let tag_end = after.find('>').unwrap_or(after.len());
                     let tag_content = &after[..tag_end];
-                    
+
                     for attr in &tag.attributes {
                         if attr.required {
                             let attr_pattern = format!("{}=", attr.name);
                             if !tag_content.contains(&attr_pattern) {
                                 diagnostics.push(Diagnostic {
                                     range: Range {
-                                        start: Position { line: line_num as u32, character: tag_start as u32 },
-                                        end: Position { line: line_num as u32, character: (tag_start + tag_end) as u32 },
+                                        start: Position {
+                                            line: line_num as u32,
+                                            character: tag_start as u32,
+                                        },
+                                        end: Position {
+                                            line: line_num as u32,
+                                            character: (tag_start + tag_end) as u32,
+                                        },
                                     },
                                     severity: Some(DiagnosticSeverity::ERROR),
-                                    code: Some(NumberOrString::String("missing-attribute".to_string())),
+                                    code: Some(NumberOrString::String(
+                                        "missing-attribute".to_string(),
+                                    )),
                                     source: Some("nucleus".to_string()),
-                                    message: format!("<{}> requires attribute: {}", tag.name, attr.name),
+                                    message: format!(
+                                        "<{}> requires attribute: {}",
+                                        tag.name, attr.name
+                                    ),
                                     ..Default::default()
                                 });
                             }
@@ -386,26 +409,26 @@ impl Backend {
                 }
             }
         }
-        
+
         diagnostics
     }
-    
+
     async fn find_definition(&self, content: &str, position: Position) -> Option<Location> {
         let lines: Vec<&str> = content.lines().collect();
         if position.line as usize >= lines.len() {
             return None;
         }
-        
+
         let line = lines[position.line as usize];
         let col = position.character as usize;
-        
+
         // Check for layout reference: name="layout_name"
         if let Some(layout_match) = self.find_quoted_value_at(line, col, "name") {
             let root = self.root_path.lock().unwrap().clone()?;
             let layout_path = PathBuf::from(&root)
                 .join("src/views")
                 .join(format!("{}.ncl", layout_match));
-            
+
             if layout_path.exists() {
                 return Some(Location {
                     uri: Url::from_file_path(&layout_path).ok()?,
@@ -413,12 +436,12 @@ impl Backend {
                 });
             }
         }
-        
+
         // Check for include reference: path="some/file.ncl"
         if let Some(path_match) = self.find_quoted_value_at(line, col, "path") {
             let root = self.root_path.lock().unwrap().clone()?;
             let include_path = PathBuf::from(&root).join(&path_match);
-            
+
             if include_path.exists() {
                 return Some(Location {
                     uri: Url::from_file_path(&include_path).ok()?,
@@ -426,10 +449,10 @@ impl Backend {
                 });
             }
         }
-        
+
         None
     }
-    
+
     fn find_quoted_value_at(&self, line: &str, col: usize, attr_name: &str) -> Option<String> {
         let pattern = format!("{}=\"", attr_name);
         if let Some(attr_start) = line.find(&pattern) {
@@ -444,10 +467,10 @@ impl Backend {
         }
         None
     }
-    
+
     fn discover_components(&self) -> Vec<CompletionItem> {
         let mut items = Vec::new();
-        
+
         let root_opt = self.root_path.lock().unwrap().clone();
         if let Some(root) = root_opt {
             // Scan src/components/
@@ -462,9 +485,10 @@ impl Backend {
                                 label: format!("n:{}", name),
                                 kind: Some(CompletionItemKind::CLASS),
                                 detail: Some("Custom Component".to_string()),
-                                documentation: Some(Documentation::String(
-                                    format!("Component from src/components/{}.ncl", name)
-                                )),
+                                documentation: Some(Documentation::String(format!(
+                                    "Component from src/components/{}.ncl",
+                                    name
+                                ))),
                                 insert_text: Some(format!("n:{} $1 />", name)),
                                 insert_text_format: Some(InsertTextFormat::SNIPPET),
                                 ..Default::default()
@@ -473,7 +497,7 @@ impl Backend {
                     }
                 }
             }
-            
+
             // Scan src/views/ for layouts
             let views_dir = PathBuf::from(&root).join("src/views");
             if let Ok(entries) = std::fs::read_dir(&views_dir) {
@@ -487,9 +511,10 @@ impl Backend {
                                     label: name.clone(),
                                     kind: Some(CompletionItemKind::FILE),
                                     detail: Some("Layout file".to_string()),
-                                    documentation: Some(Documentation::String(
-                                        format!("Layout from src/views/{}.ncl", name)
-                                    )),
+                                    documentation: Some(Documentation::String(format!(
+                                        "Layout from src/views/{}.ncl",
+                                        name
+                                    ))),
                                     ..Default::default()
                                 });
                             }
@@ -498,7 +523,7 @@ impl Backend {
                 }
             }
         }
-        
+
         items
     }
 }
@@ -523,9 +548,12 @@ impl LanguageServer for Backend {
         }
 
         self.client
-            .log_message(MessageType::INFO, "Nucleus LSP Initialized with full feature support!")
+            .log_message(
+                MessageType::INFO,
+                "Nucleus LSP Initialized with full feature support!",
+            )
             .await;
-        
+
         Ok(InitializeResult {
             capabilities: ServerCapabilities {
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
@@ -534,9 +562,9 @@ impl LanguageServer for Backend {
                 completion_provider: Some(CompletionOptions {
                     resolve_provider: Some(true),
                     trigger_characters: Some(vec![
-                        ".".to_string(), 
-                        ":".to_string(), 
-                        "<".to_string(), 
+                        ".".to_string(),
+                        ":".to_string(),
+                        "<".to_string(),
                         "\"".to_string(),
                         " ".to_string(),
                     ]),
@@ -555,7 +583,10 @@ impl LanguageServer for Backend {
 
     async fn initialized(&self, _: InitializedParams) {
         self.client
-            .log_message(MessageType::INFO, "Nucleus LSP ready with completions, hover, diagnostics, and go-to-definition!")
+            .log_message(
+                MessageType::INFO,
+                "Nucleus LSP ready with completions, hover, diagnostics, and go-to-definition!",
+            )
             .await;
     }
 
@@ -566,29 +597,39 @@ impl LanguageServer for Backend {
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         let uri = params.text_document.uri.clone();
         let content = params.text_document.text.clone();
-        
+
         // Store document
-        self.documents.lock().unwrap().insert(uri.clone(), content.clone());
-        
+        self.documents
+            .lock()
+            .unwrap()
+            .insert(uri.clone(), content.clone());
+
         // Publish diagnostics
         let diagnostics = self.validate_document(&content);
-        self.client.publish_diagnostics(uri, diagnostics, None).await;
+        self.client
+            .publish_diagnostics(uri, diagnostics, None)
+            .await;
     }
-    
+
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
         let uri = params.text_document.uri.clone();
         if let Some(change) = params.content_changes.first() {
             let content = change.text.clone();
-            
+
             // Update stored document
-            self.documents.lock().unwrap().insert(uri.clone(), content.clone());
-            
+            self.documents
+                .lock()
+                .unwrap()
+                .insert(uri.clone(), content.clone());
+
             // Publish diagnostics
             let diagnostics = self.validate_document(&content);
-            self.client.publish_diagnostics(uri, diagnostics, None).await;
+            self.client
+                .publish_diagnostics(uri, diagnostics, None)
+                .await;
         }
     }
-    
+
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         let uri = params.text_document.uri;
         self.documents.lock().unwrap().remove(&uri);
@@ -599,13 +640,19 @@ impl LanguageServer for Backend {
     async fn completion(&self, params: CompletionParams) -> Result<Option<CompletionResponse>> {
         let uri = params.text_document_position.text_document.uri;
         let position = params.text_document_position.position;
-        
-        let content = self.documents.lock().unwrap().get(&uri).cloned().unwrap_or_default();
+
+        let content = self
+            .documents
+            .lock()
+            .unwrap()
+            .get(&uri)
+            .cloned()
+            .unwrap_or_default();
         let context = self.get_completion_context(&content, position);
-        
+
         let tags = get_all_tags();
         let mut items: Vec<CompletionItem> = Vec::new();
-        
+
         match context {
             CompletionContext::TagName => {
                 // Provide all tag completions
@@ -623,7 +670,7 @@ impl LanguageServer for Backend {
                         ..Default::default()
                     });
                 }
-                
+
                 // Add discovered components
                 items.extend(self.discover_components());
             }
@@ -635,7 +682,7 @@ impl LanguageServer for Backend {
                         if attr.required {
                             label.push_str(" (required)");
                         }
-                        
+
                         items.push(CompletionItem {
                             label: attr.name.to_string(),
                             kind: Some(CompletionItemKind::PROPERTY),
@@ -661,7 +708,7 @@ impl LanguageServer for Backend {
                 }
             }
         }
-        
+
         // Add content.deck keys
         let root_opt = self.root_path.lock().unwrap().clone();
         if let Some(root) = root_opt {
@@ -672,7 +719,7 @@ impl LanguageServer for Backend {
                         if let Some((key, _)) = line.split_once("=") {
                             let key = key.trim();
                             let key = key.split(':').next().unwrap_or(key);
-                            
+
                             items.push(CompletionItem {
                                 label: key.to_string(),
                                 kind: Some(CompletionItemKind::TEXT),
@@ -688,48 +735,75 @@ impl LanguageServer for Backend {
 
         Ok(Some(CompletionResponse::Array(items)))
     }
-    
+
     async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
         let uri = params.text_document_position_params.text_document.uri;
         let position = params.text_document_position_params.position;
-        
-        let content = self.documents.lock().unwrap().get(&uri).cloned().unwrap_or_default();
-        
+
+        let content = self
+            .documents
+            .lock()
+            .unwrap()
+            .get(&uri)
+            .cloned()
+            .unwrap_or_default();
+
         if let Some(tag_name) = self.get_tag_at_position(&content, position) {
             let tags = get_all_tags();
             if let Some(tag) = tags.iter().find(|t| t.name == tag_name) {
                 return Ok(Some(Hover {
                     contents: HoverContents::Markup(MarkupContent {
                         kind: MarkupKind::Markdown,
-                        value: format!("## `<{}>`\n\n{}\n\n{}", tag.name, tag.description, tag.docs),
+                        value: format!(
+                            "## `<{}>`\n\n{}\n\n{}",
+                            tag.name, tag.description, tag.docs
+                        ),
                     }),
                     range: None,
                 }));
             }
         }
-        
+
         Ok(None)
     }
-    
-    async fn goto_definition(&self, params: GotoDefinitionParams) -> Result<Option<GotoDefinitionResponse>> {
+
+    async fn goto_definition(
+        &self,
+        params: GotoDefinitionParams,
+    ) -> Result<Option<GotoDefinitionResponse>> {
         let uri = params.text_document_position_params.text_document.uri;
         let position = params.text_document_position_params.position;
-        
-        let content = self.documents.lock().unwrap().get(&uri).cloned().unwrap_or_default();
-        
+
+        let content = self
+            .documents
+            .lock()
+            .unwrap()
+            .get(&uri)
+            .cloned()
+            .unwrap_or_default();
+
         if let Some(location) = self.find_definition(&content, position).await {
             return Ok(Some(GotoDefinitionResponse::Scalar(location)));
         }
-        
+
         Ok(None)
     }
-    
-    async fn document_symbol(&self, params: DocumentSymbolParams) -> Result<Option<DocumentSymbolResponse>> {
+
+    async fn document_symbol(
+        &self,
+        params: DocumentSymbolParams,
+    ) -> Result<Option<DocumentSymbolResponse>> {
         let uri = params.text_document.uri;
-        let content = self.documents.lock().unwrap().get(&uri).cloned().unwrap_or_default();
-        
+        let content = self
+            .documents
+            .lock()
+            .unwrap()
+            .get(&uri)
+            .cloned()
+            .unwrap_or_default();
+
         let mut symbols = Vec::new();
-        
+
         for (line_num, line) in content.lines().enumerate() {
             // Find n:view
             if let Some(start) = line.find("<n:view") {
@@ -741,12 +815,24 @@ impl LanguageServer for Backend {
                             name: format!("View: {}", title),
                             kind: SymbolKind::CLASS,
                             range: Range {
-                                start: Position { line: line_num as u32, character: start as u32 },
-                                end: Position { line: line_num as u32, character: line.len() as u32 },
+                                start: Position {
+                                    line: line_num as u32,
+                                    character: start as u32,
+                                },
+                                end: Position {
+                                    line: line_num as u32,
+                                    character: line.len() as u32,
+                                },
                             },
                             selection_range: Range {
-                                start: Position { line: line_num as u32, character: start as u32 },
-                                end: Position { line: line_num as u32, character: line.len() as u32 },
+                                start: Position {
+                                    line: line_num as u32,
+                                    character: start as u32,
+                                },
+                                end: Position {
+                                    line: line_num as u32,
+                                    character: line.len() as u32,
+                                },
                             },
                             detail: None,
                             tags: None,
@@ -757,7 +843,7 @@ impl LanguageServer for Backend {
                     }
                 }
             }
-            
+
             // Find n:model
             if let Some(start) = line.find("<n:model") {
                 if let Some(name_start) = line.find("name=\"") {
@@ -768,12 +854,24 @@ impl LanguageServer for Backend {
                             name: format!("Model: {}", name),
                             kind: SymbolKind::STRUCT,
                             range: Range {
-                                start: Position { line: line_num as u32, character: start as u32 },
-                                end: Position { line: line_num as u32, character: line.len() as u32 },
+                                start: Position {
+                                    line: line_num as u32,
+                                    character: start as u32,
+                                },
+                                end: Position {
+                                    line: line_num as u32,
+                                    character: line.len() as u32,
+                                },
                             },
                             selection_range: Range {
-                                start: Position { line: line_num as u32, character: start as u32 },
-                                end: Position { line: line_num as u32, character: line.len() as u32 },
+                                start: Position {
+                                    line: line_num as u32,
+                                    character: start as u32,
+                                },
+                                end: Position {
+                                    line: line_num as u32,
+                                    character: line.len() as u32,
+                                },
                             },
                             detail: None,
                             tags: None,
@@ -784,19 +882,31 @@ impl LanguageServer for Backend {
                     }
                 }
             }
-            
+
             // Find n:action
             if line.contains("<n:action") {
                 symbols.push(DocumentSymbol {
                     name: "Action".to_string(),
                     kind: SymbolKind::FUNCTION,
                     range: Range {
-                        start: Position { line: line_num as u32, character: 0 },
-                        end: Position { line: line_num as u32, character: line.len() as u32 },
+                        start: Position {
+                            line: line_num as u32,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: line_num as u32,
+                            character: line.len() as u32,
+                        },
                     },
                     selection_range: Range {
-                        start: Position { line: line_num as u32, character: 0 },
-                        end: Position { line: line_num as u32, character: line.len() as u32 },
+                        start: Position {
+                            line: line_num as u32,
+                            character: 0,
+                        },
+                        end: Position {
+                            line: line_num as u32,
+                            character: line.len() as u32,
+                        },
                     },
                     detail: None,
                     tags: None,
@@ -805,7 +915,7 @@ impl LanguageServer for Backend {
                     deprecated: None,
                 });
             }
-            
+
             // Find n:component
             if let Some(start) = line.find("<n:component") {
                 if let Some(name_start) = line.find("name=\"") {
@@ -816,12 +926,24 @@ impl LanguageServer for Backend {
                             name: format!("Component: {}", name),
                             kind: SymbolKind::CLASS,
                             range: Range {
-                                start: Position { line: line_num as u32, character: start as u32 },
-                                end: Position { line: line_num as u32, character: line.len() as u32 },
+                                start: Position {
+                                    line: line_num as u32,
+                                    character: start as u32,
+                                },
+                                end: Position {
+                                    line: line_num as u32,
+                                    character: line.len() as u32,
+                                },
                             },
                             selection_range: Range {
-                                start: Position { line: line_num as u32, character: start as u32 },
-                                end: Position { line: line_num as u32, character: line.len() as u32 },
+                                start: Position {
+                                    line: line_num as u32,
+                                    character: start as u32,
+                                },
+                                end: Position {
+                                    line: line_num as u32,
+                                    character: line.len() as u32,
+                                },
                             },
                             detail: None,
                             tags: None,
@@ -833,7 +955,7 @@ impl LanguageServer for Backend {
                 }
             }
         }
-        
+
         Ok(Some(DocumentSymbolResponse::Nested(symbols)))
     }
 }
@@ -843,7 +965,7 @@ async fn main() {
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
 
-    let (service, socket) = LspService::new(|client| Backend { 
+    let (service, socket) = LspService::new(|client| Backend {
         client,
         root_path: Mutex::new(None),
         documents: Mutex::new(HashMap::new()),
@@ -859,7 +981,7 @@ mod tests {
     fn test_get_all_tags() {
         let tags = get_all_tags();
         assert!(tags.len() >= 15);
-        
+
         // Check required tags exist
         let tag_names: Vec<&str> = tags.iter().map(|t| t.name).collect();
         assert!(tag_names.contains(&"n:view"));
@@ -871,16 +993,25 @@ mod tests {
         assert!(tag_names.contains(&"n:slot"));
         assert!(tag_names.contains(&"n:component"));
     }
-    
+
     #[test]
     fn test_tag_has_required_attributes() {
         let tags = get_all_tags();
-        
+
         let view_tag = tags.iter().find(|t| t.name == "n:view").unwrap();
-        assert!(view_tag.attributes.iter().any(|a| a.name == "title" && a.required));
-        
+        assert!(view_tag
+            .attributes
+            .iter()
+            .any(|a| a.name == "title" && a.required));
+
         let for_tag = tags.iter().find(|t| t.name == "n:for").unwrap();
-        assert!(for_tag.attributes.iter().any(|a| a.name == "item" && a.required));
-        assert!(for_tag.attributes.iter().any(|a| a.name == "in" && a.required));
+        assert!(for_tag
+            .attributes
+            .iter()
+            .any(|a| a.name == "item" && a.required));
+        assert!(for_tag
+            .attributes
+            .iter()
+            .any(|a| a.name == "in" && a.required));
     }
 }

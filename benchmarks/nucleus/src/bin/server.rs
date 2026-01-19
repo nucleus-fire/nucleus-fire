@@ -1,6 +1,6 @@
 use atom::NucleusRuntime;
-use std::collections::HashMap;
 use mimalloc::MiMalloc;
+use std::collections::HashMap;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -11,7 +11,7 @@ async fn main() {
     // Pre-allocate static content
     routes.insert("home".to_string(), "Hello World".to_string());
     routes.insert("plaintext".to_string(), "Hello, World!".to_string());
-    
+
     // Start the optimized runtime
     // No middleware = pure throughput test
     NucleusRuntime::start(Some(routes), None).await;

@@ -1,6 +1,6 @@
 use crate::ast::{Model, Node};
-use crate::nir::to_nir;
 use crate::db::calculate_schema_hash;
+use crate::nir::to_nir;
 
 #[test]
 fn test_nir_generation() {
@@ -43,21 +43,17 @@ fn test_schema_hashing() {
 #[test]
 fn test_rosetta_codegen() {
     use crate::ast::Element;
-    use crate::rosetta::{generate_swiftui, generate_kotlin};
+    use crate::rosetta::{generate_kotlin, generate_swiftui};
 
-    let nodes = vec![
-        Node::Element(Element {
-            tag_name: "n:view".to_string(),
+    let nodes = vec![Node::Element(Element {
+        tag_name: "n:view".to_string(),
+        attributes: vec![],
+        children: vec![Node::Element(Element {
+            tag_name: "n:text".to_string(),
             attributes: vec![],
-            children: vec![
-                Node::Element(Element {
-                    tag_name: "n:text".to_string(),
-                    attributes: vec![],
-                    children: vec![Node::Text("Hello".to_string())],
-                })
-            ],
-        })
-    ];
+            children: vec![Node::Text("Hello".to_string())],
+        })],
+    })];
 
     let swift = generate_swiftui(&nodes);
     assert!(swift.contains("VStack"));

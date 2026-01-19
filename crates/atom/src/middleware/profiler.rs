@@ -8,12 +8,7 @@
 
 #![allow(clippy::type_complexity)]
 
-use axum::{
-    extract::Request,
-    http::StatusCode,
-    middleware::Next,
-    response::Response,
-};
+use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
 use std::time::Instant;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -62,11 +57,7 @@ pub async fn profile(request: Request, next: Next) -> Response {
 }
 
 /// Profile a request with custom configuration
-pub async fn profile_with_config(
-    request: Request,
-    next: Next,
-    config: ProfilerConfig,
-) -> Response {
+pub async fn profile_with_config(request: Request, next: Next, config: ProfilerConfig) -> Response {
     if !config.enabled {
         return next.run(request).await;
     }
@@ -74,15 +65,15 @@ pub async fn profile_with_config(
     let method = request.method().clone();
     let uri = request.uri().clone();
     let path = uri.path().to_string();
-    
+
     let start = Instant::now();
     let response = next.run(request).await;
     let duration = start.elapsed();
     let duration_ms = duration.as_secs_f64() * 1000.0;
-    
+
     let status = response.status();
     let is_slow = duration.as_millis() > config.slow_threshold_ms as u128;
-    
+
     match config.format {
         LogFormat::Pretty => log_pretty(method.as_ref(), &path, status, duration_ms, is_slow),
         LogFormat::Json => log_json(method.as_ref(), &path, status, duration_ms, is_slow),
@@ -91,10 +82,12 @@ pub async fn profile_with_config(
 
     let mut response = response;
     response.headers_mut().insert(
-        "x-response-time", 
-        format!("{:.2}ms", duration_ms).parse().unwrap_or(axum::http::HeaderValue::from_static("0ms"))
+        "x-response-time",
+        format!("{:.2}ms", duration_ms)
+            .parse()
+            .unwrap_or(axum::http::HeaderValue::from_static("0ms")),
     );
-    
+
     response
 }
 
@@ -104,13 +97,13 @@ pub async fn profile_with_config(
 
 fn status_color(status: StatusCode) -> &'static str {
     if status.is_success() {
-        "\x1b[32m"  // Green
+        "\x1b[32m" // Green
     } else if status.is_redirection() {
-        "\x1b[36m"  // Cyan
+        "\x1b[36m" // Cyan
     } else if status.is_client_error() {
-        "\x1b[33m"  // Yellow
+        "\x1b[33m" // Yellow
     } else {
-        "\x1b[31m"  // Red
+        "\x1b[31m" // Red
     }
 }
 
@@ -118,23 +111,37 @@ fn log_pretty(method: &str, path: &str, status: StatusCode, duration_ms: f64, is
     let status_clr = status_color(status);
     let time_clr = if is_slow { "\x1b[31m" } else { "\x1b[90m" };
     let slow_marker = if is_slow { " ⚠️ SLOW" } else { "" };
-    
+
     println!(
         "  {status_clr}⬢\x1b[0m {} {} {status_clr}{}\x1b[0m {time_clr}{:.2}ms\x1b[0m{slow_marker}",
-        method, path, status.as_u16(), duration_ms
+        method,
+        path,
+        status.as_u16(),
+        duration_ms
     );
 }
 
 fn log_json(method: &str, path: &str, status: StatusCode, duration_ms: f64, is_slow: bool) {
     println!(
         r#"{{"method":"{}","path":"{}","status":{},"duration_ms":{:.2},"slow":{}}}"#,
-        method, path, status.as_u16(), duration_ms, is_slow
+        method,
+        path,
+        status.as_u16(),
+        duration_ms,
+        is_slow
     );
 }
 
 fn log_compact(method: &str, path: &str, status: StatusCode, duration_ms: f64, is_slow: bool) {
     let marker = if is_slow { "!" } else { "" };
-    println!("{}{} {} {} {:.0}ms", marker, method, path, status.as_u16(), duration_ms);
+    println!(
+        "{}{} {} {} {:.0}ms",
+        marker,
+        method,
+        path,
+        status.as_u16(),
+        duration_ms
+    );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -36,7 +36,7 @@ impl Default for Sonar {
 
 impl Sonar {
     pub fn index(&mut self, id: &str, content: &str) {
-         self.index_document(Document {
+        self.index_document(Document {
             id: id.to_string(),
             content: content.to_string(),
         });
@@ -45,7 +45,7 @@ impl Sonar {
     pub fn remove(&mut self, id: &str) {
         // Simple invalidation (in a real system, would need more complex cleanup)
         // For now, we effectively "remove" by resetting its length to 0 which kills score?
-        // No, full removal is expensive in inverted index. 
+        // No, full removal is expensive in inverted index.
         // We'll implemented basic removal from doc_lengths which invalidates it in search logic if we check.
         self.doc_lengths.remove(id);
         // Note: tokens remain in index but won't be score-able if we add a check.
@@ -54,19 +54,22 @@ impl Sonar {
     pub fn index_document(&mut self, doc: Document) {
         let tokens = self.tokenize(&doc.content);
         let doc_len = tokens.len();
-        
+
         let mut term_freqs = HashMap::new();
         for token in tokens {
             *term_freqs.entry(token).or_insert(0) += 1;
         }
 
         for (term, count) in term_freqs {
-            self.index.entry(term).or_default().push((doc.id.clone(), count));
+            self.index
+                .entry(term)
+                .or_default()
+                .push((doc.id.clone(), count));
         }
 
         self.doc_lengths.insert(doc.id, doc_len);
         self.total_docs += 1;
-        
+
         // Update avg length
         let total_len: usize = self.doc_lengths.values().sum();
         if self.total_docs > 0 {
@@ -98,27 +101,36 @@ impl Sonar {
             if let Some(postings) = self.index.get(&term) {
                 // IDF
                 let doc_freq = postings.len();
-                let idf = ((self.total_docs as f64 - doc_freq as f64 + 0.5) / (doc_freq as f64 + 0.5) + 1.0).ln();
+                let idf = ((self.total_docs as f64 - doc_freq as f64 + 0.5)
+                    / (doc_freq as f64 + 0.5)
+                    + 1.0)
+                    .ln();
 
                 for (doc_id, tf) in postings {
-                   // Ensure doc still exists
+                    // Ensure doc still exists
                     if let Some(&doc_len) = self.doc_lengths.get(doc_id) {
                         let tf_float = *tf as f64;
-                        
+
                         let num = tf_float * (k1 + 1.0);
-                        let den = tf_float + k1 * (1.0 - b + b * (doc_len as f64 / self.avg_doc_length));
-                        
+                        let den =
+                            tf_float + k1 * (1.0 - b + b * (doc_len as f64 / self.avg_doc_length));
+
                         *scores.entry(doc_id.clone()).or_insert(0.0) += idf * (num / den);
                     }
                 }
             }
         }
 
-        let mut results: Vec<SearchResult> = scores.into_iter()
+        let mut results: Vec<SearchResult> = scores
+            .into_iter()
             .map(|(id, score)| SearchResult { id, score })
             .collect();
-            
-        results.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+
+        results.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         results.truncate(limit);
         results
     }
@@ -141,7 +153,7 @@ mod tests {
     #[test]
     fn test_bm25_ranking() {
         let mut index = InvertedIndex::new();
-        
+
         index.index_document(Document {
             id: "1".to_string(),
             content: "Rust is a systems programming language".to_string(),
@@ -158,10 +170,9 @@ mod tests {
         // Query: "Rust"
         // Doc 3 should rank highest (highest TF), then Doc 1, Doc 2 not at all.
         let results = index.search("Rust");
-        
+
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].id, "3"); // "Rust Rust Rust" should win
         assert_eq!(results[1].id, "1");
     }
 }
-

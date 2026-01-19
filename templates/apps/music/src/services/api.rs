@@ -1,11 +1,11 @@
+use crate::models::{Album, Artist, PlaybackHistory, Playlist, Track, Video};
 use axum::{
-    routing::{get, post},
-    response::Json,
-    Router,
     extract::Json as ExtractJson,
     extract::Query,
+    response::Json,
+    routing::{get, post},
+    Router,
 };
-use crate::models::{Track, Album, Artist, Video, PlaybackHistory, Playlist};
 use nucleus_std::photon::{Model, Op};
 use serde::{Deserialize, Serialize};
 // use rand::seq::SliceRandom; // Needs cargo add rand
@@ -31,10 +31,15 @@ pub fn routes() -> Router {
 async fn get_featured() -> Json<Option<Video>> {
     // Get all videos
     let videos = Video::query().all::<Video>().await.unwrap_or_default();
-    if videos.is_empty() { return Json(None); }
-    
+    if videos.is_empty() {
+        return Json(None);
+    }
+
     // Simple random pick
-    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().subsec_nanos();
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .subsec_nanos();
     let idx = nanos as usize % videos.len();
     Json(videos.into_iter().nth(idx))
 }
@@ -52,8 +57,12 @@ struct GroupedContent {
 async fn get_grouped_content() -> Json<GroupedContent> {
     // In a real app, these would be complex distinct queries.
     // For demo, we manipulate the video list.
-    let all_videos = Video::query().order_by("id", "DESC").all::<Video>().await.unwrap_or_default();
-    
+    let all_videos = Video::query()
+        .order_by("id", "DESC")
+        .all::<Video>()
+        .await
+        .unwrap_or_default();
+
     let trending = all_videos.clone().into_iter().take(5).collect();
     let new_releases = all_videos.clone().into_iter().skip(2).take(5).collect();
     let continue_watching = all_videos.into_iter().take(2).collect();
@@ -66,7 +75,11 @@ async fn get_grouped_content() -> Json<GroupedContent> {
 }
 
 async fn list_tracks() -> Json<Vec<Track>> {
-    let tracks = Track::query().order_by("id", "DESC").all().await.unwrap_or_default();
+    let tracks = Track::query()
+        .order_by("id", "DESC")
+        .all()
+        .await
+        .unwrap_or_default();
     Json(tracks)
 }
 
@@ -81,12 +94,20 @@ async fn list_artists() -> Json<Vec<Artist>> {
 }
 
 async fn list_videos() -> Json<Vec<Video>> {
-    let videos = Video::query().order_by("id", "DESC").all().await.unwrap_or_default();
+    let videos = Video::query()
+        .order_by("id", "DESC")
+        .all()
+        .await
+        .unwrap_or_default();
     Json(videos)
 }
 
 async fn list_playlists() -> Json<Vec<Playlist>> {
-    let playlists = Playlist::query().order_by("created_at", "DESC").all::<Playlist>().await.unwrap_or_default();
+    let playlists = Playlist::query()
+        .order_by("created_at", "DESC")
+        .all::<Playlist>()
+        .await
+        .unwrap_or_default();
     Json(playlists)
 }
 
@@ -100,7 +121,9 @@ async fn create_playlist(ExtractJson(payload): ExtractJson<CreatePlaylistReq>) -
     Playlist::create()
         .value("title", payload.title)
         .value("description", payload.description.unwrap_or_default())
-        .execute().await.ok();
+        .execute()
+        .await
+        .ok();
     Json(true)
 }
 
@@ -116,20 +139,26 @@ async fn update_history(ExtractJson(payload): ExtractJson<HistoryUpdate>) -> Jso
     let existing = PlaybackHistory::query()
         .r#where("media_type", payload.media_type.as_str())
         .filter_op("media_id", Op::Eq, payload.media_id)
-        .first::<PlaybackHistory>().await.unwrap_or(None);
+        .first::<PlaybackHistory>()
+        .await
+        .unwrap_or(None);
 
     if let Some(_hist) = existing {
-         PlaybackHistory::create()
+        PlaybackHistory::create()
             .value("media_type", payload.media_type)
             .value("media_id", payload.media_id)
             .value("position", payload.position)
-            .execute().await.ok();
+            .execute()
+            .await
+            .ok();
     } else {
         PlaybackHistory::create()
             .value("media_type", payload.media_type)
             .value("media_id", payload.media_id)
             .value("position", payload.position)
-            .execute().await.ok();
+            .execute()
+            .await
+            .ok();
     }
     Json(true)
 }
@@ -141,8 +170,13 @@ struct RecQuery {
 
 async fn get_recommendations(Query(params): Query<RecQuery>) -> Json<Vec<Track>> {
     if params.mode == "recent" {
-         let tracks = Track::query().order_by("id", "DESC").limit(10).all().await.unwrap_or_default();
-         return Json(tracks);
+        let tracks = Track::query()
+            .order_by("id", "DESC")
+            .limit(10)
+            .all()
+            .await
+            .unwrap_or_default();
+        return Json(tracks);
     }
     // Default or mix
     let tracks = Track::query().limit(5).all().await.unwrap_or_default(); // "Random" (simplified)

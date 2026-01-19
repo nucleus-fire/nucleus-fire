@@ -34,15 +34,15 @@ pub enum Node {
         content: String,
         attributes: Vec<(String, String)>,
     }, // Script with attrs (e.g. lang="ts")
-    Style(String),  // Raw style content
+    Style(String), // Raw style content
     ScopedStyle {
         content: String,
         scope_id: String,
     }, // Scoped CSS with unique identifier
-    Spec(String),   // Unit tests
-    Test(String),   // Integration tests
+    Spec(String),  // Unit tests
+    Test(String),  // Integration tests
     Model(Model),
-    Client(String), // <n:client> Rust code
+    Client(String),        // <n:client> Rust code
     Interpolation(String), // {{ expression }}
     For {
         variable: String,
@@ -63,7 +63,7 @@ pub enum Node {
     },
     Island {
         path: String,
-        directive: String, // e.g. "load", "visible", "idle"
+        directive: String,                 // e.g. "load", "visible", "idle"
         attributes: Vec<(String, String)>, // other props
     },
     Component(Component), // Component definition
@@ -88,7 +88,7 @@ impl Node {
     pub fn is_script(&self) -> bool {
         matches!(self, Node::Script { .. })
     }
-    
+
     pub fn is_component(&self) -> bool {
         matches!(self, Node::Component(_))
     }

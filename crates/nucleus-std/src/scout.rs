@@ -183,21 +183,33 @@ impl Backend {
         }
     }
 
-    async fn search(&self, index_name: &str, params: &SearchParams) -> Result<SearchResults, ScoutError> {
+    async fn search(
+        &self,
+        index_name: &str,
+        params: &SearchParams,
+    ) -> Result<SearchResults, ScoutError> {
         match self {
             Backend::Meilisearch(b) => b.search(index_name, params).await,
             Backend::Typesense(b) => b.search(index_name, params).await,
         }
     }
 
-    async fn get(&self, index_name: &str, id: &str) -> Result<Option<serde_json::Value>, ScoutError> {
+    async fn get(
+        &self,
+        index_name: &str,
+        id: &str,
+    ) -> Result<Option<serde_json::Value>, ScoutError> {
         match self {
             Backend::Meilisearch(b) => b.get(index_name, id).await,
             Backend::Typesense(b) => b.get(index_name, id).await,
         }
     }
 
-    async fn create_index(&self, index_name: &str, primary_key: Option<&str>) -> Result<(), ScoutError> {
+    async fn create_index(
+        &self,
+        index_name: &str,
+        primary_key: Option<&str>,
+    ) -> Result<(), ScoutError> {
         match self {
             Backend::Meilisearch(b) => b.create_index(index_name, primary_key).await,
             Backend::Typesense(b) => b.create_index(index_name, primary_key).await,
@@ -309,10 +321,7 @@ impl MeilisearchBackend {
 
     async fn clear(&self, index_name: &str) -> Result<IndexTask, ScoutError> {
         let path = format!("/indexes/{}/documents", index_name);
-        let response = self
-            .request(reqwest::Method::DELETE, &path)
-            .send()
-            .await?;
+        let response = self.request(reqwest::Method::DELETE, &path).send().await?;
 
         if response.status() == 404 {
             return Err(ScoutError::IndexNotFound(index_name.to_string()));
@@ -326,7 +335,11 @@ impl MeilisearchBackend {
         })
     }
 
-    async fn search(&self, index_name: &str, params: &SearchParams) -> Result<SearchResults, ScoutError> {
+    async fn search(
+        &self,
+        index_name: &str,
+        params: &SearchParams,
+    ) -> Result<SearchResults, ScoutError> {
         let path = format!("/indexes/{}/search", index_name);
 
         let mut body = serde_json::json!({
@@ -391,7 +404,11 @@ impl MeilisearchBackend {
         })
     }
 
-    async fn get(&self, index_name: &str, id: &str) -> Result<Option<serde_json::Value>, ScoutError> {
+    async fn get(
+        &self,
+        index_name: &str,
+        id: &str,
+    ) -> Result<Option<serde_json::Value>, ScoutError> {
         let path = format!("/indexes/{}/documents/{}", index_name, id);
         let response = self.request(reqwest::Method::GET, &path).send().await?;
 
@@ -403,7 +420,11 @@ impl MeilisearchBackend {
         Ok(Some(doc))
     }
 
-    async fn create_index(&self, index_name: &str, primary_key: Option<&str>) -> Result<(), ScoutError> {
+    async fn create_index(
+        &self,
+        index_name: &str,
+        primary_key: Option<&str>,
+    ) -> Result<(), ScoutError> {
         let mut body = serde_json::json!({ "uid": index_name });
         if let Some(pk) = primary_key {
             body["primaryKey"] = serde_json::json!(pk);
@@ -418,7 +439,10 @@ impl MeilisearchBackend {
         if !response.status().is_success() {
             let error: serde_json::Value = response.json().await?;
             return Err(ScoutError::BackendError(
-                error["message"].as_str().unwrap_or("Unknown error").to_string(),
+                error["message"]
+                    .as_str()
+                    .unwrap_or("Unknown error")
+                    .to_string(),
             ));
         }
 
@@ -437,7 +461,10 @@ impl MeilisearchBackend {
     }
 
     async fn list_indexes(&self) -> Result<Vec<IndexInfo>, ScoutError> {
-        let response = self.request(reqwest::Method::GET, "/indexes").send().await?;
+        let response = self
+            .request(reqwest::Method::GET, "/indexes")
+            .send()
+            .await?;
 
         let result: MeilisearchIndexList = response.json().await?;
         Ok(result
@@ -591,7 +618,11 @@ impl TypesenseBackend {
         })
     }
 
-    async fn search(&self, index_name: &str, params: &SearchParams) -> Result<SearchResults, ScoutError> {
+    async fn search(
+        &self,
+        index_name: &str,
+        params: &SearchParams,
+    ) -> Result<SearchResults, ScoutError> {
         let mut query_params = vec![
             format!("q={}", urlencoding::encode(&params.query)),
             format!("per_page={}", params.limit),
@@ -649,7 +680,11 @@ impl TypesenseBackend {
         })
     }
 
-    async fn get(&self, index_name: &str, id: &str) -> Result<Option<serde_json::Value>, ScoutError> {
+    async fn get(
+        &self,
+        index_name: &str,
+        id: &str,
+    ) -> Result<Option<serde_json::Value>, ScoutError> {
         let path = format!("/collections/{}/documents/{}", index_name, id);
         let response = self.request(reqwest::Method::GET, &path).send().await?;
 
@@ -661,7 +696,11 @@ impl TypesenseBackend {
         Ok(Some(doc))
     }
 
-    async fn create_index(&self, index_name: &str, _primary_key: Option<&str>) -> Result<(), ScoutError> {
+    async fn create_index(
+        &self,
+        index_name: &str,
+        _primary_key: Option<&str>,
+    ) -> Result<(), ScoutError> {
         let schema = serde_json::json!({
             "name": index_name,
             "fields": [{"name": ".*", "type": "auto"}]
@@ -676,7 +715,10 @@ impl TypesenseBackend {
         if !response.status().is_success() {
             let error: serde_json::Value = response.json().await?;
             return Err(ScoutError::BackendError(
-                error["message"].as_str().unwrap_or("Unknown error").to_string(),
+                error["message"]
+                    .as_str()
+                    .unwrap_or("Unknown error")
+                    .to_string(),
             ));
         }
 
@@ -695,7 +737,10 @@ impl TypesenseBackend {
     }
 
     async fn list_indexes(&self) -> Result<Vec<IndexInfo>, ScoutError> {
-        let response = self.request(reqwest::Method::GET, "/collections").send().await?;
+        let response = self
+            .request(reqwest::Method::GET, "/collections")
+            .send()
+            .await?;
 
         let collections: Vec<TypesenseCollection> = response.json().await?;
         Ok(collections
@@ -759,7 +804,11 @@ impl Scout {
     }
 
     /// Index documents
-    pub async fn index<T: Serialize>(&self, index_name: &str, documents: &[T]) -> Result<IndexTask, ScoutError> {
+    pub async fn index<T: Serialize>(
+        &self,
+        index_name: &str,
+        documents: &[T],
+    ) -> Result<IndexTask, ScoutError> {
         let json = serde_json::to_value(documents)?;
         self.backend.index(index_name, json, None).await
     }
@@ -772,7 +821,9 @@ impl Scout {
         primary_key: &str,
     ) -> Result<IndexTask, ScoutError> {
         let json = serde_json::to_value(documents)?;
-        self.backend.index(index_name, json, Some(primary_key)).await
+        self.backend
+            .index(index_name, json, Some(primary_key))
+            .await
     }
 
     /// Start a search query
@@ -781,7 +832,11 @@ impl Scout {
     }
 
     /// Get a document by ID
-    pub async fn get(&self, index_name: &str, id: &str) -> Result<Option<serde_json::Value>, ScoutError> {
+    pub async fn get(
+        &self,
+        index_name: &str,
+        id: &str,
+    ) -> Result<Option<serde_json::Value>, ScoutError> {
         self.backend.get(index_name, id).await
     }
 
@@ -801,8 +856,14 @@ impl Scout {
     }
 
     /// Create an index with primary key
-    pub async fn create_index_with_key(&self, index_name: &str, primary_key: &str) -> Result<(), ScoutError> {
-        self.backend.create_index(index_name, Some(primary_key)).await
+    pub async fn create_index_with_key(
+        &self,
+        index_name: &str,
+        primary_key: &str,
+    ) -> Result<(), ScoutError> {
+        self.backend
+            .create_index(index_name, Some(primary_key))
+            .await
     }
 
     /// Delete an index
@@ -821,7 +882,11 @@ impl Scout {
     }
 
     /// Wait for a task to complete
-    pub async fn wait_for_task(&self, task: &IndexTask, timeout_ms: u64) -> Result<TaskStatus, ScoutError> {
+    pub async fn wait_for_task(
+        &self,
+        task: &IndexTask,
+        timeout_ms: u64,
+    ) -> Result<TaskStatus, ScoutError> {
         let start = std::time::Instant::now();
         loop {
             let status = self.backend.task_status(task.task_id).await?;
@@ -909,7 +974,10 @@ impl<'a> SearchQuery<'a> {
 
     /// Execute the search
     pub async fn execute(self) -> Result<SearchResults, ScoutError> {
-        self.scout.backend.search(&self.index_name, &self.params).await
+        self.scout
+            .backend
+            .search(&self.index_name, &self.params)
+            .await
     }
 }
 

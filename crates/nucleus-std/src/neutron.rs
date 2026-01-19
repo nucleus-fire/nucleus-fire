@@ -33,10 +33,10 @@
 //! - **Effect Cleanup**: No memory leaks
 //! - **Store Pattern**: Organized state containers
 
-use std::sync::{Arc, RwLock};
-use std::collections::{HashSet, HashMap};
-use std::sync::atomic::{AtomicU64, AtomicBool, Ordering};
 use std::cell::RefCell;
+use std::collections::{HashMap, HashSet};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, RwLock};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ID GENERATION
@@ -83,16 +83,14 @@ where
     BATCHING.with(|b| *b.borrow_mut() = true);
     let result = f();
     BATCHING.with(|b| *b.borrow_mut() = false);
-    
+
     // Flush pending effects
-    let pending: HashSet<u64> = PENDING_EFFECTS.with(|p| {
-        std::mem::take(&mut *p.borrow_mut())
-    });
-    
+    let pending: HashSet<u64> = PENDING_EFFECTS.with(|p| std::mem::take(&mut *p.borrow_mut()));
+
     for effect_id in pending {
         trigger_effect(effect_id);
     }
-    
+
     result
 }
 
@@ -183,10 +181,10 @@ impl<T: Clone + 'static> Signal<T> {
             let mut subs = self.subscribers.write().unwrap();
             subs.insert(effect_id);
         }
-        
+
         self.value.read().unwrap().clone()
     }
-    
+
     /// Get the current value without tracking as a dependency.
     ///
     /// Use this when you need the value but don't want to create
@@ -203,19 +201,21 @@ impl<T: Clone + 'static> Signal<T> {
         }
         self.notify();
     }
-    
+
     /// Update the value in-place and notify subscribers.
     ///
     /// More efficient than `get()` + `set()` for complex types.
-    pub fn update<F>(&self, f: F) 
-    where F: FnOnce(&mut T) {
+    pub fn update<F>(&self, f: F)
+    where
+        F: FnOnce(&mut T),
+    {
         {
             let mut w = self.value.write().unwrap();
             f(&mut *w);
         }
         self.notify();
     }
-    
+
     /// Get the signal's unique ID.
     pub fn id(&self) -> u64 {
         self.id
@@ -226,7 +226,7 @@ impl<T: Clone + 'static> Signal<T> {
             let lock = self.subscribers.read().unwrap();
             lock.clone()
         };
-        
+
         for effect_id in subs.iter() {
             if is_batching() {
                 queue_effect(*effect_id);
@@ -287,41 +287,41 @@ impl<T: Clone + Send + Sync + 'static> Computed<T> {
         let signal = Signal::new(initial);
         let signal_clone = signal.clone();
         let compute_clone = compute.clone();
-        
+
         let effect_id = next_id();
         let active = Arc::new(AtomicBool::new(true));
         let active_clone = active.clone();
-        
+
         let wrapper = move || {
             if !active_clone.load(Ordering::Relaxed) {
                 return;
             }
-            
+
             // Set up tracking context
             CURRENT_EFFECT.with(|e| *e.borrow_mut() = Some(effect_id));
             let new_value = compute_clone();
             CURRENT_EFFECT.with(|e| *e.borrow_mut() = None);
-            
+
             signal_clone.set(new_value);
         };
-        
+
         // Register the effect
         register_effect(effect_id, Box::new(wrapper.clone()));
-        
+
         // Run initial to set up subscriptions
         wrapper();
-        
+
         Self {
             signal,
             _effect_id: effect_id,
         }
     }
-    
+
     /// Get the current computed value.
     pub fn get(&self) -> T {
         self.signal.get()
     }
-    
+
     /// Get the value without tracking as a dependency.
     pub fn get_untracked(&self) -> T {
         self.signal.get_untracked()
@@ -446,12 +446,12 @@ impl EffectHandle {
         self.active.store(false, Ordering::Relaxed);
         unregister_effect(self.id);
     }
-    
+
     /// Check if this effect is still active.
     pub fn is_active(&self) -> bool {
         self.active.load(Ordering::Relaxed)
     }
-    
+
     /// Prevent this effect from being cleaned up when the handle is dropped.
     ///
     /// Use this for long-lived effects that should run for the lifetime of
@@ -509,27 +509,29 @@ impl Drop for EffectHandle {
 /// count.set(1); // Prints: "Count changed to: 1"
 /// ```
 pub fn create_effect<F>(f: F) -> EffectHandle
-where F: Fn() + Send + Sync + 'static + Clone {
+where
+    F: Fn() + Send + Sync + 'static + Clone,
+{
     let id = next_id();
     let active = Arc::new(AtomicBool::new(true));
     let active_clone = active.clone();
     let f_clone = f.clone();
-    
+
     let wrapper = move || {
         if !active_clone.load(Ordering::Relaxed) {
             return;
         }
-        
+
         CURRENT_EFFECT.with(|e| *e.borrow_mut() = Some(id));
         f_clone();
         CURRENT_EFFECT.with(|e| *e.borrow_mut() = None);
     };
 
     register_effect(id, Box::new(wrapper.clone()));
-    
+
     // Initial run
     wrapper();
-    
+
     EffectHandle { id, active }
 }
 
@@ -538,7 +540,9 @@ where F: Fn() + Send + Sync + 'static + Clone {
 /// Use this when you don't need to manually stop the effect.
 /// The effect will run until the program ends.
 pub fn effect<F>(f: F)
-where F: Fn() + Send + Sync + 'static + Clone {
+where
+    F: Fn() + Send + Sync + 'static + Clone,
+{
     let _ = create_effect(f);
 }
 
@@ -616,14 +620,16 @@ impl<T> std::ops::Deref for Global<T> {
 
 impl<T: Clone + 'static> Signal<T> {
     /// Alias for `update`. Modifies the value in-place.
-    pub fn modify<F>(&self, f: F) 
-    where F: FnOnce(&mut T) {
+    pub fn modify<F>(&self, f: F)
+    where
+        F: FnOnce(&mut T),
+    {
         self.update(f)
     }
 }
 
 thread_local! {
-    static CONTEXT_STACK: RefCell<Vec<HashMap<std::any::TypeId, Box<dyn std::any::Any>>>> = 
+    static CONTEXT_STACK: RefCell<Vec<HashMap<std::any::TypeId, Box<dyn std::any::Any>>>> =
         RefCell::new(vec![HashMap::new()]);
 }
 
@@ -696,14 +702,14 @@ where
     let signal_clone = signal.clone();
     let callback_clone = callback.clone();
     let prev_clone = prev.clone();
-    
+
     create_effect(move || {
         let current = signal_clone.get();
         let old = {
             let lock = prev_clone.read().unwrap();
             lock.clone()
         };
-        
+
         if old != current {
             callback_clone(old, current.clone());
             *prev_clone.write().unwrap() = current;
@@ -731,30 +737,30 @@ mod tests {
         count.update(|v| *v += 5);
         assert_eq!(count.get(), 15);
     }
-    
+
     #[test]
     fn test_signal_untracked() {
         let count = Signal::new(42);
         assert_eq!(count.get_untracked(), 42);
     }
-    
+
     #[test]
     fn test_set_if_changed() {
         let count = Signal::new(0);
         let run_count = Arc::new(AtomicU32::new(0));
         let run_count_c = run_count.clone();
         let count_c = count.clone();
-        
+
         let _handle = create_effect(move || {
             let _val = count_c.get();
             run_count_c.fetch_add(1, AtomicOrdering::Relaxed);
         });
-        
+
         assert_eq!(run_count.load(AtomicOrdering::Relaxed), 1);
-        
+
         count.set_if_changed(0); // Same value - should not trigger
         assert_eq!(run_count.load(AtomicOrdering::Relaxed), 1);
-        
+
         count.set_if_changed(5); // Different - should trigger
         assert_eq!(run_count.load(AtomicOrdering::Relaxed), 2);
     }
@@ -763,7 +769,7 @@ mod tests {
     fn test_effect_reactivity() {
         let count = Signal::new(0);
         let count_c = count.clone();
-        
+
         let run_count = Arc::new(AtomicU32::new(0));
         let run_count_c = run_count.clone();
 
@@ -780,12 +786,12 @@ mod tests {
         count.update(|v| *v += 1);
         assert_eq!(run_count.load(AtomicOrdering::Relaxed), 3);
     }
-    
+
     #[test]
     fn test_effect_cleanup() {
         let count = Signal::new(0);
         let count_c = count.clone();
-        
+
         let run_count = Arc::new(AtomicU32::new(0));
         let run_count_c = run_count.clone();
 
@@ -795,21 +801,21 @@ mod tests {
         });
 
         assert_eq!(run_count.load(AtomicOrdering::Relaxed), 1);
-        
+
         handle.stop();
         count.set(1);
-        
+
         // Effect should not run after stop
         assert_eq!(run_count.load(AtomicOrdering::Relaxed), 1);
     }
-    
+
     #[test]
     fn test_batch_updates() {
         let a = Signal::new(0);
         let b = Signal::new(0);
         let a_c = a.clone();
         let b_c = b.clone();
-        
+
         let run_count = Arc::new(AtomicU32::new(0));
         let run_count_c = run_count.clone();
 
@@ -819,34 +825,34 @@ mod tests {
         });
 
         assert_eq!(run_count.load(AtomicOrdering::Relaxed), 1);
-        
+
         // Without batch: would trigger 2 times
         // With batch: triggers once
         batch(|| {
             a.set(1);
             b.set(2);
         });
-        
+
         assert_eq!(run_count.load(AtomicOrdering::Relaxed), 2);
     }
-    
+
     #[test]
     fn test_computed_basic() {
         let count = Signal::new(5);
         let count_c = count.clone();
-        
+
         let doubled = Computed::new(move || count_c.get() * 2);
-        
+
         assert_eq!(doubled.get(), 10);
     }
-    
+
     #[test]
     fn test_computed_helper() {
         let count = Signal::new(5);
         let doubled = computed(count.clone(), |c| c * 2);
-        
+
         assert_eq!(doubled.get(), 10);
-        
+
         count.set(10);
         assert_eq!(doubled.get(), 20);
     }
@@ -855,10 +861,10 @@ mod tests {
     fn test_derived_dependency() {
         let first = Signal::new("Hello".to_string());
         let last = Signal::new("World".to_string());
-        
+
         let full_name = Arc::new(RwLock::new(String::new()));
         let full_name_c = full_name.clone();
-        
+
         let f_c = first.clone();
         let l_c = last.clone();
 
@@ -890,17 +896,17 @@ mod tests {
         thread_handle.join().unwrap();
         assert_eq!(counter.get(), 100);
     }
-    
+
     #[test]
     fn test_context() {
         let theme = Signal::new("dark".to_string());
         provide_context(theme.clone());
-        
+
         let retrieved = use_context::<Signal<String>>();
         assert!(retrieved.is_some());
         assert_eq!(retrieved.unwrap().get(), "dark");
     }
-    
+
     #[test]
     fn test_store_pattern() {
         #[store]
@@ -912,7 +918,7 @@ mod tests {
         let store = CounterStore::new(0, "Counter".to_string());
         assert_eq!(store.count.get(), 0);
         assert_eq!(store.name.get(), "Counter");
-        
+
         store.count.set(5);
         assert_eq!(store.count.get(), 5);
 

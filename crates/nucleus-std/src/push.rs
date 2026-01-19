@@ -433,7 +433,7 @@ impl FirebaseBackend {
             "https://fcm.googleapis.com/v1/projects/{}/messages:send",
             self.project_id
         );
-        
+
         // Log the actor
         nucleus_std::logging::debug!("Push: Sending via FCM as {}", self.client_email);
         let _ = &self.private_key; // Suppress unused warning (reserved for JWT)
@@ -465,7 +465,9 @@ impl FirebaseBackend {
         } else {
             let error: serde_json::Value = response.json().await.unwrap_or_default();
             Ok(SendResult::failure(
-                error["error"]["message"].as_str().unwrap_or("Unknown error"),
+                error["error"]["message"]
+                    .as_str()
+                    .unwrap_or("Unknown error"),
             ))
         }
     }
@@ -573,9 +575,9 @@ impl FirebaseBackend {
 struct FirebaseCredentials {
     project_id: String,
     private_key_id: String,
-    
+
     private_key: String,
-    
+
     client_email: String,
 }
 
@@ -642,9 +644,7 @@ impl OneSignalBackend {
             Ok(SendResult::success(&message_id))
         } else {
             let error: serde_json::Value = response.json().await.unwrap_or_default();
-            Ok(SendResult::failure(
-                &error["errors"].to_string(),
-            ))
+            Ok(SendResult::failure(&error["errors"].to_string()))
         }
     }
 
@@ -717,7 +717,11 @@ impl Push {
     }
 
     /// Send to a specific topic
-    pub async fn send_to_topic(&self, topic: &str, mut message: PushMessage) -> Result<SendResult, PushError> {
+    pub async fn send_to_topic(
+        &self,
+        topic: &str,
+        mut message: PushMessage,
+    ) -> Result<SendResult, PushError> {
         message = message.to_topic(topic);
         self.backend.send(&message).await
     }

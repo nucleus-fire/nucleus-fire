@@ -22,7 +22,7 @@ pub enum NucleusError {
 
     #[error("Validation Error: {0}")]
     ValidationError(String),
-    
+
     #[error("Internal Error: {0}")]
     InternalError(String),
 }
@@ -41,15 +41,27 @@ impl IntoResponse for NucleusError {
     fn into_response(self) -> Response {
         let (status, msg) = match self {
             NucleusError::ValidationError(m) => (StatusCode::BAD_REQUEST, m),
-            NucleusError::ConfigError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Configuration Error".to_string()),
-            NucleusError::DatabaseError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Database Error".to_string()),
-            NucleusError::NetworkError(_) => (StatusCode::BAD_GATEWAY, "Upstream Error".to_string()),
+            NucleusError::ConfigError(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Configuration Error".to_string(),
+            ),
+            NucleusError::DatabaseError(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Database Error".to_string(),
+            ),
+            NucleusError::NetworkError(_) => {
+                (StatusCode::BAD_GATEWAY, "Upstream Error".to_string())
+            }
             NucleusError::IOError(_) => (StatusCode::INTERNAL_SERVER_ERROR, "IO Error".to_string()),
-            NucleusError::PaymentError(m) => (StatusCode::BAD_REQUEST, format!("Payment Error: {}", m)),
-            NucleusError::CryptoError(m) => (StatusCode::BAD_REQUEST, format!("Crypto Error: {}", m)),
+            NucleusError::PaymentError(m) => {
+                (StatusCode::BAD_REQUEST, format!("Payment Error: {}", m))
+            }
+            NucleusError::CryptoError(m) => {
+                (StatusCode::BAD_REQUEST, format!("Crypto Error: {}", m))
+            }
             NucleusError::InternalError(m) => (StatusCode::INTERNAL_SERVER_ERROR, m),
         };
-        
+
         (status, Json(json!({ "error": msg }))).into_response()
     }
 }
@@ -91,7 +103,7 @@ mod tests {
         fn example_function() -> Result<i32> {
             Ok(42)
         }
-        
+
         assert_eq!(example_function().unwrap(), 42);
     }
 
@@ -100,7 +112,7 @@ mod tests {
         fn failing_function() -> Result<()> {
             Err(NucleusError::ValidationError("test".to_string()))
         }
-        
+
         assert!(failing_function().is_err());
     }
 
@@ -108,7 +120,7 @@ mod tests {
     fn test_io_error_conversion() {
         let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "file not found");
         let nucleus_err: NucleusError = io_err.into();
-        
+
         assert!(matches!(nucleus_err, NucleusError::IOError(_)));
         assert!(nucleus_err.to_string().contains("IO Error"));
     }
@@ -117,7 +129,7 @@ mod tests {
     fn test_error_debug() {
         let err = NucleusError::ValidationError("test".to_string());
         let debug_str = format!("{:?}", err);
-        
+
         assert!(debug_str.contains("ValidationError"));
     }
 }

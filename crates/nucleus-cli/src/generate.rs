@@ -1,8 +1,8 @@
-use clap::Subcommand;
-use std::fs;
 use crate::animations::{build_step, colors};
-use std::path::Path;
+use clap::Subcommand;
 use miette::{IntoDiagnostic, Result};
+use std::fs;
+use std::path::Path;
 
 #[derive(Subcommand, Debug)]
 pub enum GenerateCommands {
@@ -15,10 +15,7 @@ pub enum GenerateCommands {
         fields: Vec<String>,
     },
     /// Generates just a Model
-    Model {
-        name: String,
-        fields: Vec<String>,
-    },
+    Model { name: String, fields: Vec<String> },
     /// Generates Payment components (Stripe + Crypto)
     Payments {
         /// Include subscription pricing table
@@ -30,31 +27,59 @@ pub enum GenerateCommands {
 pub fn handle_generate(command: &GenerateCommands) -> Result<()> {
     match command {
         GenerateCommands::Scaffold { name, fields } => {
-            println!("\n{}🏗️  Scaffolding resource: {}{}", colors::CYAN, name, colors::RESET);
-            
+            println!(
+                "\n{}🏗️  Scaffolding resource: {}{}",
+                colors::CYAN,
+                name,
+                colors::RESET
+            );
+
             build_step("📦", &format!("Generating Model: {}", name));
             generate_model(name, fields)?;
-            
+
             build_step("🗄️", "Creating Migration...");
             generate_migration(name, fields)?;
-            
+
             build_step("🎮", "Generating Controllers & Views...");
             generate_controllers(name, fields)?;
-            
+
             build_step("🔗", "Linking logic...");
             update_lib_rs(name)?;
-            
-            println!("\n{}✅ Scaffold complete for '{}'{}\n", colors::GREEN, name, colors::RESET);
+
+            println!(
+                "\n{}✅ Scaffold complete for '{}'{}\n",
+                colors::GREEN,
+                name,
+                colors::RESET
+            );
         }
         GenerateCommands::Model { name, fields } => {
-             println!("\n{}🏗️  Generating model: {}{}", colors::CYAN, name, colors::RESET);
-             generate_model(name, fields)?;
-             println!("\n{}✅ Model complete for '{}'{}\n", colors::GREEN, name, colors::RESET);
+            println!(
+                "\n{}🏗️  Generating model: {}{}",
+                colors::CYAN,
+                name,
+                colors::RESET
+            );
+            generate_model(name, fields)?;
+            println!(
+                "\n{}✅ Model complete for '{}'{}\n",
+                colors::GREEN,
+                name,
+                colors::RESET
+            );
         }
         GenerateCommands::Payments { subscription } => {
-            println!("\n{}💳 Generating Payment Components...{}", colors::CYAN, colors::RESET);
+            println!(
+                "\n{}💳 Generating Payment Components...{}",
+                colors::CYAN,
+                colors::RESET
+            );
             generate_payments(*subscription)?;
-            println!("\n{}✅ Payments initialized!{}", colors::GREEN, colors::RESET);
+            println!(
+                "\n{}✅ Payments initialized!{}",
+                colors::GREEN,
+                colors::RESET
+            );
         }
     }
     Ok(())
@@ -78,27 +103,40 @@ fn generate_model_content(name: &str, fields: &[String]) -> String {
     let table = format!("{}s", lower);
 
     // 1. Struct Fields
-    let struct_fields = fields.iter().map(|f| {
-        let (fname, ftype, _) = parse_field(f);
-        format!("    pub {}: {},", fname, ftype)
-    }).collect::<Vec<_>>().join("\n");
+    let struct_fields = fields
+        .iter()
+        .map(|f| {
+            let (fname, ftype, _) = parse_field(f);
+            format!("    pub {}: {},", fname, ftype)
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
 
     // 2. DTO Fields (No ID)
-    let dto_fields = fields.iter().map(|f| {
-        let (fname, ftype, _) = parse_field(f);
-        format!("    pub {}: {},", fname, ftype)
-    }).collect::<Vec<_>>().join("\n");
+    let dto_fields = fields
+        .iter()
+        .map(|f| {
+            let (fname, ftype, _) = parse_field(f);
+            format!("    pub {}: {},", fname, ftype)
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
 
     // 3. Insert Values
-    let insert_values = fields.iter().map(|f| {
-        let (fname, _, _) = parse_field(f);
-        format!("            .value(\"{}\", payload.{})", fname, fname)
-    }).collect::<Vec<_>>().join("\n");
+    let insert_values = fields
+        .iter()
+        .map(|f| {
+            let (fname, _, _) = parse_field(f);
+            format!("            .value(\"{}\", payload.{})", fname, fname)
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
 
     // 4. Update Values
     let update_values = insert_values.clone();
 
-    format!(r#"use serde::{{Deserialize, Serialize}};
+    format!(
+        r#"use serde::{{Deserialize, Serialize}};
 use nucleus_std::photon::query::{{Model, Builder}};
 use nucleus_std::models; // Assuming impl_model is here or re-exported
 use nucleus_std::server;
@@ -144,13 +182,13 @@ impl {cap} {{
         Ok(())
     }}
 }}
-"#, 
-    cap = cap,
-    table = table,
-    struct_fields = struct_fields,
-    dto_fields = dto_fields,
-    insert_values = insert_values,
-    update_values = update_values
+"#,
+        cap = cap,
+        table = table,
+        struct_fields = struct_fields,
+        dto_fields = dto_fields,
+        insert_values = insert_values,
+        update_values = update_values
     )
 }
 
@@ -437,7 +475,7 @@ async fn create_subscription(Json(payload): Json<CreateSubPayload>) -> Result<Js
     Ok(Json(json!({ "url": url })))
 }
 "#;
-    
+
     fs::write("src/logic/billing.rs", backend_content).into_diagnostic()?;
     build_step("  +", "Created src/logic/billing.rs");
 
@@ -463,23 +501,31 @@ fn parse_field(f: &str) -> (String, String, String) {
 
 fn generate_migration(name: &str, fields: &[String]) -> Result<()> {
     // 1. Parse SQL
-    let sql_fields = fields.iter().map(|f| {
-        let (fname, _, sql_type) = parse_field(f);
-        format!("    {} {}", fname, sql_type)
-    }).collect::<Vec<_>>().join(",\n");
+    let sql_fields = fields
+        .iter()
+        .map(|f| {
+            let (fname, _, sql_type) = parse_field(f);
+            format!("    {} {}", fname, sql_type)
+        })
+        .collect::<Vec<_>>()
+        .join(",\n");
 
     let table = format!("{}s", name.to_lowercase());
-    
-    let content = format!(r#"CREATE TABLE IF NOT EXISTS {table} (
+
+    let content = format!(
+        r#"CREATE TABLE IF NOT EXISTS {table} (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
 {fields}
 );
-"#, table = table, fields = sql_fields);
+"#,
+        table = table,
+        fields = sql_fields
+    );
 
     // 2. Filename
     let timestamp = chrono::Local::now().format("%Y%m%d%H%M%S");
     let filename = format!("migrations/{}_create_{}.sql", timestamp, table);
-    
+
     fs::create_dir_all("migrations").into_diagnostic()?;
     fs::write(&filename, content).into_diagnostic()?;
     build_step("  +", &format!("Created {}", filename));
@@ -493,7 +539,8 @@ fn generate_controllers(name: &str, fields: &[String]) -> Result<()> {
     fs::create_dir_all(&view_dir).into_diagnostic()?;
 
     // 1. Index View
-    let index_content = format!(r#"<n:model list="crate::logic::{modname}::{cap}::query().all().await.unwrap_or_default()">
+    let index_content = format!(
+        r#"<n:model list="crate::logic::{modname}::{cap}::query().all().await.unwrap_or_default()">
 <div class="container">
     <div class="header">
         <h1>All {cap}s</h1>
@@ -510,18 +557,31 @@ fn generate_controllers(name: &str, fields: &[String]) -> Result<()> {
         </n:for>
     </ul>
 </div>
-</n:model>"#, modname = lower, cap = cap, lower = lower);
-    
+</n:model>"#,
+        modname = lower,
+        cap = cap,
+        lower = lower
+    );
+
     fs::write(format!("{}/index.ncl", view_dir), index_content).into_diagnostic()?;
     build_step("  +", &format!("Created {}/index.ncl", view_dir));
 
     // 2. Show View ([id].ncl)
-    let display_fields = fields.iter().map(|f| {
-        let (fname, _, _) = parse_field(f);
-        format!("<p><strong>{}:</strong> {{ item.{} }}</p>", capitalize(&fname), fname)
-    }).collect::<Vec<_>>().join("\n    ");
+    let display_fields = fields
+        .iter()
+        .map(|f| {
+            let (fname, _, _) = parse_field(f);
+            format!(
+                "<p><strong>{}:</strong> {{ item.{} }}</p>",
+                capitalize(&fname),
+                fname
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n    ");
 
-    let show_content = format!(r#"<n:model item="crate::logic::{modname}::{cap}::find(params.id.parse().unwrap_or_default()).await.unwrap_or(None)">
+    let show_content = format!(
+        r#"<n:model item="crate::logic::{modname}::{cap}::find(params.id.parse().unwrap_or_default()).await.unwrap_or(None)">
 <div class="container">
     <h1>{cap} #{{ item.id }}</h1>
     <div class="card">
@@ -532,21 +592,35 @@ fn generate_controllers(name: &str, fields: &[String]) -> Result<()> {
         <a href="/{lower}s" class="btn secondary">Back</a>
     </div>
 </div>
-</n:model>"#, modname = lower, cap = cap, lower = lower, display_fields = display_fields);
+</n:model>"#,
+        modname = lower,
+        cap = cap,
+        lower = lower,
+        display_fields = display_fields
+    );
 
     fs::write(format!("{}/[id].ncl", view_dir), show_content).into_diagnostic()?;
     build_step("  +", &format!("Created {}/[id].ncl", view_dir));
 
     // 3. New View (new.ncl)
-    let form_fields = fields.iter().map(|f| {
-        let (fname, _, _) = parse_field(f);
-        format!(r#"<div class="field">
+    let form_fields = fields
+        .iter()
+        .map(|f| {
+            let (fname, _, _) = parse_field(f);
+            format!(
+                r#"<div class="field">
         <label for="{name}">{label}</label>
         <input type="text" name="{name}" id="{name}" required />
-    </div>"#, name = fname, label = capitalize(&fname))
-    }).collect::<Vec<_>>().join("\n    ");
+    </div>"#,
+                name = fname,
+                label = capitalize(&fname)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n    ");
 
-    let new_content = format!(r#"<n:view title="New {cap}">
+    let new_content = format!(
+        r#"<n:view title="New {cap}">
 <div class="container">
     <h1>New {cap}</h1>
     <form method="POST">
@@ -556,21 +630,34 @@ fn generate_controllers(name: &str, fields: &[String]) -> Result<()> {
     <!-- Action Mapping: Implicitly calls crate::logic::{modname}::{cap}::create if mapped via ncc? 
          For now we rely on manual binding or convention. -->
 </div>
-</n:view>"#, cap = cap, modname = lower, form_fields = form_fields);
+</n:view>"#,
+        cap = cap,
+        modname = lower,
+        form_fields = form_fields
+    );
 
     fs::write(format!("{}/new.ncl", view_dir), new_content).into_diagnostic()?;
     build_step("  +", &format!("Created {}/new.ncl", view_dir));
 
     // 4. Edit View ([id]/edit.ncl)
-    let edit_form_fields = fields.iter().map(|f| {
-        let (fname, _, _) = parse_field(f);
-        format!(r#"<div class="field">
+    let edit_form_fields = fields
+        .iter()
+        .map(|f| {
+            let (fname, _, _) = parse_field(f);
+            format!(
+                r#"<div class="field">
         <label for="{name}">{label}</label>
         <input type="text" name="{name}" id="{name}" value="{{ item.{name} }}" required />
-    </div>"#, name = fname, label = capitalize(&fname))
-    }).collect::<Vec<_>>().join("\n    ");
+    </div>"#,
+                name = fname,
+                label = capitalize(&fname)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n    ");
 
-    let edit_content = format!(r#"<n:model item="crate::logic::{modname}::{cap}::find(params.id.parse().unwrap_or_default()).await.unwrap_or(None)">
+    let edit_content = format!(
+        r#"<n:model item="crate::logic::{modname}::{cap}::find(params.id.parse().unwrap_or_default()).await.unwrap_or(None)">
 <div class="container">
     <h1>Edit {cap}</h1>
     <form method="POST">
@@ -578,7 +665,11 @@ fn generate_controllers(name: &str, fields: &[String]) -> Result<()> {
         <button type="submit" class="btn">Update {cap}</button>
     </form>
 </div>
-</n:model>"#, modname = lower, cap = cap, form_fields = edit_form_fields);
+</n:model>"#,
+        modname = lower,
+        cap = cap,
+        form_fields = edit_form_fields
+    );
 
     fs::create_dir_all(format!("{}/[id]", view_dir)).into_diagnostic()?;
     fs::write(format!("{}/[id]/edit.ncl", view_dir), edit_content).into_diagnostic()?;
@@ -595,30 +686,30 @@ fn update_lib_rs(name: &str) -> Result<()> {
 
     let content = fs::read_to_string(lib_path).into_diagnostic()?;
     let mod_line = format!("pub mod {};", name.to_lowercase());
-    
+
     // Naive check
     if !content.contains(&mod_line) {
         // Find "pub mod logic {" or similar and insert
         // For now, just append to src/logic/mod.rs if it exists, roughly.
         // Actually, Nucleus structure usually has `pub mod logic { pub mod x; }`.
-        
+
         // Let's assume standard structure: src/lib.rs has `pub mod logic;` and `src/logic/mod.rs` has modules
-        
+
         // Check src/logic/mod.rs
         let logic_mod_path = "src/logic/mod.rs";
         if Path::new(logic_mod_path).exists() {
-             let mut logic_content = fs::read_to_string(logic_mod_path).into_diagnostic()?;
-             if !logic_content.contains(&format!("pub mod {};", name.to_lowercase())) {
-                 logic_content.push_str(&format!("\npub mod {};\n", name.to_lowercase()));
-                 fs::write(logic_mod_path, logic_content).into_diagnostic()?;
-                 build_step("  +", &format!("Updated {}", logic_mod_path));
-             }
+            let mut logic_content = fs::read_to_string(logic_mod_path).into_diagnostic()?;
+            if !logic_content.contains(&format!("pub mod {};", name.to_lowercase())) {
+                logic_content.push_str(&format!("\npub mod {};\n", name.to_lowercase()));
+                fs::write(logic_mod_path, logic_content).into_diagnostic()?;
+                build_step("  +", &format!("Updated {}", logic_mod_path));
+            }
         } else {
-             // Maybe create it?
-             println!("{}⚠️  Could not automatically register module in logic/mod.rs. Please add 'pub mod {};' manually.{}", colors::YELLOW, name.to_lowercase(), colors::RESET);
+            // Maybe create it?
+            println!("{}⚠️  Could not automatically register module in logic/mod.rs. Please add 'pub mod {};' manually.{}", colors::YELLOW, name.to_lowercase(), colors::RESET);
         }
     }
-    
+
     Ok(())
 }
 
@@ -636,19 +727,57 @@ mod tests {
 
     #[test]
     fn test_parse_field() {
-        assert_eq!(parse_field("title:string"), ("title".to_string(), "String".to_string(), "TEXT NOT NULL".to_string()));
-        assert_eq!(parse_field("count:int"), ("count".to_string(), "i32".to_string(), "INTEGER NOT NULL".to_string()));
-        assert_eq!(parse_field("is_active:bool"), ("is_active".to_string(), "bool".to_string(), "BOOLEAN NOT NULL".to_string()));
-        assert_eq!(parse_field("price:float"), ("price".to_string(), "f64".to_string(), "REAL".to_string()));
-        assert_eq!(parse_field("desc"), ("desc".to_string(), "String".to_string(), "TEXT NOT NULL".to_string()));
-        assert_eq!(parse_field("custom:unknown"), ("custom".to_string(), "String".to_string(), "TEXT".to_string()));
+        assert_eq!(
+            parse_field("title:string"),
+            (
+                "title".to_string(),
+                "String".to_string(),
+                "TEXT NOT NULL".to_string()
+            )
+        );
+        assert_eq!(
+            parse_field("count:int"),
+            (
+                "count".to_string(),
+                "i32".to_string(),
+                "INTEGER NOT NULL".to_string()
+            )
+        );
+        assert_eq!(
+            parse_field("is_active:bool"),
+            (
+                "is_active".to_string(),
+                "bool".to_string(),
+                "BOOLEAN NOT NULL".to_string()
+            )
+        );
+        assert_eq!(
+            parse_field("price:float"),
+            ("price".to_string(), "f64".to_string(), "REAL".to_string())
+        );
+        assert_eq!(
+            parse_field("desc"),
+            (
+                "desc".to_string(),
+                "String".to_string(),
+                "TEXT NOT NULL".to_string()
+            )
+        );
+        assert_eq!(
+            parse_field("custom:unknown"),
+            (
+                "custom".to_string(),
+                "String".to_string(),
+                "TEXT".to_string()
+            )
+        );
     }
 
     #[test]
     fn test_generate_model_content() {
         let fields = vec!["title:string".to_string(), "views:int".to_string()];
         let content = generate_model_content("Post", &fields);
-        
+
         assert!(content.contains("pub struct Post"));
         assert!(content.contains("pub title: String"));
         assert!(content.contains("pub views: i32"));
@@ -681,7 +810,7 @@ mod tests {
     fn test_generate_model_content_table_name() {
         let fields = vec!["name:string".to_string()];
         let content = generate_model_content("User", &fields);
-        
+
         // Table name should be pluralized lowercase
         assert!(content.contains("\"users\""));
     }
@@ -690,7 +819,7 @@ mod tests {
     fn test_generate_model_content_empty_fields() {
         let fields: Vec<String> = vec![];
         let content = generate_model_content("Empty", &fields);
-        
+
         // Should still generate valid struct with ID
         assert!(content.contains("pub struct Empty"));
         assert!(content.contains("pub id: i64"));
@@ -706,7 +835,7 @@ mod tests {
             "published:bool".to_string(),
         ];
         let content = generate_model_content("Article", &fields);
-        
+
         assert!(content.contains("pub title: String"));
         assert!(content.contains("pub content: String"));
         assert!(content.contains("pub views: i32"));
@@ -714,4 +843,3 @@ mod tests {
         assert!(content.contains("pub published: bool"));
     }
 }
-

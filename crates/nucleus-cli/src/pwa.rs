@@ -108,10 +108,7 @@ pub fn generate_service_worker(routes: &[String], config: &PwaConfig) -> String 
     let strategy = &config.cache_strategy;
 
     // Build the list of assets to precache
-    let precache_urls: Vec<String> = routes
-        .iter()
-        .map(|r| format!("'{}'", r))
-        .collect();
+    let precache_urls: Vec<String> = routes.iter().map(|r| format!("'{}'", r)).collect();
 
     let sw = format!(
         r#"/**
@@ -468,7 +465,7 @@ mod tests {
     fn test_generate_manifest() {
         let config = PwaConfig::default();
         let manifest = generate_manifest(&config);
-        
+
         assert!(manifest.contains("\"name\": \"Nucleus App\""));
         assert!(manifest.contains("\"theme_color\": \"#8B5CF6\""));
         assert!(manifest.contains("\"display\": \"standalone\""));
@@ -479,7 +476,7 @@ mod tests {
         let config = PwaConfig::default();
         let routes = vec!["/".to_string(), "/about".to_string()];
         let sw = generate_service_worker(&routes, &config);
-        
+
         assert!(sw.contains("const CACHE_NAME"));
         assert!(sw.contains("cacheFirst"));
         assert!(sw.contains("addEventListener('install'"));
@@ -492,7 +489,7 @@ mod tests {
         config.cache_strategy = "network-first".to_string();
         let routes = vec![];
         let sw = generate_service_worker(&routes, &config);
-        
+
         assert!(sw.contains("networkFirst(request)"));
     }
 
@@ -500,7 +497,7 @@ mod tests {
     fn test_generate_offline_page() {
         let config = PwaConfig::default();
         let page = generate_offline_page(&config);
-        
+
         assert!(page.contains("<!DOCTYPE html>"));
         assert!(page.contains("You're Offline"));
         assert!(page.contains("#8B5CF6")); // theme color

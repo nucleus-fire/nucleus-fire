@@ -20,8 +20,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 // use std::fs::OpenOptions;
 // use std::io::Write;
 
@@ -82,7 +82,10 @@ pub enum AnalyticsProvider {
     /// Webhook (POST to URL)
     Webhook { url: String },
     /// Plausible Analytics (privacy-friendly)
-    Plausible { domain: String, api_host: Option<String> },
+    Plausible {
+        domain: String,
+        api_host: Option<String>,
+    },
     /// Disabled (no-op)
     Disabled,
 }
@@ -131,19 +134,24 @@ impl Beacon {
     /// - `webhook:https://url` - Webhook
     /// - `plausible:domain.com` - Plausible Analytics
     pub fn from_env() -> Self {
-        let provider = std::env::var("ANALYTICS_PROVIDER").unwrap_or_else(|_| "disabled".to_string());
-        
+        let provider =
+            std::env::var("ANALYTICS_PROVIDER").unwrap_or_else(|_| "disabled".to_string());
+
         let provider = if provider == "disabled" {
             AnalyticsProvider::Disabled
         } else if provider == "memory" {
             AnalyticsProvider::InMemory
         } else if let Some(path) = provider.strip_prefix("file:") {
-            AnalyticsProvider::File { path: PathBuf::from(path) }
+            AnalyticsProvider::File {
+                path: PathBuf::from(path),
+            }
         } else if let Some(url) = provider.strip_prefix("webhook:") {
-            AnalyticsProvider::Webhook { url: url.to_string() }
+            AnalyticsProvider::Webhook {
+                url: url.to_string(),
+            }
         } else if let Some(domain) = provider.strip_prefix("plausible:") {
-            AnalyticsProvider::Plausible { 
-                domain: domain.to_string(), 
+            AnalyticsProvider::Plausible {
+                domain: domain.to_string(),
                 api_host: std::env::var("PLAUSIBLE_HOST").ok(),
             }
         } else {
@@ -156,55 +164,52 @@ impl Beacon {
     /// Identify the current user
     pub fn identify(&self, user_id: &str, traits: HashMap<String, Value>) {
         *self.user_id.lock().unwrap() = Some(user_id.to_string());
-        
+
         // Track identify event
         let mut event = AnalyticsEvent::new("identify");
         event.user_id = Some(user_id.to_string());
         event.properties = traits;
-        
+
         self.store_event(event);
     }
 
     /// Track a custom event
     pub async fn track(&self, event_name: &str, properties: Value) {
         let mut event = AnalyticsEvent::new(event_name);
-        
+
         if let Value::Object(map) = properties {
             for (k, v) in map {
                 event.properties.insert(k, v);
             }
         }
-        
+
         event.user_id = self.user_id.lock().unwrap().clone();
-        
+
         self.send_event(event).await;
     }
 
     /// Track a page view
     pub async fn page_view(&self, path: &str) {
-        let event = AnalyticsEvent::new("page_view")
-            .property("path", path);
-        
+        let event = AnalyticsEvent::new("page_view").property("path", path);
+
         self.send_event(event).await;
     }
 
     /// Track a click event
     pub async fn click(&self, element: &str) {
-        let event = AnalyticsEvent::new("click")
-            .property("element", element);
-        
+        let event = AnalyticsEvent::new("click").property("element", element);
+
         self.send_event(event).await;
     }
 
     /// Track an error
     pub async fn error(&self, message: &str, details: Option<Value>) {
-        let mut event = AnalyticsEvent::new("error")
-            .property("message", message);
-        
+        let mut event = AnalyticsEvent::new("error").property("message", message);
+
         if let Some(d) = details {
             event.properties.insert("details".to_string(), d);
         }
-        
+
         self.send_event(event).await;
     }
 
@@ -252,11 +257,11 @@ impl Beacon {
     async fn send_to_provider(&self, event: &AnalyticsEvent) {
         match &self.provider {
             AnalyticsProvider::Disabled => {}
-            
+
             AnalyticsProvider::InMemory => {
                 self.store_event(event.clone());
             }
-            
+
             AnalyticsProvider::File { path } => {
                 use tokio::io::AsyncWriteExt;
                 if let Ok(mut file) = tokio::fs::OpenOptions::new()
@@ -270,28 +275,25 @@ impl Beacon {
                     }
                 }
             }
-            
+
             AnalyticsProvider::Webhook { url } => {
-                let _ = self.client
-                    .post(url)
-                    .json(event)
-                    .send()
-                    .await;
+                let _ = self.client.post(url).json(event).send().await;
             }
-            
+
             AnalyticsProvider::Plausible { domain, api_host } => {
                 let host = api_host.as_deref().unwrap_or("https://plausible.io");
                 let url = format!("{}/api/event", host);
-                
+
                 let payload = serde_json::json!({
                     "name": event.name,
-                    "url": format!("https://{}{}", domain, 
+                    "url": format!("https://{}{}", domain,
                         event.properties.get("path").and_then(|v| v.as_str()).unwrap_or("/")),
                     "domain": domain,
                     "props": event.properties,
                 });
-                
-                let _ = self.client
+
+                let _ = self
+                    .client
                     .post(&url)
                     .header("Content-Type", "application/json")
                     .json(&payload)
@@ -310,10 +312,10 @@ impl Beacon {
 mod tests {
     use super::*;
     use std::sync::Mutex;
-    
+
     // Mutex to serialize tests that modify environment variables
     static ENV_MUTEX: Mutex<()> = Mutex::new(());
-    
+
     // Helper to run a test with exclusive access to env vars
     fn with_env_lock<F, R>(f: F) -> R
     where
@@ -336,26 +338,25 @@ mod tests {
         let event = AnalyticsEvent::new("click")
             .property("button_id", "submit")
             .property("page", "/signup");
-        
+
         assert_eq!(event.properties.get("button_id").unwrap(), "submit");
         assert_eq!(event.properties.get("page").unwrap(), "/signup");
     }
 
     #[test]
     fn test_analytics_event_with_user() {
-        let event = AnalyticsEvent::new("purchase")
-            .with_user("user_123");
-        
+        let event = AnalyticsEvent::new("purchase").with_user("user_123");
+
         assert_eq!(event.user_id, Some("user_123".to_string()));
     }
 
     #[test]
     fn test_beacon_inmemory() {
         let beacon = Beacon::new(AnalyticsProvider::InMemory);
-        
+
         let event = AnalyticsEvent::new("test");
         beacon.store_event(event);
-        
+
         let events = beacon.get_events();
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].name, "test");
@@ -364,12 +365,15 @@ mod tests {
     #[test]
     fn test_beacon_identify() {
         let beacon = Beacon::new(AnalyticsProvider::InMemory);
-        
+
         let mut traits = HashMap::new();
-        traits.insert("email".to_string(), Value::String("test@example.com".to_string()));
-        
+        traits.insert(
+            "email".to_string(),
+            Value::String("test@example.com".to_string()),
+        );
+
         beacon.identify("user_456", traits);
-        
+
         let events = beacon.get_events();
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].name, "identify");
@@ -379,11 +383,16 @@ mod tests {
     #[tokio::test]
     async fn test_beacon_track() {
         let beacon = Beacon::new(AnalyticsProvider::InMemory);
-        
-        beacon.track("button_click", serde_json::json!({
-            "button_id": "signup"
-        })).await;
-        
+
+        beacon
+            .track(
+                "button_click",
+                serde_json::json!({
+                    "button_id": "signup"
+                }),
+            )
+            .await;
+
         let events = beacon.get_events();
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].name, "button_click");
@@ -393,9 +402,9 @@ mod tests {
     #[tokio::test]
     async fn test_beacon_page_view() {
         let beacon = Beacon::new(AnalyticsProvider::InMemory);
-        
+
         beacon.page_view("/dashboard").await;
-        
+
         let events = beacon.get_events();
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].name, "page_view");
@@ -405,14 +414,14 @@ mod tests {
     #[test]
     fn test_beacon_clear_events() {
         let beacon = Beacon::new(AnalyticsProvider::InMemory);
-        
+
         beacon.store_event(AnalyticsEvent::new("test1"));
         beacon.store_event(AnalyticsEvent::new("test2"));
-        
+
         assert_eq!(beacon.get_events().len(), 2);
-        
+
         beacon.clear_events();
-        
+
         assert_eq!(beacon.get_events().len(), 0);
     }
 
@@ -467,7 +476,10 @@ mod tests {
         with_env_lock(|| {
             std::env::set_var("ANALYTICS_PROVIDER", "plausible:mysite.com");
             let beacon = Beacon::from_env();
-            assert!(matches!(beacon.provider, AnalyticsProvider::Plausible { .. }));
+            assert!(matches!(
+                beacon.provider,
+                AnalyticsProvider::Plausible { .. }
+            ));
             std::env::remove_var("ANALYTICS_PROVIDER");
         });
     }
@@ -476,25 +488,36 @@ mod tests {
     async fn test_beacon_click() {
         let beacon = Beacon::new(AnalyticsProvider::InMemory);
         beacon.click("signup_button").await;
-        
+
         let events = beacon.get_events();
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].name, "click");
-        assert_eq!(events[0].properties.get("element").unwrap(), "signup_button");
+        assert_eq!(
+            events[0].properties.get("element").unwrap(),
+            "signup_button"
+        );
     }
 
     #[tokio::test]
     async fn test_beacon_error_with_details() {
         let beacon = Beacon::new(AnalyticsProvider::InMemory);
-        beacon.error("Something went wrong", Some(serde_json::json!({
-            "code": 500,
-            "stack": "trace"
-        }))).await;
-        
+        beacon
+            .error(
+                "Something went wrong",
+                Some(serde_json::json!({
+                    "code": 500,
+                    "stack": "trace"
+                })),
+            )
+            .await;
+
         let events = beacon.get_events();
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].name, "error");
-        assert_eq!(events[0].properties.get("message").unwrap(), "Something went wrong");
+        assert_eq!(
+            events[0].properties.get("message").unwrap(),
+            "Something went wrong"
+        );
         assert!(events[0].properties.contains_key("details"));
     }
 
@@ -502,7 +525,7 @@ mod tests {
     async fn test_beacon_error_without_details() {
         let beacon = Beacon::new(AnalyticsProvider::InMemory);
         beacon.error("Simple error", None).await;
-        
+
         let events = beacon.get_events();
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].name, "error");
@@ -512,16 +535,16 @@ mod tests {
     #[tokio::test]
     async fn test_beacon_flush() {
         let beacon = Beacon::new(AnalyticsProvider::InMemory);
-        
+
         // Store events directly (simulating buffering)
         beacon.store_event(AnalyticsEvent::new("event1"));
         beacon.store_event(AnalyticsEvent::new("event2"));
-        
+
         assert_eq!(beacon.get_events().len(), 2);
-        
+
         // Flush clears for InMemory (sends to provider, which re-stores)
         beacon.flush().await;
-        
+
         // After flush, events should be processed (for InMemory, re-stored)
         assert!(beacon.get_events().len() >= 2);
     }
@@ -529,14 +552,16 @@ mod tests {
     #[tokio::test]
     async fn test_beacon_track_with_user() {
         let beacon = Beacon::new(AnalyticsProvider::InMemory);
-        
+
         beacon.identify("user_123", HashMap::new());
-        beacon.track("purchase", serde_json::json!({"item": "book"})).await;
-        
+        beacon
+            .track("purchase", serde_json::json!({"item": "book"}))
+            .await;
+
         let events = beacon.get_events();
         // Should have identify + purchase events
         assert!(events.len() >= 2);
-        
+
         // Find the purchase event and verify user_id
         let purchase = events.iter().find(|e| e.name == "purchase").unwrap();
         assert_eq!(purchase.user_id, Some("user_123".to_string()));
@@ -549,9 +574,11 @@ mod tests {
         // This tests line 172 where we check if properties is an object
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            beacon.track("test", serde_json::json!("string_value")).await;
+            beacon
+                .track("test", serde_json::json!("string_value"))
+                .await;
         });
-        
+
         let events = beacon.get_events();
         assert_eq!(events.len(), 1);
         // Properties should be empty since input wasn't an object
@@ -563,7 +590,7 @@ mod tests {
         with_env_lock(|| {
             std::env::set_var("ANALYTICS_PROVIDER", "plausible:mysite.com");
             std::env::set_var("PLAUSIBLE_HOST", "https://custom.plausible.io");
-            
+
             let beacon = Beacon::from_env();
             if let AnalyticsProvider::Plausible { domain, api_host } = beacon.provider {
                 assert_eq!(domain, "mysite.com");
@@ -571,7 +598,7 @@ mod tests {
             } else {
                 panic!("Expected Plausible provider");
             }
-            
+
             std::env::remove_var("ANALYTICS_PROVIDER");
             std::env::remove_var("PLAUSIBLE_HOST");
         });

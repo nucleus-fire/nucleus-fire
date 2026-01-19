@@ -17,10 +17,7 @@
 //! let thumb = Lens::thumbnail(&image_bytes, 150)?;
 //! ```
 
-use image::{
-    DynamicImage, GenericImageView,
-    imageops::FilterType, ImageFormat as ImgFormat,
-};
+use image::{imageops::FilterType, DynamicImage, GenericImageView, ImageFormat as ImgFormat};
 use std::io::Cursor;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -99,7 +96,7 @@ impl Lens {
     pub fn dimensions(data: &[u8]) -> Result<Dimensions> {
         let img = image::load_from_memory(data)
             .map_err(|e| LensError(format!("Failed to load image: {}", e)))?;
-        
+
         Ok(Dimensions {
             width: img.width(),
             height: img.height(),
@@ -130,7 +127,7 @@ impl Lens {
     /// Crop image to specified region
     pub fn crop(data: &[u8], x: u32, y: u32, width: u32, height: u32) -> Result<Vec<u8>> {
         let img = Self::load(data)?;
-        
+
         // Validate bounds
         let (img_width, img_height) = img.dimensions();
         if x + width > img_width || y + height > img_height {
@@ -139,7 +136,7 @@ impl Lens {
                 x, y, width, height, img_width, img_height
             )));
         }
-        
+
         let cropped = img.crop_imm(x, y, width, height);
         Self::encode(&cropped, ImageFormat::Jpeg(85))
     }
@@ -225,16 +222,16 @@ impl Lens {
     // ─────────────────────────────────────────────────────────────────────────
 
     fn load(data: &[u8]) -> Result<DynamicImage> {
-        image::load_from_memory(data)
-            .map_err(|e| LensError(format!("Failed to load image: {}", e)))
+        image::load_from_memory(data).map_err(|e| LensError(format!("Failed to load image: {}", e)))
     }
 
     fn encode(img: &DynamicImage, format: ImageFormat) -> Result<Vec<u8>> {
         let mut buffer = Cursor::new(Vec::new());
-        
+
         match format {
             ImageFormat::Jpeg(quality) => {
-                let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut buffer, quality);
+                let encoder =
+                    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut buffer, quality);
                 img.write_with_encoder(encoder)
                     .map_err(|e| LensError(format!("Failed to encode JPEG: {}", e)))?;
             }
@@ -256,7 +253,7 @@ impl Lens {
                     .map_err(|e| LensError(format!("Failed to encode (WebP fallback): {}", e)))?;
             }
         }
-        
+
         Ok(buffer.into_inner())
     }
 }
@@ -275,7 +272,7 @@ mod tests {
         let img: ImageBuffer<image::Rgb<u8>, Vec<u8>> = ImageBuffer::from_fn(10, 10, |_x, _y| {
             image::Rgb([255, 0, 0]) // Red pixel
         });
-        
+
         let mut buffer = Cursor::new(Vec::new());
         let dynamic = DynamicImage::ImageRgb8(img);
         dynamic.write_to(&mut buffer, ImgFormat::Png).unwrap();
@@ -294,7 +291,7 @@ mod tests {
     fn test_resize_exact() {
         let data = create_test_image();
         let resized = Lens::resize(&data, 5, 5).unwrap();
-        
+
         let dims = Lens::dimensions(&resized).unwrap();
         assert_eq!(dims.width, 5);
         assert_eq!(dims.height, 5);
@@ -304,7 +301,7 @@ mod tests {
     fn test_resize_fit() {
         let data = create_test_image();
         let resized = Lens::resize_fit(&data, 5, 20).unwrap();
-        
+
         let dims = Lens::dimensions(&resized).unwrap();
         // Should maintain aspect ratio (10x10 -> 5x5)
         assert_eq!(dims.width, 5);
@@ -315,7 +312,7 @@ mod tests {
     fn test_thumbnail() {
         let data = create_test_image();
         let thumb = Lens::thumbnail(&data, 5).unwrap();
-        
+
         let dims = Lens::dimensions(&thumb).unwrap();
         assert!(dims.width <= 5);
         assert!(dims.height <= 5);
@@ -325,7 +322,7 @@ mod tests {
     fn test_crop_valid() {
         let data = create_test_image();
         let cropped = Lens::crop(&data, 2, 2, 5, 5).unwrap();
-        
+
         let dims = Lens::dimensions(&cropped).unwrap();
         assert_eq!(dims.width, 5);
         assert_eq!(dims.height, 5);
@@ -505,10 +502,19 @@ mod tests {
 
     #[test]
     fn test_dimensions_equality() {
-        let dims1 = Dimensions { width: 100, height: 200 };
-        let dims2 = Dimensions { width: 100, height: 200 };
-        let dims3 = Dimensions { width: 50, height: 50 };
-        
+        let dims1 = Dimensions {
+            width: 100,
+            height: 200,
+        };
+        let dims2 = Dimensions {
+            width: 100,
+            height: 200,
+        };
+        let dims3 = Dimensions {
+            width: 50,
+            height: 50,
+        };
+
         assert_eq!(dims1, dims2);
         assert_ne!(dims1, dims3);
     }

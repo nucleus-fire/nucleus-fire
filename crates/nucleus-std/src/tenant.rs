@@ -100,19 +100,19 @@ impl Tenant {
 pub enum TenantStrategy {
     /// Extract from subdomain: `tenant1.example.com` → `tenant1`
     Subdomain,
-    
+
     /// Extract from header: `X-Tenant-ID: tenant1`
     Header(String),
-    
+
     /// Extract from path prefix: `/tenant1/api/users` → `tenant1`
     PathPrefix,
-    
+
     /// Extract from query param: `?tenant=tenant1`
     QueryParam(String),
-    
+
     /// Fixed tenant (for single-tenant mode or testing)
     Fixed(String),
-    
+
     /// Try multiple strategies in order
     Chain(Vec<TenantStrategy>),
 }
@@ -191,9 +191,14 @@ impl TenantExtractor {
     }
 
     /// Extract tenant from request
-    pub fn extract(&self, headers: &HeaderMap, uri: &str, host: Option<&str>) -> Result<Option<String>, TenantError> {
+    pub fn extract(
+        &self,
+        headers: &HeaderMap,
+        uri: &str,
+        host: Option<&str>,
+    ) -> Result<Option<String>, TenantError> {
         let result = self.extract_strategy(&self.strategy, headers, uri, host);
-        
+
         match (result, self.required) {
             (Ok(Some(tenant)), _) => Ok(Some(tenant)),
             (Ok(None), true) => Err(TenantError::NotFound),
@@ -210,21 +215,11 @@ impl TenantExtractor {
         host: Option<&str>,
     ) -> Result<Option<String>, TenantError> {
         match strategy {
-            TenantStrategy::Subdomain => {
-                self.extract_subdomain(host)
-            }
-            TenantStrategy::Header(name) => {
-                self.extract_header(headers, name)
-            }
-            TenantStrategy::PathPrefix => {
-                self.extract_path_prefix(uri)
-            }
-            TenantStrategy::QueryParam(param) => {
-                self.extract_query_param(uri, param)
-            }
-            TenantStrategy::Fixed(tenant) => {
-                Ok(Some(tenant.clone()))
-            }
+            TenantStrategy::Subdomain => self.extract_subdomain(host),
+            TenantStrategy::Header(name) => self.extract_header(headers, name),
+            TenantStrategy::PathPrefix => self.extract_path_prefix(uri),
+            TenantStrategy::QueryParam(param) => self.extract_query_param(uri, param),
+            TenantStrategy::Fixed(tenant) => Ok(Some(tenant.clone())),
             TenantStrategy::Chain(strategies) => {
                 for s in strategies {
                     if let Ok(Some(tenant)) = self.extract_strategy(s, headers, uri, host) {
@@ -247,7 +242,11 @@ impl TenantExtractor {
 
         let base = match &self.base_domain {
             Some(b) => b.as_str(),
-            None => return Err(TenantError::InvalidConfig("base_domain required for subdomain strategy".into())),
+            None => {
+                return Err(TenantError::InvalidConfig(
+                    "base_domain required for subdomain strategy".into(),
+                ))
+            }
         };
 
         // Check if host ends with base domain
@@ -256,14 +255,19 @@ impl TenantExtractor {
         }
 
         // Extract subdomain
-        let subdomain = host.strip_suffix(base)
+        let subdomain = host
+            .strip_suffix(base)
             .and_then(|s| s.strip_suffix('.'))
             .filter(|s| !s.is_empty() && !s.contains('.'));
 
         Ok(subdomain.map(|s| s.to_string()))
     }
 
-    fn extract_header(&self, headers: &HeaderMap, name: &str) -> Result<Option<String>, TenantError> {
+    fn extract_header(
+        &self,
+        headers: &HeaderMap,
+        name: &str,
+    ) -> Result<Option<String>, TenantError> {
         Ok(headers
             .get(name)
             .and_then(|v| v.to_str().ok())
@@ -275,13 +279,13 @@ impl TenantExtractor {
         // Parse path: /tenant-id/rest/of/path
         let path = uri.split('?').next().unwrap_or(uri);
         let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
-        
+
         Ok(segments.first().map(|s| s.to_string()))
     }
 
     fn extract_query_param(&self, uri: &str, param: &str) -> Result<Option<String>, TenantError> {
         let query = uri.split('?').nth(1).unwrap_or("");
-        
+
         for pair in query.split('&') {
             let mut parts = pair.splitn(2, '=');
             if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
@@ -290,7 +294,7 @@ impl TenantExtractor {
                 }
             }
         }
-        
+
         Ok(None)
     }
 }
@@ -313,12 +317,13 @@ pub struct TenantInfo {
 impl TenantInfo {
     /// Create a new tenant info
     pub fn new(id: &str, name: &str) -> Self {
-        let slug = name.to_lowercase()
+        let slug = name
+            .to_lowercase()
             .replace(' ', "-")
             .chars()
             .filter(|c| c.is_alphanumeric() || *c == '-')
             .collect();
-        
+
         Self {
             id: id.to_string(),
             name: name.to_string(),
@@ -380,7 +385,7 @@ impl IntoResponse for TenantError {
             TenantError::InvalidConfig(_) => StatusCode::INTERNAL_SERVER_ERROR,
             TenantError::AccessDenied => StatusCode::FORBIDDEN,
         };
-        
+
         (status, self.to_string()).into_response()
     }
 }
@@ -460,10 +465,17 @@ impl TenantGuard {
     }
 
     /// Check request and set tenant context
-    pub fn check(&self, headers: &HeaderMap, uri: &str, host: Option<&str>) -> Result<String, TenantError> {
-        let tenant = self.extractor.extract(headers, uri, host)?
+    pub fn check(
+        &self,
+        headers: &HeaderMap,
+        uri: &str,
+        host: Option<&str>,
+    ) -> Result<String, TenantError> {
+        let tenant = self
+            .extractor
+            .extract(headers, uri, host)?
             .ok_or(TenantError::NotFound)?;
-        
+
         Tenant::set(&tenant);
         Ok(tenant)
     }
@@ -490,10 +502,10 @@ mod tests {
     fn test_tenant_set_get_clear() {
         Tenant::clear();
         assert!(Tenant::get().is_none());
-        
+
         Tenant::set("tenant_123");
         assert_eq!(Tenant::get(), Some("tenant_123".to_string()));
-        
+
         Tenant::clear();
         assert!(Tenant::get().is_none());
     }
@@ -502,7 +514,7 @@ mod tests {
     fn test_tenant_require() {
         Tenant::clear();
         assert!(Tenant::require().is_err());
-        
+
         Tenant::set("tenant_456");
         assert_eq!(Tenant::require().unwrap(), "tenant_456");
         Tenant::clear();
@@ -511,11 +523,9 @@ mod tests {
     #[test]
     fn test_tenant_with() {
         Tenant::clear();
-        
-        let result = Tenant::with("temp_tenant", || {
-            Tenant::get()
-        });
-        
+
+        let result = Tenant::with("temp_tenant", || Tenant::get());
+
         assert_eq!(result, Some("temp_tenant".to_string()));
         assert!(Tenant::get().is_none()); // Restored to none
     }
@@ -523,11 +533,11 @@ mod tests {
     #[test]
     fn test_tenant_with_preserves_previous() {
         Tenant::set("original");
-        
+
         Tenant::with("temp", || {
             assert_eq!(Tenant::get(), Some("temp".to_string()));
         });
-        
+
         assert_eq!(Tenant::get(), Some("original".to_string()));
         Tenant::clear();
     }
@@ -537,7 +547,7 @@ mod tests {
         let extractor = TenantExtractor::header("X-Tenant-ID");
         let mut headers = HeaderMap::new();
         headers.insert("X-Tenant-ID", HeaderValue::from_static("acme"));
-        
+
         let result = extractor.extract(&headers, "/api/users", None);
         assert_eq!(result.unwrap(), Some("acme".to_string()));
     }
@@ -546,7 +556,7 @@ mod tests {
     fn test_extract_header_missing() {
         let extractor = TenantExtractor::header("X-Tenant-ID");
         let headers = HeaderMap::new();
-        
+
         let result = extractor.extract(&headers, "/api/users", None);
         assert!(result.is_err()); // Required by default
     }
@@ -555,7 +565,7 @@ mod tests {
     fn test_extract_header_optional() {
         let extractor = TenantExtractor::header("X-Tenant-ID").optional();
         let headers = HeaderMap::new();
-        
+
         let result = extractor.extract(&headers, "/api/users", None);
         assert_eq!(result.unwrap(), None);
     }
@@ -564,7 +574,7 @@ mod tests {
     fn test_extract_subdomain() {
         let extractor = TenantExtractor::subdomain("example.com");
         let headers = HeaderMap::new();
-        
+
         let result = extractor.extract(&headers, "/api", Some("acme.example.com"));
         assert_eq!(result.unwrap(), Some("acme".to_string()));
     }
@@ -573,7 +583,7 @@ mod tests {
     fn test_extract_subdomain_no_subdomain() {
         let extractor = TenantExtractor::subdomain("example.com").optional();
         let headers = HeaderMap::new();
-        
+
         let result = extractor.extract(&headers, "/api", Some("example.com"));
         assert_eq!(result.unwrap(), None);
     }
@@ -582,7 +592,7 @@ mod tests {
     fn test_extract_subdomain_with_port() {
         let extractor = TenantExtractor::subdomain("example.com");
         let headers = HeaderMap::new();
-        
+
         let result = extractor.extract(&headers, "/api", Some("acme.example.com:3000"));
         assert_eq!(result.unwrap(), Some("acme".to_string()));
     }
@@ -591,7 +601,7 @@ mod tests {
     fn test_extract_path_prefix() {
         let extractor = TenantExtractor::path_prefix();
         let headers = HeaderMap::new();
-        
+
         let result = extractor.extract(&headers, "/acme/api/users", None);
         assert_eq!(result.unwrap(), Some("acme".to_string()));
     }
@@ -600,7 +610,7 @@ mod tests {
     fn test_extract_query_param() {
         let extractor = TenantExtractor::new(TenantStrategy::QueryParam("org".to_string()));
         let headers = HeaderMap::new();
-        
+
         let result = extractor.extract(&headers, "/api/users?org=acme&page=1", None);
         assert_eq!(result.unwrap(), Some("acme".to_string()));
     }
@@ -609,7 +619,7 @@ mod tests {
     fn test_extract_fixed() {
         let extractor = TenantExtractor::new(TenantStrategy::Fixed("default".to_string()));
         let headers = HeaderMap::new();
-        
+
         let result = extractor.extract(&headers, "/api", None);
         assert_eq!(result.unwrap(), Some("default".to_string()));
     }
@@ -621,12 +631,12 @@ mod tests {
             TenantStrategy::QueryParam("tenant".to_string()),
             TenantStrategy::Fixed("default".to_string()),
         ]));
-        
+
         // No header, no query param → falls back to fixed
         let headers = HeaderMap::new();
         let result = extractor.extract(&headers, "/api", None);
         assert_eq!(result.unwrap(), Some("default".to_string()));
-        
+
         // Has header → uses header
         let mut headers = HeaderMap::new();
         headers.insert("X-Tenant-ID", HeaderValue::from_static("from_header"));
@@ -648,7 +658,7 @@ mod tests {
         Tenant::clear();
         let sql = TenantQuery::select("users", "*");
         assert_eq!(sql, "SELECT * FROM users");
-        
+
         Tenant::set("t_123");
         let sql = TenantQuery::select("users", "*");
         assert_eq!(sql, "SELECT * FROM users WHERE tenant_id = ?");
@@ -666,22 +676,28 @@ mod tests {
     #[test]
     fn test_tenant_error_display() {
         assert_eq!(TenantError::NotSet.to_string(), "Tenant not set in context");
-        assert_eq!(TenantError::NotFound.to_string(), "Tenant not found in request");
-        assert_eq!(TenantError::Invalid("bad".into()).to_string(), "Invalid tenant ID: bad");
+        assert_eq!(
+            TenantError::NotFound.to_string(),
+            "Tenant not found in request"
+        );
+        assert_eq!(
+            TenantError::Invalid("bad".into()).to_string(),
+            "Invalid tenant ID: bad"
+        );
     }
 
     #[test]
     fn test_tenant_guard() {
         Tenant::clear();
-        
+
         let guard = TenantGuard::new(TenantExtractor::header("X-Tenant"));
         let mut headers = HeaderMap::new();
         headers.insert("X-Tenant", HeaderValue::from_static("guarded"));
-        
+
         let result = guard.check(&headers, "/api", None);
         assert_eq!(result.unwrap(), "guarded");
         assert_eq!(Tenant::get(), Some("guarded".to_string()));
-        
+
         Tenant::clear();
     }
 
@@ -689,10 +705,10 @@ mod tests {
     fn test_is_set() {
         Tenant::clear();
         assert!(!Tenant::is_set());
-        
+
         Tenant::set("test");
         assert!(Tenant::is_set());
-        
+
         Tenant::clear();
     }
 }

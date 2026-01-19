@@ -127,7 +127,9 @@ impl MockExpectationBuilder {
 
     /// Expect specific request header
     pub fn with_header(mut self, key: &str, value: &str) -> Self {
-        self.expectation.request_headers.insert(key.to_string(), value.to_string());
+        self.expectation
+            .request_headers
+            .insert(key.to_string(), value.to_string());
         self
     }
 
@@ -146,16 +148,17 @@ impl MockExpectationBuilder {
     /// Set response JSON body
     pub fn respond_with_json(mut self, json: serde_json::Value) -> Self {
         self.expectation.response_body = Some(json);
-        self.expectation.response_headers.insert(
-            "content-type".to_string(),
-            "application/json".to_string(),
-        );
+        self.expectation
+            .response_headers
+            .insert("content-type".to_string(), "application/json".to_string());
         self
     }
 
     /// Set response header
     pub fn respond_with_header(mut self, key: &str, value: &str) -> Self {
-        self.expectation.response_headers.insert(key.to_string(), value.to_string());
+        self.expectation
+            .response_headers
+            .insert(key.to_string(), value.to_string());
         self
     }
 
@@ -192,25 +195,22 @@ impl MockServer {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
             .await
             .map_err(|e| TestError::ServerError(e.to_string()))?;
-        let addr = listener.local_addr()
+        let addr = listener
+            .local_addr()
             .map_err(|e| TestError::ServerError(e.to_string()))?;
 
         let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
 
         // Spawn the mock server
         tokio::spawn(async move {
-            let app = axum::Router::new()
-                .fallback(move |req: axum::extract::Request| {
-                    let exp = expectations_clone.clone();
-                    async move {
-                        handle_mock_request(exp, req).await
-                    }
-                });
+            let app = axum::Router::new().fallback(move |req: axum::extract::Request| {
+                let exp = expectations_clone.clone();
+                async move { handle_mock_request(exp, req).await }
+            });
 
-            let server = axum::serve(listener, app)
-                .with_graceful_shutdown(async {
-                    shutdown_rx.await.ok();
-                });
+            let server = axum::serve(listener, app).with_graceful_shutdown(async {
+                shutdown_rx.await.ok();
+            });
 
             let _ = server.await;
         });
@@ -289,7 +289,7 @@ async fn handle_mock_request(
     let path = req.uri().path().to_string();
 
     let mut expectations = expectations.write().await;
-    
+
     // Find matching expectation
     for exp in expectations.iter_mut() {
         if exp.matches(&method, &path) {
@@ -301,27 +301,32 @@ async fn handle_mock_request(
             }
 
             exp.hits += 1;
-            
-            let mut response = axum::http::Response::builder()
-                .status(exp.response_status);
-            
+
+            let mut response = axum::http::Response::builder().status(exp.response_status);
+
             for (key, value) in &exp.response_headers {
                 response = response.header(key.as_str(), value.as_str());
             }
-            
-            let body = exp.response_body
+
+            let body = exp
+                .response_body
                 .as_ref()
                 .map(|b| serde_json::to_string(b).unwrap_or_default())
                 .unwrap_or_default();
-            
-            return response.body(axum::body::Body::from(body))
+
+            return response
+                .body(axum::body::Body::from(body))
                 .unwrap()
                 .into_response();
         }
     }
 
     // No match found
-    (StatusCode::NOT_FOUND, format!("No mock for {} {}", method, path)).into_response()
+    (
+        StatusCode::NOT_FOUND,
+        format!("No mock for {} {}", method, path),
+    )
+        .into_response()
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -347,7 +352,8 @@ impl TestClient {
 
     /// Add authentication header
     pub fn with_auth(mut self, token: &str) -> Self {
-        self.headers.insert("Authorization".to_string(), format!("Bearer {}", token));
+        self.headers
+            .insert("Authorization".to_string(), format!("Bearer {}", token));
         self
     }
 
@@ -380,12 +386,19 @@ impl TestClient {
 
     /// Send GET request
     pub async fn get(&self, path: &str) -> Result<TestResponse, TestError> {
-        let response = self.build_request(reqwest::Method::GET, path).send().await?;
+        let response = self
+            .build_request(reqwest::Method::GET, path)
+            .send()
+            .await?;
         Ok(TestResponse::from_response(response).await)
     }
 
     /// Send POST request with JSON body
-    pub async fn post<T: Serialize>(&self, path: &str, body: &T) -> Result<TestResponse, TestError> {
+    pub async fn post<T: Serialize>(
+        &self,
+        path: &str,
+        body: &T,
+    ) -> Result<TestResponse, TestError> {
         let response = self
             .build_request(reqwest::Method::POST, path)
             .json(body)
@@ -405,7 +418,11 @@ impl TestClient {
     }
 
     /// Send PATCH request with JSON body
-    pub async fn patch<T: Serialize>(&self, path: &str, body: &T) -> Result<TestResponse, TestError> {
+    pub async fn patch<T: Serialize>(
+        &self,
+        path: &str,
+        body: &T,
+    ) -> Result<TestResponse, TestError> {
         let response = self
             .build_request(reqwest::Method::PATCH, path)
             .json(body)
@@ -416,12 +433,19 @@ impl TestClient {
 
     /// Send DELETE request
     pub async fn delete(&self, path: &str) -> Result<TestResponse, TestError> {
-        let response = self.build_request(reqwest::Method::DELETE, path).send().await?;
+        let response = self
+            .build_request(reqwest::Method::DELETE, path)
+            .send()
+            .await?;
         Ok(TestResponse::from_response(response).await)
     }
 
     /// Send form data
-    pub async fn post_form(&self, path: &str, form: &[(&str, &str)]) -> Result<TestResponse, TestError> {
+    pub async fn post_form(
+        &self,
+        path: &str,
+        form: &[(&str, &str)],
+    ) -> Result<TestResponse, TestError> {
         let response = self
             .build_request(reqwest::Method::POST, path)
             .form(form)
@@ -449,7 +473,11 @@ impl TestResponse {
             .collect();
         let body = response.text().await.unwrap_or_default();
 
-        Self { status, headers, body }
+        Self {
+            status,
+            headers,
+            body,
+        }
     }
 
     /// Get status code
@@ -494,7 +522,11 @@ impl TestResponse {
 
     /// Assert status code
     pub fn assert_status(self, expected: u16) -> Self {
-        assert_eq!(self.status, expected, "Expected status {} but got {}", expected, self.status);
+        assert_eq!(
+            self.status, expected,
+            "Expected status {} but got {}",
+            expected, self.status
+        );
         self
     }
 
@@ -533,9 +565,11 @@ impl Factory {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_nanos() as u64;
-        
+
         iter::repeat_with(|| {
-            rng = rng.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+            rng = rng
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
             CHARSET[(rng % CHARSET.len() as u64) as usize] as char
         })
         .take(len)
@@ -632,7 +666,11 @@ impl UserFactory {
 
 /// Assert two JSON values are equal
 pub fn assert_json_eq(actual: &serde_json::Value, expected: &serde_json::Value) {
-    assert_eq!(actual, expected, "JSON mismatch:\nActual: {}\nExpected: {}", actual, expected);
+    assert_eq!(
+        actual, expected,
+        "JSON mismatch:\nActual: {}\nExpected: {}",
+        actual, expected
+    );
 }
 
 /// Assert JSON contains subset
@@ -642,7 +680,9 @@ pub fn assert_json_contains(actual: &serde_json::Value, subset: &serde_json::Val
             assert!(
                 actual_obj.get(key) == Some(value),
                 "JSON missing or mismatched key '{}'. Expected: {}, Actual: {:?}",
-                key, value, actual_obj.get(key)
+                key,
+                value,
+                actual_obj.get(key)
             );
         }
     } else {
@@ -770,20 +810,25 @@ mod tests {
     #[test]
     fn test_client_with_auth() {
         let client = TestClient::new("http://localhost:3000").with_auth("token123");
-        assert_eq!(client.headers.get("Authorization"), Some(&"Bearer token123".to_string()));
+        assert_eq!(
+            client.headers.get("Authorization"),
+            Some(&"Bearer token123".to_string())
+        );
     }
 
     #[test]
     fn test_client_with_header() {
-        let client = TestClient::new("http://localhost:3000")
-            .with_header("X-Custom", "value");
+        let client = TestClient::new("http://localhost:3000").with_header("X-Custom", "value");
         assert_eq!(client.headers.get("X-Custom"), Some(&"value".to_string()));
     }
 
     #[test]
     fn test_client_with_cookie() {
         let client = TestClient::new("http://localhost:3000").with_cookie("session", "abc");
-        assert_eq!(client.headers.get("Cookie"), Some(&"session=abc".to_string()));
+        assert_eq!(
+            client.headers.get("Cookie"),
+            Some(&"session=abc".to_string())
+        );
     }
 
     #[test]
@@ -791,7 +836,10 @@ mod tests {
         let client = TestClient::new("http://localhost:3000")
             .with_cookie("session", "abc")
             .with_cookie("theme", "dark");
-        assert_eq!(client.headers.get("Cookie"), Some(&"session=abc; theme=dark".to_string()));
+        assert_eq!(
+            client.headers.get("Cookie"),
+            Some(&"session=abc; theme=dark".to_string())
+        );
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -969,7 +1017,8 @@ mod tests {
     #[tokio::test]
     async fn test_mock_server_expectation() {
         let server = MockServer::start().await.unwrap();
-        server.expect("GET", "/api/test")
+        server
+            .expect("GET", "/api/test")
             .respond_with_status(200)
             .respond_with_json(serde_json::json!({"success": true}))
             .mount()
@@ -983,7 +1032,11 @@ mod tests {
     #[tokio::test]
     async fn test_mock_server_reset() {
         let server = MockServer::start().await.unwrap();
-        server.expect("GET", "/test").respond_with_status(200).mount().await;
+        server
+            .expect("GET", "/test")
+            .respond_with_status(200)
+            .mount()
+            .await;
         server.reset().await;
         // After reset, no expectations
     }

@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
 use nucleus_std::impl_model;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Video {

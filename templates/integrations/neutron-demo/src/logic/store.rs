@@ -44,7 +44,7 @@ impl TodoStore {
     pub fn filtered_todos(&self) -> Vec<Todo> {
         let f = self.filter.get();
         let list = self.todos.get();
-        
+
         match f.as_str() {
             "active" => list.into_iter().filter(|t| !t.completed).collect(),
             "completed" => list.into_iter().filter(|t| t.completed).collect(),

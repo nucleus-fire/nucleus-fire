@@ -1,5 +1,5 @@
+use nucleus_std::errors::{NucleusError, Result};
 use nucleus_std::server;
-use nucleus_std::errors::{Result, NucleusError};
 // use std::path::Path;
 
 #[server]
@@ -13,7 +13,7 @@ pub async fn get_source(path: String) -> Result<String> {
     let content = tokio::fs::read_to_string(&path)
         .await
         .map_err(NucleusError::IOError)?;
-        
+
     Ok(content)
 }
 
@@ -42,7 +42,9 @@ mod tests {
     #[tokio::test]
     async fn test_valid_source_read() {
         // We know src/services/source.rs exists because we are in it!
-        let content = get_source("src/services/source.rs".to_string()).await.unwrap();
+        let content = get_source("src/services/source.rs".to_string())
+            .await
+            .unwrap();
         assert!(content.contains("pub async fn get_source"));
     }
 }

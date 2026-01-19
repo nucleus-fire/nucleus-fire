@@ -123,10 +123,15 @@ impl SmtpConfig {
     pub fn from_env() -> Option<Self> {
         Some(Self {
             host: std::env::var("SMTP_HOST").ok()?,
-            port: std::env::var("SMTP_PORT").ok().and_then(|p| p.parse().ok()).unwrap_or(587),
+            port: std::env::var("SMTP_PORT")
+                .ok()
+                .and_then(|p| p.parse().ok())
+                .unwrap_or(587),
             username: std::env::var("SMTP_USERNAME").ok()?,
             password: std::env::var("SMTP_PASSWORD").ok()?,
-            tls: std::env::var("SMTP_TLS").map(|v| v != "false").unwrap_or(true),
+            tls: std::env::var("SMTP_TLS")
+                .map(|v| v != "false")
+                .unwrap_or(true),
             from: std::env::var("SMTP_FROM").ok()?,
         })
     }
@@ -231,7 +236,10 @@ impl Postman {
             return Self::new(EmailProvider::Ses(ses));
         }
 
-        if std::env::var("EMAIL_PROVIDER").map(|v| v == "mock").unwrap_or(false) {
+        if std::env::var("EMAIL_PROVIDER")
+            .map(|v| v == "mock")
+            .unwrap_or(false)
+        {
             return Self::new(EmailProvider::Mock);
         }
 
@@ -240,7 +248,8 @@ impl Postman {
 
     /// Register a template
     pub fn register_template(&mut self, name: &str, template: &str) {
-        self.templates.insert(name.to_string(), template.to_string());
+        self.templates
+            .insert(name.to_string(), template.to_string());
     }
 
     /// Render a template with variables
@@ -256,10 +265,8 @@ impl Postman {
     /// Send an email
     pub async fn send(&self, email: Email) -> Result<SendResult, String> {
         match &self.provider {
-            EmailProvider::Disabled => {
-                Err("Email sending is disabled".to_string())
-            }
-            
+            EmailProvider::Disabled => Err("Email sending is disabled".to_string()),
+
             EmailProvider::Mock => {
                 println!("[MOCK EMAIL] To: {}", email.to);
                 println!("[MOCK EMAIL] Subject: {}", email.subject);
@@ -269,14 +276,10 @@ impl Postman {
                     provider: "mock".to_string(),
                 })
             }
-            
-            EmailProvider::Smtp(config) => {
-                self.send_smtp(config, &email).await
-            }
-            
-            EmailProvider::Ses(config) => {
-                self.send_ses(config, &email).await
-            }
+
+            EmailProvider::Smtp(config) => self.send_smtp(config, &email).await,
+
+            EmailProvider::Ses(config) => self.send_ses(config, &email).await,
         }
     }
 
@@ -288,7 +291,8 @@ impl Postman {
         template_name: &str,
         vars: &HashMap<String, String>,
     ) -> Result<SendResult, String> {
-        let body = self.render_template(template_name, vars)
+        let body = self
+            .render_template(template_name, vars)
             .ok_or_else(|| format!("Template '{}' not found", template_name))?;
 
         let email = Email::new(to, subject, &body);
@@ -303,15 +307,20 @@ impl Postman {
         use lettre::{
             message::{header::ContentType, Mailbox, MessageBuilder},
             transport::smtp::authentication::Credentials,
-            AsyncSmtpTransport, Tokio1Executor, AsyncTransport,
+            AsyncSmtpTransport, AsyncTransport, Tokio1Executor,
         };
 
         // Build message
-        let from: Mailbox = email.from.as_ref().unwrap_or(&config.from)
+        let from: Mailbox = email
+            .from
+            .as_ref()
+            .unwrap_or(&config.from)
             .parse()
             .map_err(|e| format!("Invalid from address: {}", e))?;
 
-        let to: Mailbox = email.to.parse()
+        let to: Mailbox = email
+            .to
+            .parse()
             .map_err(|e| format!("Invalid to address: {}", e))?;
 
         let mut builder = MessageBuilder::new()
@@ -321,35 +330,37 @@ impl Postman {
 
         // Add reply-to if set
         if let Some(ref reply_to) = email.reply_to {
-            let reply_to_mailbox: Mailbox = reply_to.parse()
+            let reply_to_mailbox: Mailbox = reply_to
+                .parse()
                 .map_err(|e| format!("Invalid reply-to address: {}", e))?;
             builder = builder.reply_to(reply_to_mailbox);
         }
 
         // Add CC recipients
         for cc_addr in &email.cc {
-            let cc_mailbox: Mailbox = cc_addr.parse()
+            let cc_mailbox: Mailbox = cc_addr
+                .parse()
                 .map_err(|e| format!("Invalid CC address: {}", e))?;
             builder = builder.cc(cc_mailbox);
         }
 
         // Add BCC recipients
         for bcc_addr in &email.bcc {
-            let bcc_mailbox: Mailbox = bcc_addr.parse()
+            let bcc_mailbox: Mailbox = bcc_addr
+                .parse()
                 .map_err(|e| format!("Invalid BCC address: {}", e))?;
             builder = builder.bcc(bcc_mailbox);
         }
 
         // Set body
         let message = if let Some(ref html) = email.html {
-            builder
-                .header(ContentType::TEXT_HTML)
-                .body(html.clone())
+            builder.header(ContentType::TEXT_HTML).body(html.clone())
         } else {
             builder
                 .header(ContentType::TEXT_PLAIN)
                 .body(email.body.clone())
-        }.map_err(|e| format!("Failed to build message: {}", e))?;
+        }
+        .map_err(|e| format!("Failed to build message: {}", e))?;
 
         // Configure transport
         let creds = Credentials::new(config.username.clone(), config.password.clone());
@@ -368,10 +379,13 @@ impl Postman {
         };
 
         // Send
-        let response = mailer.send(message).await
+        let response = mailer
+            .send(message)
+            .await
             .map_err(|e| format!("SMTP send failed: {}", e))?;
 
-        let message_id = response.message()
+        let message_id = response
+            .message()
             .next()
             .map(|s| s.to_string())
             .unwrap_or_else(|| "unknown".to_string());
@@ -389,9 +403,12 @@ impl Postman {
     async fn send_ses(&self, config: &SesConfig, email: &Email) -> Result<SendResult, String> {
         // Use SES v2 SendEmail API via HTTP
         // This is a simplified implementation - production would use aws-sdk-sesv2
-        
-        let endpoint = format!("https://email.{}.amazonaws.com/v2/email/outbound-emails", config.region);
-        
+
+        let endpoint = format!(
+            "https://email.{}.amazonaws.com/v2/email/outbound-emails",
+            config.region
+        );
+
         let payload = serde_json::json!({
             "Content": {
                 "Simple": {
@@ -415,7 +432,8 @@ impl Postman {
 
         // Note: Real implementation would use AWS SDK with proper signing
         // This is a placeholder that shows the API structure
-        let response = self.client
+        let response = self
+            .client
             .post(&endpoint)
             .header("Content-Type", "application/json")
             .json(&payload)
@@ -424,18 +442,24 @@ impl Postman {
             .map_err(|e| format!("SES request failed: {}", e))?;
 
         if response.status().is_success() {
-            let body: serde_json::Value = response.json().await
+            let body: serde_json::Value = response
+                .json()
+                .await
                 .map_err(|e| format!("Failed to parse SES response: {}", e))?;
-            
+
             Ok(SendResult {
-                message_id: body.get("MessageId")
+                message_id: body
+                    .get("MessageId")
                     .and_then(|v| v.as_str())
                     .unwrap_or("unknown")
                     .to_string(),
                 provider: "ses".to_string(),
             })
         } else {
-            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
             Err(format!("SES error: {}", error_text))
         }
     }
@@ -446,8 +470,8 @@ pub fn is_valid_email(email: &str) -> bool {
     // Basic validation - contains @ and at least one dot after @
     if let Some(at_pos) = email.find('@') {
         let domain = &email[at_pos + 1..];
-        !domain.is_empty() 
-            && domain.contains('.') 
+        !domain.is_empty()
+            && domain.contains('.')
             && !email.starts_with('@')
             && !domain.starts_with('.')
             && !domain.ends_with('.')
@@ -464,10 +488,10 @@ pub fn is_valid_email(email: &str) -> bool {
 mod tests {
     use super::*;
     use std::sync::Mutex;
-    
+
     // Mutex to serialize tests that modify environment variables
     static ENV_MUTEX: Mutex<()> = Mutex::new(());
-    
+
     // Helper to run a test with exclusive access to env vars
     fn with_env_lock<F, R>(f: F) -> R
     where
@@ -600,14 +624,18 @@ mod tests {
         let mut vars = HashMap::new();
         vars.insert("name".to_string(), "World".to_string());
 
-        let result = postman.send_template("test@example.com", "Test", "test", &vars).await;
+        let result = postman
+            .send_template("test@example.com", "Test", "test", &vars)
+            .await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_send_template_missing() {
         let postman = Postman::new(EmailProvider::Mock);
-        let result = postman.send_template("test@example.com", "Test", "missing", &HashMap::new()).await;
+        let result = postman
+            .send_template("test@example.com", "Test", "missing", &HashMap::new())
+            .await;
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("not found"));
     }
@@ -632,7 +660,7 @@ mod tests {
             std::env::remove_var("SES_REGION");
             std::env::remove_var("SES_FROM");
             std::env::remove_var("EMAIL_PROVIDER");
-            
+
             let postman = Postman::from_env();
             assert!(matches!(postman.provider, EmailProvider::Disabled));
         });
@@ -648,10 +676,10 @@ mod tests {
             std::env::remove_var("SES_REGION");
             std::env::remove_var("SES_FROM");
             std::env::set_var("EMAIL_PROVIDER", "mock");
-            
+
             let postman = Postman::from_env();
             assert!(matches!(postman.provider, EmailProvider::Mock));
-            
+
             std::env::remove_var("EMAIL_PROVIDER");
         });
     }
@@ -665,7 +693,7 @@ mod tests {
         assert!(!is_valid_email("user@domain.")); // Trailing dot
         assert!(is_valid_email("a@b.c")); // Minimal valid
         assert!(is_valid_email("user@sub.domain.com")); // Subdomain
-        // Double dot in domain is still accepted by our simple validation
+                                                        // Double dot in domain is still accepted by our simple validation
         assert!(is_valid_email("user@domain..com"));
     }
 
@@ -677,10 +705,10 @@ mod tests {
             std::env::set_var("SMTP_PASSWORD", "pass");
             std::env::set_var("SMTP_FROM", "noreply@example.com");
             std::env::set_var("SMTP_PORT", "2525");
-            
+
             let config = SmtpConfig::from_env().unwrap();
             assert_eq!(config.port, 2525);
-            
+
             std::env::remove_var("SMTP_HOST");
             std::env::remove_var("SMTP_USERNAME");
             std::env::remove_var("SMTP_PASSWORD");
@@ -697,10 +725,10 @@ mod tests {
             std::env::set_var("SMTP_PASSWORD", "pass");
             std::env::set_var("SMTP_FROM", "noreply@example.com");
             std::env::set_var("SMTP_TLS", "false");
-            
+
             let config = SmtpConfig::from_env().unwrap();
             assert!(!config.tls);
-            
+
             std::env::remove_var("SMTP_HOST");
             std::env::remove_var("SMTP_USERNAME");
             std::env::remove_var("SMTP_PASSWORD");
@@ -716,12 +744,12 @@ mod tests {
             std::env::set_var("SES_FROM", "noreply@example.com");
             std::env::set_var("AWS_ACCESS_KEY_ID", "AKIAEXAMPLE");
             std::env::set_var("AWS_SECRET_ACCESS_KEY", "secretkey");
-            
+
             let config = SesConfig::from_env().unwrap();
             assert_eq!(config.region, "eu-west-1");
             assert_eq!(config.access_key, Some("AKIAEXAMPLE".to_string()));
             assert_eq!(config.secret_key, Some("secretkey".to_string()));
-            
+
             std::env::remove_var("SES_REGION");
             std::env::remove_var("SES_FROM");
             std::env::remove_var("AWS_ACCESS_KEY_ID");
@@ -736,7 +764,7 @@ mod tests {
             .cc("cc2@example.com")
             .bcc("bcc1@example.com")
             .bcc("bcc2@example.com");
-        
+
         assert_eq!(email.cc.len(), 2);
         assert_eq!(email.bcc.len(), 2);
         assert!(email.cc.contains(&"cc1@example.com".to_string()));
@@ -751,7 +779,7 @@ mod tests {
             .reply_to("reply@example.com")
             .cc("cc@example.com")
             .bcc("bcc@example.com");
-        
+
         assert!(email.html.is_some());
         assert!(email.from.is_some());
         assert!(email.reply_to.is_some());
@@ -772,10 +800,10 @@ mod tests {
         with_env_lock(|| {
             std::env::remove_var("SES_REGION");
             std::env::set_var("SES_FROM", "noreply@example.com");
-            
+
             let config = SesConfig::from_env();
             assert!(config.is_none());
-            
+
             std::env::remove_var("SES_FROM");
         });
     }
@@ -788,11 +816,11 @@ mod tests {
             std::env::set_var("SMTP_PASSWORD", "pass");
             std::env::set_var("SMTP_FROM", "noreply@example.com");
             std::env::set_var("SMTP_PORT", "invalid");
-            
+
             // Invalid port falls back to default 587
             let config = SmtpConfig::from_env().unwrap();
             assert_eq!(config.port, 587);
-            
+
             std::env::remove_var("SMTP_HOST");
             std::env::remove_var("SMTP_USERNAME");
             std::env::remove_var("SMTP_PASSWORD");

@@ -35,15 +35,17 @@
 //! ```
 
 pub mod db;
-pub mod query;
 pub mod migrations;
+pub mod query;
 pub mod relations;
 
 // Re-export main types
-pub use db::{DatabasePool, DatabaseType, QueryValue, init_db, db, is_db_initialized};
-pub use query::{Builder, Model, Op, transaction_sqlite, transaction_postgres, transaction_mysql};
-pub use migrations::{run_migrations, rollback, migration_status, create_migration, MigrationInfo, MigrationError};
-pub use relations::{HasMany, BelongsTo, HasOne};
+pub use db::{db, init_db, is_db_initialized, DatabasePool, DatabaseType, QueryValue};
+pub use migrations::{
+    create_migration, migration_status, rollback, run_migrations, MigrationError, MigrationInfo,
+};
+pub use query::{transaction_mysql, transaction_postgres, transaction_sqlite, Builder, Model, Op};
+pub use relations::{BelongsTo, HasMany, HasOne};
 
 // Re-export macro
 pub use crate::impl_model;

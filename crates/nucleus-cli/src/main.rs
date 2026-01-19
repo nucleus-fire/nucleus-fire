@@ -1,5 +1,5 @@
-use nucleus_cli::run_cli;
 use mimalloc::MiMalloc;
+use nucleus_cli::run_cli;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
