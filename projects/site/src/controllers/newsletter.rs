@@ -375,8 +375,8 @@ mod tests {
     async fn test_fetch_admin_data() {
         setup_test_db().await;
         let data = super::fetch_admin_data().await;
-        assert!(data.subscribers.len() >= 0);
-        assert!(data.templates.len() >= 0);
+        // Just verify we got a result struct back
+        println!("Fetched {} subscribers and {} templates", data.subscribers.len(), data.templates.len());
     }
 
     #[test]

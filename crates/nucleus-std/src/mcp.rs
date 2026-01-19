@@ -489,6 +489,7 @@ mod tests {
     use tokio::sync::mpsc;
 
     // Mock Transport for testing
+    #[allow(dead_code)]
     struct MockTransport {
         tx: mpsc::Sender<JsonRpcMessage>,
         rx: Mutex<mpsc::Receiver<JsonRpcMessage>>,

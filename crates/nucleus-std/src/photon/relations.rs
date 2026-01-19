@@ -381,6 +381,7 @@ mod tests {
     }
     
     // HasOne mock
+    #[allow(dead_code)]
     struct MockProfile { _id: i64, user_id: i64 }
     
     impl Model for MockProfile {
