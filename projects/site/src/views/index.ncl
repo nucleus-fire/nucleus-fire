@@ -167,10 +167,10 @@
                 </div>
             </div>
             <div class="hero-stat-card">
-                <div class="hero-stat-icon">✨</div>
+                <div class="hero-stat-icon">💰</div>
                 <div class="hero-stat-content">
-                    <span class="hero-stat-value">Zero</span>
-                    <span class="hero-stat-label">runtime</span>
+                    <span class="hero-stat-value">90%</span>
+                    <span class="hero-stat-label">less RAM</span>
                 </div>
             </div>
         </div>
@@ -251,7 +251,7 @@
             <div class="feature-card">
                 <div class="feature-icon">⚡</div>
                 <h3 class="feature-title">Hyper Speed</h3>
-                <p class="feature-desc">Powered by Tokio and Hyper. No garbage collection. Consistent sub-millisecond latency.</p>
+                <p class="feature-desc">Powered by Tokio. Handles 10x traffic on the same hardware. Consistent sub-ms latency.</p>
             </div>
             
             <div class="feature-card">
@@ -707,7 +707,7 @@
                 <div class="compare-cell other no">✗</div>
             </div>
             <div class="compare-row">
-                <div class="compare-cell feature">Zero Runtime</div>
+                <div class="compare-cell feature">Zero Runtime Overhead</div>
                 <div class="compare-cell nucleus yes">✓</div>
                 <div class="compare-cell other no">✗</div>
                 <div class="compare-cell other no">✗</div>

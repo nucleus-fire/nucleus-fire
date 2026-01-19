@@ -510,26 +510,12 @@ impl McpClient {
 mod tests {
     use super::*;
     use serde_json::json;
-    use tokio::sync::mpsc;
     use std::error::Error;
 
     // Mock Transport for testing
     
-    struct MockTransport {
-        tx: mpsc::Sender<JsonRpcMessage>,
-        rx: Mutex<mpsc::Receiver<JsonRpcMessage>>,
-    }
-
-    #[async_trait]
-    impl McpTransport for MockTransport {
-        async fn send(&self, msg: JsonRpcMessage) -> Result<(), McpError> {
-            self.tx.send(msg).await.map_err(|e| McpError::Transport(e.to_string()))
-        }
-        
-        async fn receive(&self) -> Result<Option<JsonRpcMessage>, McpError> {
-            Ok(self.rx.lock().await.recv().await)
-        }
-    }
+    // Mock Transport for testing
+    // (Removed unused MockTransport struct)
 
     #[tokio::test]
     async fn test_server_tools() -> Result<(), Box<dyn Error>> {

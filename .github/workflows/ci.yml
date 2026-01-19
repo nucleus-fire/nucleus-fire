@@ -39,6 +39,9 @@ jobs:
       - name: Run clippy
         run: cargo clippy --workspace -- -D warnings
 
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
   benchmark:
     name: Benchmark Regression
     runs-on: ubuntu-latest
