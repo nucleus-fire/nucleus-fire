@@ -65,20 +65,24 @@ nucleus new my-app
 cd my-app
 
 # 3. Start the development server (Hot Reload enabled)
-nucleus run
+nucleus dev
 
 # 4. Open Nucleus Studio (in a separate terminal)
-nucleus studio
+nucleus studio --database site.db
 
 # 5. Prepare for Production
 nucleus deploy init
+
+# 6. Export as PWA (optional)
+nucleus export --pwa
 ```
 
 ## 🚀 One-Click Deploy
 
-Try the templates instantly in the cloud:
+Deploy to cloud platforms instantly:
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/nucleus-fire/nucleus-fire)
+[![Deploy to Railway](https://railway.app/button.svg)](https://railway.app/template/nucleus)
 
 ## 🌟 Templates & Starters
 
@@ -96,8 +100,10 @@ Try the templates instantly in the cloud:
 
 -   **[Complete Documentation](https://nucleus-fire.github.io/docs)**
 -   **[Quick Start Guide](docs/en/24_quick_start_tutorial.md)**
+-   **[CLI Reference](docs/en/17_cli_reference.md)**
 -   **[Database Guide](docs/en/20_database_guide.md)**
 -   **[Authentication](docs/en/21_authentication_guide.md)**
+-   **[Local Storage & PWA](docs/en/28_local_storage_guide.md)**
 -   **[AI Agents](docs/en/59_ai_agents.md)**
 
 ## 🆚 Comparison
