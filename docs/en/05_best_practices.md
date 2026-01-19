@@ -411,6 +411,28 @@ sqlx::query("SELECT * FROM users")
 let pool = SqlitePool::connect("sqlite:data.db").await?;  // Wrong!
 ```
 
+### External Resources
+ 
+**Always localize external assets** (fonts, scripts, images).
+ 
+**Why?**
+1.  **Performance**: Reduces DNS lookups and TLS handshakes. Leverages HTTP/2 multiplexing on your own domain.
+2.  **Privacy**: Prevents leaking visitor IP addresses to third parties (e.g., Google Fonts).
+3.  **Reliability**: Your site won't break if a third-party CDN goes down.
+ 
+```html
+<!-- ❌ Bad: External dependency -->
+<link href="https://fonts.googleapis.com/css2?family=Inter" rel="stylesheet">
+ 
+<!-- ✅ Good: Localized asset -->
+<style>
+    @font-face {
+        font-family: 'Inter';
+        src: url("/assets/fonts/Inter.woff2") format("woff2");
+    }
+</style>
+```
+
 ---
 
 ## Error Handling

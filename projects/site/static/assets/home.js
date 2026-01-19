@@ -62,6 +62,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // ═══ Newsletter Modal ═══
+    const modal = document.getElementById('newsletter-modal');
+    const openBtn = document.getElementById('open-newsletter');
+    const closeBtn = document.querySelector('.modal-close');
+    
+    if (openBtn && modal) {
+        openBtn.addEventListener('click', () => {
+             modal.classList.add('active');
+             setTimeout(() => document.getElementById('modal-email').focus(), 100);
+        });
+        
+        const close = () => modal.classList.remove('active');
+        
+        if (closeBtn) closeBtn.addEventListener('click', close);
+        
+        // Close on click outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) close();
+        });
+        
+        // Close on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('active')) close();
+        });
+    }
+
     // ═══ Newsletter Form ═══
     const newsletterForm = document.querySelector('.newsletter-form');
     if (newsletterForm) {
@@ -69,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const input = newsletterForm.querySelector('input');
             const btn = newsletterForm.querySelector('button');
-            const originalText = btn.textContent;
+            const originalContent = btn.innerHTML; // Save SVG/Text
             
             btn.disabled = true;
             input.disabled = true;
@@ -84,7 +110,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (res.ok) {
                     btn.textContent = '✓ Subscribed!';
+                    btn.style.background = '#10b981';
                     input.value = '';
+                    setTimeout(() => {
+                        modal.classList.remove('active');
+                        // Reset button style
+                        setTimeout(() => {
+                            btn.innerHTML = originalContent;
+                            btn.style.background = '';
+                            btn.disabled = false;
+                            input.disabled = false;
+                        }, 500);
+                    }, 1500);
                 } else {
                     const err = await res.text();
                     
@@ -100,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     setTimeout(() => {
                         btn.disabled = false;
                         input.disabled = false;
-                        btn.textContent = originalText;
+                        btn.innerHTML = originalContent;
                     }, 3000);
                 }
             } catch {

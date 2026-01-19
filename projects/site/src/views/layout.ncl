@@ -32,9 +32,17 @@
     <link rel="stylesheet" href="/assets/highlight.css?v=4">
     <script src="/assets/highlight.min.js?v=4"></script>
 
-    <!-- Google Fonts with font-display: swap (non-render-blocking) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+    <!-- Local Fonts (Inter Variable) -->
+    <style>
+        @font-face {
+            font-family: 'Inter';
+            font-weight: 100 900;
+            font-display: swap;
+            font-style: normal;
+            font-named-instance: 'Regular';
+            src: url("/assets/fonts/Inter-Variable.woff2") format("woff2");
+        }
+    </style>
 </head>
 <body>
     <!-- Skip Link for Keyboard Navigation (WCAG 2.4.1) -->

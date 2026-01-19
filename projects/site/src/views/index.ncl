@@ -725,16 +725,37 @@
 
 
 
-<!-- Newsletter Section -->
-<section class="newsletter">
-    <div class="container newsletter-content">
-        <h2 class="newsletter-title">Stay Updated</h2>
-        <p class="newsletter-desc">Get the latest Nucleus news, tutorials, and releases.</p>
-        <form class="newsletter-form" method="POST">
-            <input type="email" name="email" id="newsletter-email" autocomplete="email" placeholder="you@example.com" class="newsletter-input" required>
-            <button type="submit" class="btn btn-gradient">Subscribe</button>
-        </form>
-        <p class="newsletter-note">No spam. Unsubscribe anytime.</p>
+<!-- Newsletter Modal (Hidden by default) -->
+<div id="newsletter-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal-container glass-panel">
+        <button class="modal-close" aria-label="Close modal">×</button>
+        <div class="modal-content">
+            <div class="modal-icon">✨</div>
+            <h3 class="modal-title">Join the Nucleus</h3>
+            <p class="modal-desc">Get the latest updates, tutorials, and early access to new features.</p>
+            
+            <form class="newsletter-form" method="POST">
+                <div class="input-group">
+                    <input type="email" name="email" id="modal-email" placeholder="dev@example.com" required class="modal-input">
+                    <button type="submit" class="modal-submit-btn">
+                        <span>Subscribe</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+                <p class="modal-note">Zero spam. Unsubscribe anytime.</p>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Compact Newsletter Trigger -->
+<section class="newsletter-compact">
+    <div class="container flex justify-between items-center">
+        <div>
+            <h3 class="text-xl font-bold text-white mb-1">Stay in the loop</h3>
+            <p class="text-gray-400 text-sm">Join 10,000+ developers shipping faster.</p>
+        </div>
+        <button id="open-newsletter" class="btn btn-secondary btn-sm">Subscribe to Updates</button>
     </div>
 </section>
 
@@ -1428,6 +1449,140 @@
     .code-tabs .code-block {
         overflow-x: hidden;
         max-width: 100%;
+    }
+    /* ===== NEWSLETTER MODAL ===== */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+    
+    .modal-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    
+    .modal-container {
+        background: linear-gradient(145deg, rgba(20, 20, 20, 0.9), rgba(10, 10, 10, 0.95));
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 40px;
+        border-radius: 24px;
+        width: 100%;
+        max-width: 480px;
+        position: relative;
+        transform: translateY(20px) scale(0.95);
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    
+    .modal-overlay.active .modal-container {
+        transform: translateY(0) scale(1);
+    }
+    
+    .modal-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: transparent;
+        border: none;
+        color: #666;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 5px;
+        line-height: 1;
+        transition: color 0.2s;
+    }
+    
+    .modal-close:hover {
+        color: #fff;
+    }
+    
+    .modal-icon {
+        font-size: 48px;
+        margin-bottom: 24px;
+        text-align: center;
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    .modal-title {
+        color: #fff;
+        font-size: 28px;
+        font-weight: 800;
+        text-align: center;
+        margin-bottom: 12px;
+        letter-spacing: -0.02em;
+    }
+    
+    .modal-desc {
+        color: #999;
+        text-align: center;
+        margin-bottom: 32px;
+        line-height: 1.6;
+    }
+    
+    .modal-input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 16px;
+        border-radius: 12px;
+        color: #fff;
+        margin-bottom: 16px;
+        font-size: 16px;
+        transition: all 0.2s;
+    }
+    
+    .modal-input:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        background: rgba(139, 92, 246, 0.1);
+    }
+    
+    .modal-submit-btn {
+        width: 100%;
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        padding: 16px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+    
+    .modal-submit-btn:hover {
+        background: #7c3aed;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(124, 58, 237, 0.2);
+    }
+    
+    .modal-note {
+        text-align: center;
+        font-size: 12px;
+        color: #555;
+        margin-top: 16px;
+    }
+    
+    .newsletter-compact {
+        background: #000;
+        border-top: 1px solid #111;
+        padding: 32px 0;
     }
 </n:style>
 

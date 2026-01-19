@@ -90,22 +90,12 @@ html_body.push_str(" src=\"/assets/highlight.min.js?v=4\"");
 html_body.push_str(">");
 html_body.push_str("");
 html_body.push_str("</script>");
-html_body.push_str("<!-- Google Fonts with font-display: swap (non-render-blocking) -->");
+html_body.push_str("<!-- Local Fonts (Inter Variable) -->");
 html_body.push_str("<link");
-html_body.push_str(" href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap\"");
 html_body.push_str(" rel=\"stylesheet\"");
-html_body.push_str(" media=\"print\"");
-html_body.push_str(" onload=\"this.media='all'\"");
+html_body.push_str(" href=\"/static/css/style-18f37c3851472eed.css\"");
 html_body.push_str(">");
 html_body.push_str("</link>");
-html_body.push_str("<noscript");
-html_body.push_str(">");
-html_body.push_str("<link");
-html_body.push_str(" href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap\"");
-html_body.push_str(" rel=\"stylesheet\"");
-html_body.push_str(">");
-html_body.push_str("</link>");
-html_body.push_str("</noscript>");
 html_body.push_str("<link");
 html_body.push_str(" rel=\"preconnect\"");
 html_body.push_str(" href=\"https://fonts.googleapis.com\"");
@@ -2740,49 +2730,113 @@ html_body.push_str("</a>");
 html_body.push_str("</div>");
 html_body.push_str("</div>");
 html_body.push_str("</section>");
-html_body.push_str("<!-- Newsletter Section -->");
-html_body.push_str("<section");
-html_body.push_str(" class=\"newsletter\"");
+html_body.push_str("<!-- Newsletter Modal (Hidden by default) -->");
+html_body.push_str("<div");
+html_body.push_str(" id=\"newsletter-modal\"");
+html_body.push_str(" class=\"modal-overlay\"");
+html_body.push_str(" aria-hidden=\"true\"");
 html_body.push_str(">");
 html_body.push_str("<div");
-html_body.push_str(" class=\"container newsletter-content\"");
+html_body.push_str(" class=\"modal-container glass-panel\"");
 html_body.push_str(">");
-html_body.push_str("<h2");
-html_body.push_str(" class=\"newsletter-title\"");
+html_body.push_str("<button");
+html_body.push_str(" class=\"modal-close\"");
+html_body.push_str(" aria-label=\"Close modal\"");
 html_body.push_str(">");
-html_body.push_str("Stay Updated");
-html_body.push_str("</h2>");
+html_body.push_str("×");
+html_body.push_str("</button>");
+html_body.push_str("<div");
+html_body.push_str(" class=\"modal-content\"");
+html_body.push_str(">");
+html_body.push_str("<div");
+html_body.push_str(" class=\"modal-icon\"");
+html_body.push_str(">");
+html_body.push_str("✨");
+html_body.push_str("</div>");
+html_body.push_str("<h3");
+html_body.push_str(" class=\"modal-title\"");
+html_body.push_str(">");
+html_body.push_str("Join the Nucleus");
+html_body.push_str("</h3>");
 html_body.push_str("<p");
-html_body.push_str(" class=\"newsletter-desc\"");
+html_body.push_str(" class=\"modal-desc\"");
 html_body.push_str(">");
-html_body.push_str("Get the latest Nucleus news, tutorials, and releases.");
+html_body.push_str("Get the latest updates, tutorials, and early access to new features.");
 html_body.push_str("</p>");
 html_body.push_str("<form");
 html_body.push_str(" class=\"newsletter-form\"");
 html_body.push_str(" method=\"POST\"");
 html_body.push_str(">");
+html_body.push_str("<div");
+html_body.push_str(" class=\"input-group\"");
+html_body.push_str(">");
 html_body.push_str("<input");
 html_body.push_str(" type=\"email\"");
 html_body.push_str(" name=\"email\"");
-html_body.push_str(" id=\"newsletter-email\"");
-html_body.push_str(" autocomplete=\"email\"");
-html_body.push_str(" placeholder=\"you@example.com\"");
-html_body.push_str(" class=\"newsletter-input\"");
+html_body.push_str(" id=\"modal-email\"");
+html_body.push_str(" placeholder=\"dev@example.com\"");
 html_body.push_str(" required=\"true\"");
+html_body.push_str(" class=\"modal-input\"");
 html_body.push_str(">");
 html_body.push_str("</input>");
 html_body.push_str("<button");
 html_body.push_str(" type=\"submit\"");
-html_body.push_str(" class=\"btn btn-gradient\"");
+html_body.push_str(" class=\"modal-submit-btn\"");
+html_body.push_str(">");
+html_body.push_str("<span");
 html_body.push_str(">");
 html_body.push_str("Subscribe");
-html_body.push_str("</button>");
-html_body.push_str("</form>");
-html_body.push_str("<p");
-html_body.push_str(" class=\"newsletter-note\"");
+html_body.push_str("</span>");
+html_body.push_str("<svg");
+html_body.push_str(" width=\"16\"");
+html_body.push_str(" height=\"16\"");
+html_body.push_str(" viewBox=\"0 0 24 24\"");
+html_body.push_str(" fill=\"none\"");
+html_body.push_str(" stroke=\"currentColor\"");
+html_body.push_str(" stroke-width=\"2\"");
 html_body.push_str(">");
-html_body.push_str("No spam. Unsubscribe anytime.");
+html_body.push_str("<path");
+html_body.push_str(" d=\"M5 12h14M12 5l7 7-7 7\"");
+html_body.push_str(">");
+html_body.push_str("</path>");
+html_body.push_str("</svg>");
+html_body.push_str("</button>");
+html_body.push_str("</div>");
+html_body.push_str("<p");
+html_body.push_str(" class=\"modal-note\"");
+html_body.push_str(">");
+html_body.push_str("Zero spam. Unsubscribe anytime.");
 html_body.push_str("</p>");
+html_body.push_str("</form>");
+html_body.push_str("</div>");
+html_body.push_str("</div>");
+html_body.push_str("</div>");
+html_body.push_str("<!-- Compact Newsletter Trigger -->");
+html_body.push_str("<section");
+html_body.push_str(" class=\"newsletter-compact\"");
+html_body.push_str(">");
+html_body.push_str("<div");
+html_body.push_str(" class=\"container flex justify-between items-center\"");
+html_body.push_str(">");
+html_body.push_str("<div");
+html_body.push_str(">");
+html_body.push_str("<h3");
+html_body.push_str(" class=\"text-xl font-bold text-white mb-1\"");
+html_body.push_str(">");
+html_body.push_str("Stay in the loop");
+html_body.push_str("</h3>");
+html_body.push_str("<p");
+html_body.push_str(" class=\"text-gray-400 text-sm\"");
+html_body.push_str(">");
+html_body.push_str("Join 10,000+ developers shipping faster.");
+html_body.push_str("</p>");
+html_body.push_str("</div>");
+html_body.push_str("<button");
+html_body.push_str(" id=\"open-newsletter\"");
+html_body.push_str(" class=\"btn btn-secondary btn-sm\"");
+html_body.push_str(">");
+html_body.push_str("Subscribe to Updates");
+html_body.push_str("</button>");
 html_body.push_str("</div>");
 html_body.push_str("</section>");
 html_body.push_str("<!-- CTA Section -->");
@@ -3534,6 +3588,140 @@ html_body.push_str("<style>
         overflow-x: hidden;
         max-width: 100%;
     }
+    /* ===== NEWSLETTER MODAL ===== */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+    
+    .modal-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    
+    .modal-container {
+        background: linear-gradient(145deg, rgba(20, 20, 20, 0.9), rgba(10, 10, 10, 0.95));
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 40px;
+        border-radius: 24px;
+        width: 100%;
+        max-width: 480px;
+        position: relative;
+        transform: translateY(20px) scale(0.95);
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    
+    .modal-overlay.active .modal-container {
+        transform: translateY(0) scale(1);
+    }
+    
+    .modal-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: transparent;
+        border: none;
+        color: #666;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 5px;
+        line-height: 1;
+        transition: color 0.2s;
+    }
+    
+    .modal-close:hover {
+        color: #fff;
+    }
+    
+    .modal-icon {
+        font-size: 48px;
+        margin-bottom: 24px;
+        text-align: center;
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    .modal-title {
+        color: #fff;
+        font-size: 28px;
+        font-weight: 800;
+        text-align: center;
+        margin-bottom: 12px;
+        letter-spacing: -0.02em;
+    }
+    
+    .modal-desc {
+        color: #999;
+        text-align: center;
+        margin-bottom: 32px;
+        line-height: 1.6;
+    }
+    
+    .modal-input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 16px;
+        border-radius: 12px;
+        color: #fff;
+        margin-bottom: 16px;
+        font-size: 16px;
+        transition: all 0.2s;
+    }
+    
+    .modal-input:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        background: rgba(139, 92, 246, 0.1);
+    }
+    
+    .modal-submit-btn {
+        width: 100%;
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        padding: 16px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+    
+    .modal-submit-btn:hover {
+        background: #7c3aed;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(124, 58, 237, 0.2);
+    }
+    
+    .modal-note {
+        text-align: center;
+        font-size: 12px;
+        color: #555;
+        margin-top: 16px;
+    }
+    
+    .newsletter-compact {
+        background: #000;
+        border-top: 1px solid #111;
+        padding: 32px 0;
+    }
 </style>");
 html_body.push_str("<!-- Hero Canvas Animation -->");
 html_body.push_str("<script");
@@ -3680,22 +3868,12 @@ html_body.push_str(" src=\"/assets/highlight.min.js?v=4\"");
 html_body.push_str(">");
 html_body.push_str("");
 html_body.push_str("</script>");
-html_body.push_str("<!-- Google Fonts with font-display: swap (non-render-blocking) -->");
+html_body.push_str("<!-- Local Fonts (Inter Variable) -->");
 html_body.push_str("<link");
-html_body.push_str(" href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap\"");
 html_body.push_str(" rel=\"stylesheet\"");
-html_body.push_str(" media=\"print\"");
-html_body.push_str(" onload=\"this.media='all'\"");
+html_body.push_str(" href=\"/static/css/style-18f37c3851472eed.css\"");
 html_body.push_str(">");
 html_body.push_str("</link>");
-html_body.push_str("<noscript");
-html_body.push_str(">");
-html_body.push_str("<link");
-html_body.push_str(" href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap\"");
-html_body.push_str(" rel=\"stylesheet\"");
-html_body.push_str(">");
-html_body.push_str("</link>");
-html_body.push_str("</noscript>");
 html_body.push_str("<link");
 html_body.push_str(" rel=\"preconnect\"");
 html_body.push_str(" href=\"https://fonts.googleapis.com\"");
@@ -5862,22 +6040,12 @@ html_body.push_str(" src=\"/assets/highlight.min.js?v=4\"");
 html_body.push_str(">");
 html_body.push_str("");
 html_body.push_str("</script>");
-html_body.push_str("<!-- Google Fonts with font-display: swap (non-render-blocking) -->");
+html_body.push_str("<!-- Local Fonts (Inter Variable) -->");
 html_body.push_str("<link");
-html_body.push_str(" href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap\"");
 html_body.push_str(" rel=\"stylesheet\"");
-html_body.push_str(" media=\"print\"");
-html_body.push_str(" onload=\"this.media='all'\"");
+html_body.push_str(" href=\"/static/css/style-18f37c3851472eed.css\"");
 html_body.push_str(">");
 html_body.push_str("</link>");
-html_body.push_str("<noscript");
-html_body.push_str(">");
-html_body.push_str("<link");
-html_body.push_str(" href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap\"");
-html_body.push_str(" rel=\"stylesheet\"");
-html_body.push_str(">");
-html_body.push_str("</link>");
-html_body.push_str("</noscript>");
 html_body.push_str("<link");
 html_body.push_str(" rel=\"preconnect\"");
 html_body.push_str(" href=\"https://fonts.googleapis.com\"");
@@ -6040,22 +6208,12 @@ html_body.push_str(" src=\"/assets/highlight.min.js?v=4\"");
 html_body.push_str(">");
 html_body.push_str("");
 html_body.push_str("</script>");
-html_body.push_str("<!-- Google Fonts with font-display: swap (non-render-blocking) -->");
+html_body.push_str("<!-- Local Fonts (Inter Variable) -->");
 html_body.push_str("<link");
-html_body.push_str(" href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap\"");
 html_body.push_str(" rel=\"stylesheet\"");
-html_body.push_str(" media=\"print\"");
-html_body.push_str(" onload=\"this.media='all'\"");
+html_body.push_str(" href=\"/static/css/style-18f37c3851472eed.css\"");
 html_body.push_str(">");
 html_body.push_str("</link>");
-html_body.push_str("<noscript");
-html_body.push_str(">");
-html_body.push_str("<link");
-html_body.push_str(" href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap\"");
-html_body.push_str(" rel=\"stylesheet\"");
-html_body.push_str(">");
-html_body.push_str("</link>");
-html_body.push_str("</noscript>");
 html_body.push_str("<link");
 html_body.push_str(" rel=\"preconnect\"");
 html_body.push_str(" href=\"https://fonts.googleapis.com\"");
@@ -6372,22 +6530,12 @@ html_body.push_str(" src=\"/assets/highlight.min.js?v=4\"");
 html_body.push_str(">");
 html_body.push_str("");
 html_body.push_str("</script>");
-html_body.push_str("<!-- Google Fonts with font-display: swap (non-render-blocking) -->");
+html_body.push_str("<!-- Local Fonts (Inter Variable) -->");
 html_body.push_str("<link");
-html_body.push_str(" href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap\"");
 html_body.push_str(" rel=\"stylesheet\"");
-html_body.push_str(" media=\"print\"");
-html_body.push_str(" onload=\"this.media='all'\"");
+html_body.push_str(" href=\"/static/css/style-18f37c3851472eed.css\"");
 html_body.push_str(">");
 html_body.push_str("</link>");
-html_body.push_str("<noscript");
-html_body.push_str(">");
-html_body.push_str("<link");
-html_body.push_str(" href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap\"");
-html_body.push_str(" rel=\"stylesheet\"");
-html_body.push_str(">");
-html_body.push_str("</link>");
-html_body.push_str("</noscript>");
 html_body.push_str("<link");
 html_body.push_str(" rel=\"preconnect\"");
 html_body.push_str(" href=\"https://fonts.googleapis.com\"");
@@ -7572,22 +7720,12 @@ html_body.push_str(" src=\"/assets/highlight.min.js?v=4\"");
 html_body.push_str(">");
 html_body.push_str("");
 html_body.push_str("</script>");
-html_body.push_str("<!-- Google Fonts with font-display: swap (non-render-blocking) -->");
+html_body.push_str("<!-- Local Fonts (Inter Variable) -->");
 html_body.push_str("<link");
-html_body.push_str(" href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap\"");
 html_body.push_str(" rel=\"stylesheet\"");
-html_body.push_str(" media=\"print\"");
-html_body.push_str(" onload=\"this.media='all'\"");
+html_body.push_str(" href=\"/static/css/style-18f37c3851472eed.css\"");
 html_body.push_str(">");
 html_body.push_str("</link>");
-html_body.push_str("<noscript");
-html_body.push_str(">");
-html_body.push_str("<link");
-html_body.push_str(" href=\"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap\"");
-html_body.push_str(" rel=\"stylesheet\"");
-html_body.push_str(">");
-html_body.push_str("</link>");
-html_body.push_str("</noscript>");
 html_body.push_str("<link");
 html_body.push_str(" rel=\"preconnect\"");
 html_body.push_str(" href=\"https://fonts.googleapis.com\"");
