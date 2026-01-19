@@ -29,6 +29,10 @@ pub struct ExportConfig {
     pub minify: bool,
     pub convert_webp: bool,
     pub platform: Option<Platform>,
+    /// Generate PWA assets (manifest, service worker, offline page)
+    pub pwa: bool,
+    /// PWA app name (defaults to project name)
+    pub pwa_name: Option<String>,
 }
 
 impl Default for ExportConfig {
@@ -40,6 +44,8 @@ impl Default for ExportConfig {
             minify: true,
             convert_webp: true,
             platform: None,
+            pwa: false,
+            pwa_name: None,
         }
     }
 }
@@ -470,9 +476,15 @@ pub fn run_export(config: ExportConfig) -> Result<()> {
     generate_robots_txt(output_dir, &config)?;
     generate_404_page(output_dir)?;
     
-    // Step 6: Generate platform-specific files
+    // Step 6: Generate PWA assets (if enabled)
+    if config.pwa {
+        println!("\n  \x1b[1m6. Generating PWA assets...\x1b[0m");
+        generate_pwa_assets(output_dir, &routes, &config)?;
+    }
+    
+    // Step 7: Generate platform-specific files
     if let Some(platform) = &config.platform {
-        println!("\n  \x1b[1m6. Generating {} config...\x1b[0m", platform.name());
+        println!("\n  \x1b[1m7. Generating {} config...\x1b[0m", platform.name());
         generate_platform_config(output_dir, *platform)?;
     }
     
@@ -899,6 +911,62 @@ fn generate_404_page(output_dir: &Path) -> Result<()> {
     
     fs::write(output_dir.join("404.html"), html).into_diagnostic()?;
     println!("     ✓ Generated 404.html");
+    
+    Ok(())
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PWA ASSETS GENERATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Generate PWA assets (manifest.json, sw.js, offline.html)
+fn generate_pwa_assets(output_dir: &Path, routes: &[Route], config: &ExportConfig) -> Result<()> {
+    use crate::pwa::{PwaConfig, generate_manifest, generate_service_worker, generate_offline_page, generate_sw_registration};
+    
+    // Build PWA config from export config
+    let pwa_config = PwaConfig {
+        name: config.pwa_name.clone().unwrap_or_else(|| "Nucleus App".to_string()),
+        short_name: config.pwa_name.clone().unwrap_or_else(|| "App".to_string()),
+        ..PwaConfig::default()
+    };
+    
+    // Generate manifest.json
+    let manifest = generate_manifest(&pwa_config);
+    fs::write(output_dir.join("manifest.json"), &manifest).into_diagnostic()?;
+    println!("     ✓ Generated manifest.json");
+    
+    // Generate service worker
+    let route_paths: Vec<String> = routes.iter().map(|r| r.path.clone()).collect();
+    let sw = generate_service_worker(&route_paths, &pwa_config);
+    fs::write(output_dir.join("sw.js"), &sw).into_diagnostic()?;
+    println!("     ✓ Generated sw.js (cache-first strategy)");
+    
+    // Generate offline page
+    let offline = generate_offline_page(&pwa_config);
+    fs::write(output_dir.join("offline.html"), &offline).into_diagnostic()?;
+    println!("     ✓ Generated offline.html");
+    
+    // Copy neutron-store.js if available
+    let neutron_store_src = std::env::current_dir()
+        .unwrap_or_default()
+        .join("static")
+        .join("assets")
+        .join("neutron-store.js");
+    
+    if neutron_store_src.exists() {
+        let dest_dir = output_dir.join("assets");
+        fs::create_dir_all(&dest_dir).into_diagnostic()?;
+        fs::copy(&neutron_store_src, dest_dir.join("neutron-store.js")).into_diagnostic()?;
+        println!("     ✓ Copied neutron-store.js");
+    }
+    
+    // Print SW registration snippet for users
+    println!("\n  \x1b[90mAdd this to your HTML <head>:\x1b[0m");
+    let registration = generate_sw_registration();
+    for line in registration.lines().take(5) {
+        println!("  \x1b[90m{}\x1b[0m", line);
+    }
+    println!("  \x1b[90m  ...\x1b[0m");
     
     Ok(())
 }

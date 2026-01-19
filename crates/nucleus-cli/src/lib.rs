@@ -80,6 +80,12 @@ pub enum Commands {
         /// Target platform: netlify, vercel, cloudflare, github
         #[arg(long)]
         platform: Option<String>,
+        /// Generate PWA assets (manifest.json, service worker, offline page)
+        #[arg(long)]
+        pwa: bool,
+        /// PWA app name (defaults to project name)
+        #[arg(long)]
+        pwa_name: Option<String>,
     },
     /// Publish static site to platform
     Publish {
@@ -461,7 +467,7 @@ pub async fn run_cli() -> miette::Result<()> {
                  deploy::run_deploy(target.clone())?;
             }
         }
-        Some(Commands::Export { output, wizard, incremental, base_url, platform }) => {
+        Some(Commands::Export { output, wizard, incremental, base_url, platform, pwa, pwa_name }) => {
             if *wizard {
                 let config = export::run_export_wizard()?;
                 export::run_export(config)?;
@@ -473,6 +479,8 @@ pub async fn run_cli() -> miette::Result<()> {
                     minify: true,
                     convert_webp: true,
                     platform: platform.as_ref().and_then(|p| export::Platform::parse(p)),
+                    pwa: *pwa,
+                    pwa_name: pwa_name.clone(),
                 };
                 export::run_export(config)?;
             }
