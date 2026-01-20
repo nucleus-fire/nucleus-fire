@@ -26,15 +26,53 @@ npm run build:css
 ### Core Elements
 | Component | Path | Variants |
 |-----------|------|----------|
-| Button | `src/components/buttons/button.ncl` | primary, secondary, outline, ghost, danger, success |
-| Icon Button | `src/components/buttons/icon-button.ncl` | primary, secondary, ghost, danger |
-| Button Group | `src/components/buttons/button-group.ncl` | horizontal, vertical |
-| Badge | `src/components/feedback/badge.ncl` | solid, outline, soft × 6 colors |
-| Avatar | `src/components/feedback/avatar.ncl` | 6 sizes, status indicators |
-| Avatar Group | `src/components/feedback/avatar-group.ncl` | stacked avatars |
-| Spinner | `src/components/feedback/spinner.ncl` | 5 sizes, 3 colors |
-| Icon | `src/components/feedback/icon.ncl` | 5 sizes, 6 colors |
-| Divider | `src/components/layout/divider.ncl` | solid, dashed, dotted |
+| Button | `components/buttons/button.ncl` | primary, secondary, outline, ghost, danger, success |
+| Icon Button | `components/buttons/icon-button.ncl` | primary, secondary, ghost, danger |
+| Button Group | `components/buttons/button-group.ncl` | horizontal, vertical |
+| Badge | `components/feedback/badge.ncl` | solid, outline, soft × 6 colors |
+| Avatar | `components/feedback/avatar.ncl` | 6 sizes, status indicators |
+| Avatar Group | `components/feedback/avatar-group.ncl` | stacked avatars |
+| Spinner | `components/feedback/spinner.ncl` | 5 sizes, 3 colors |
+| Icon | `components/feedback/icon.ncl` | 5 sizes, 6 colors |
+| Divider | `components/layout/divider.ncl` | solid, dashed, dotted |
+
+### Forms
+| Component | Path | Features |
+|-----------|------|----------|
+| Input | `components/forms/input.ncl` | label, error, hint, icons |
+| Textarea | `components/forms/textarea.ncl` | auto-grow, char count |
+| Select | `components/forms/select.ncl` | native, placeholder |
+| Checkbox | `components/forms/checkbox.ncl` | label, description, indeterminate |
+| Radio | `components/forms/radio.ncl` | label, description |
+| Toggle | `components/forms/toggle.ncl` | switch with label |
+
+### Feedback & Overlays
+| Component | Path | Variants |
+|-----------|------|----------|
+| Alert | `components/feedback/alert.ncl` | info, success, warning, error |
+| Modal | `components/overlays/modal.ncl` | sm, md, lg, xl, full |
+| Card | `components/data-display/card.ncl` | default, elevated, bordered, ghost |
+| Table | `components/data-display/table.ncl` | striped, hoverable, bordered |
+
+### Navigation
+| Component | Path | Features |
+|-----------|------|----------|
+| Tabs | `components/navigation/tabs.ncl` | underline, pills, boxed |
+| Tab | `components/navigation/tab.ncl` | individual tab item |
+| Breadcrumbs | `components/navigation/breadcrumbs.ncl` | with separators |
+| Pagination | `components/navigation/pagination.ncl` | first/last, prev/next |
+| Progress | `components/navigation/progress.ncl` | bar with label, indeterminate |
+
+### Marketing Blocks
+| Component | Path | Variants |
+|-----------|------|----------|
+| Hero | `blocks/marketing/hero.ncl` | centered, split, with-image |
+| Features | `blocks/marketing/features.ncl` | grid, alternating, centered |
+| Feature Card | `blocks/marketing/feature-card.ncl` | icon + title + description |
+| CTA | `blocks/marketing/cta.ncl` | simple, split, gradient |
+| Pricing | `blocks/marketing/pricing.ncl` | cards container |
+| Pricing Card | `blocks/marketing/pricing-card.ncl` | tier with features list |
+| Footer | `blocks/marketing/footer.ncl` | simple, mega, centered |
 
 ## Usage
 
