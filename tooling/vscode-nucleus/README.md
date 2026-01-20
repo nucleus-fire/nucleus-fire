@@ -2,7 +2,7 @@
 
 ⚡ **Full-featured language support for the Nucleus Framework** - syntax highlighting, IntelliSense, snippets, and CLI integration.
 
-![Nucleus Version](https://img.shields.io/badge/Nucleus-v3.1-00dc82?style=flat-square)
+![Nucleus Version](https://img.shields.io/badge/Nucleus-v1.0.0-00dc82?style=flat-square)
 ![VS Code](https://img.shields.io/badge/VS%20Code-1.85+-007ACC?style=flat-square)
 
 ## Features
@@ -138,8 +138,8 @@ cargo install --path crates/nucleus-lsp
 
 ## Contributing
 
-Issues and PRs welcome at [github.com/nucleus-lang/nucleus-lang](https://github.com/nucleus-lang/nucleus-lang)
+Issues and PRs welcome at [github.com/nucleus-fire/nucleus-fire](https://github.com/nucleus-fire/nucleus-fire)
 
 ## License
 
-MIT License - [Nucleus Framework](https://github.com/nucleus-lang/nucleus-lang)
+MIT License - [Nucleus Framework](https://github.com/nucleus-fire/nucleus-fire)

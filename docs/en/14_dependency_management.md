@@ -40,12 +40,12 @@ For Nucleus-specific modules (components, plugins), use a URL:
 
 ```bash
 # GitHub repository
-nucleus install https://github.com/nucleus-ui/navbar
+nucleus install https://github.com/example-org/navbar
 # → Clones to src/vendor/navbar
 
 # Shortened syntax
-nucleus install nucleus-ui/navbar
-# → Clones from github.com/nucleus-ui/navbar
+nucleus install example-org/navbar
+# → Clones from github.com/example-org/navbar
 
 # Specific branch/tag
 nucleus install nucleus-ui/navbar@v2.0
