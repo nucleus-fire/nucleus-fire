@@ -1,0 +1,14 @@
+{
+  "name": "nucleus-ui",
+  "version": "1.0.0",
+  "description": "Nucleus UI Component Library - A complete, polished Tailwind CSS-based UI library",
+  "keywords": ["nucleus", "ui", "components", "tailwind"],
+  "scripts": {
+    "build:css": "npx tailwindcss -i ./src/styles/main.css -o ./dist/nucleus-ui.css --minify",
+    "watch:css": "npx tailwindcss -i ./src/styles/main.css -o ./dist/nucleus-ui.css --watch",
+    "dev": "npm run watch:css"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}

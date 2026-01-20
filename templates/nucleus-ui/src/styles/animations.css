@@ -1,0 +1,462 @@
+/*
+ * Nucleus UI - Animations
+ * 
+ * Reusable micro-animations and transitions for interactive components.
+ * All animations respect prefers-reduced-motion.
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ENTRANCE ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Fade In */
+.animate-fade-in {
+    animation: fadeIn 0.2s ease-out forwards;
+}
+
+.animate-fade-in-slow {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Slide In variants */
+.animate-slide-in-up {
+    animation: slideInUp 0.3s ease-out forwards;
+}
+
+.animate-slide-in-down {
+    animation: slideInDown 0.3s ease-out forwards;
+}
+
+.animate-slide-in-left {
+    animation: slideInLeft 0.3s ease-out forwards;
+}
+
+.animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out forwards;
+}
+
+/* Scale In */
+.animate-scale-in {
+    animation: scaleIn 0.2s ease-out forwards;
+}
+
+.animate-scale-in-bounce {
+    animation: scaleInBounce 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EXIT ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.animate-fade-out {
+    animation: fadeOut 0.2s ease-out forwards;
+}
+
+.animate-scale-out {
+    animation: scaleOut 0.15s ease-in forwards;
+}
+
+.animate-slide-out-up {
+    animation: slideOutUp 0.2s ease-in forwards;
+}
+
+.animate-slide-out-down {
+    animation: slideOutDown 0.2s ease-in forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONTINUOUS ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Spinner */
+.animate-spin-slow {
+    animation: spin 2s linear infinite;
+}
+
+/* Pulse */
+.animate-pulse-subtle {
+    animation: pulseSubtle 2s ease-in-out infinite;
+}
+
+/* Bounce */
+.animate-bounce-subtle {
+    animation: bounceSubtle 1s ease-in-out infinite;
+}
+
+/* Shimmer (loading skeleton) */
+.animate-shimmer {
+    background: linear-gradient(90deg,
+            rgb(var(--color-surface-200)) 0%,
+            rgb(var(--color-surface-100)) 50%,
+            rgb(var(--color-surface-200)) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
+}
+
+.dark .animate-shimmer {
+    background: linear-gradient(90deg,
+            rgb(var(--color-surface-700)) 0%,
+            rgb(var(--color-surface-600)) 50%,
+            rgb(var(--color-surface-700)) 100%);
+    background-size: 200% 100%;
+}
+
+/* Ping (notification dot) */
+.animate-ping-subtle {
+    animation: pingSoft 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HOVER & INTERACTION ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Button press effect */
+.btn-press {
+    transition: transform 0.1s ease-out;
+}
+
+.btn-press:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+/* Lift on hover */
+.hover-lift {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Glow on hover */
+.hover-glow {
+    transition: box-shadow 0.3s ease-out;
+}
+
+.hover-glow:hover {
+    box-shadow: 0 0 20px -5px rgb(var(--color-primary-500) / 0.4);
+}
+
+/* Card hover */
+.card-hover {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+    border-color: rgb(var(--color-primary-200));
+}
+
+.dark .card-hover:hover {
+    border-color: rgb(var(--color-primary-800));
+}
+
+/* Icon button */
+.icon-btn-hover {
+    transition: background-color 0.2s ease-out, color 0.2s ease-out;
+}
+
+.icon-btn-hover:hover {
+    background-color: rgb(var(--color-surface-100));
+    color: rgb(var(--color-primary-600));
+}
+
+.dark .icon-btn-hover:hover {
+    background-color: rgb(var(--color-surface-800));
+    color: rgb(var(--color-primary-400));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRANSITION UTILITIES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.transition-fast {
+    transition-duration: 100ms;
+    transition-timing-function: ease-out;
+}
+
+.transition-normal {
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+}
+
+.transition-slow {
+    transition-duration: 300ms;
+    transition-timing-function: ease-out;
+}
+
+.transition-colors-only {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+}
+
+.transition-transform-only {
+    transition-property: transform;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+}
+
+.transition-opacity-only {
+    transition-property: opacity;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STAGGERED ANIMATIONS (for lists)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.stagger-children>* {
+    animation: fadeIn 0.3s ease-out forwards;
+    opacity: 0;
+}
+
+.stagger-children>*:nth-child(1) {
+    animation-delay: 0ms;
+}
+
+.stagger-children>*:nth-child(2) {
+    animation-delay: 50ms;
+}
+
+.stagger-children>*:nth-child(3) {
+    animation-delay: 100ms;
+}
+
+.stagger-children>*:nth-child(4) {
+    animation-delay: 150ms;
+}
+
+.stagger-children>*:nth-child(5) {
+    animation-delay: 200ms;
+}
+
+.stagger-children>*:nth-child(6) {
+    animation-delay: 250ms;
+}
+
+.stagger-children>*:nth-child(7) {
+    animation-delay: 300ms;
+}
+
+.stagger-children>*:nth-child(8) {
+    animation-delay: 350ms;
+}
+
+.stagger-children>*:nth-child(n+9) {
+    animation-delay: 400ms;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KEYFRAMES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes slideOutDown {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes scaleInBounce {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+
+    60% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes scaleOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulseSubtle {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes bounceSubtle {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5%);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes pingSoft {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    75%,
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOCUS ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes focusRing {
+    0% {
+        box-shadow: 0 0 0 0px rgb(var(--color-primary-500) / 0.5);
+    }
+
+    100% {
+        box-shadow: 0 0 0 4px rgb(var(--color-primary-500) / 0.3);
+    }
+}
+
+.animate-focus-ring:focus-visible {
+    animation: focusRing 0.2s ease-out forwards;
+}

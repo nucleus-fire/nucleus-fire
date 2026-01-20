@@ -1,0 +1,16 @@
+/*
+ * Nucleus UI - Main Stylesheet
+ * 
+ * Import order matters. Base styles and variables must come before Tailwind.
+ */
+
+/* Design system foundation */
+@import './base.css';
+
+/* Tailwind layers */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Animations (after utilities so they can be overridden) */
+@import './animations.css';
