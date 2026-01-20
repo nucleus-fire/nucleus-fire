@@ -3,6 +3,7 @@ use miette::{Diagnostic, SourceSpan};
 use thiserror::Error;
 
 #[derive(Error, Diagnostic, Debug, Clone)]
+#[allow(unused_assignments)]
 pub enum GuardianRule {
     #[error("Accessibility: {message}")]
     #[diagnostic(code(guardian::a11y), severity(Warning))]

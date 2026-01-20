@@ -156,8 +156,6 @@ pub async fn run_cli() -> miette::Result<()> {
     miette::set_hook(Box::new(|_| {
         Box::new(
             miette::MietteHandlerOpts::new()
-                .theme(miette::GraphicalTheme::unicode())
-                .word_wrapper(textwrap::Options::new(80))
                 .build(),
         )
     }))
@@ -686,8 +684,13 @@ pub fn build_project() -> miette::Result<()> {
                 }
 
                 // Guardian Validation (A11y & Spec)
-                if let Err(e) = ncc::guardian::Guardian::new().validate(&raw_nodes) {
-                      return Err(miette::miette!("Validation Error in {}: {}", path.display(), e));
+                let guardian_issues = ncc::guardian::Guardian::new().validate(&raw_nodes);
+                if guardian_issues.iter().any(|i| matches!(i, ncc::guardian::GuardianRule::Security { .. } | ncc::guardian::GuardianRule::Quality { .. })) {
+                      let mut error_msg = "Guardian Validation Failed:\n".to_string();
+                      for issue in guardian_issues {
+                           error_msg.push_str(&format!("- {}\n", issue));
+                      }
+                      return Err(miette::miette!("{}", error_msg));
                 }
 
                 // --- OPTIMIZATION: Asset Extraction ---
