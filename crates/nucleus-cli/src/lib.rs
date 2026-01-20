@@ -685,10 +685,10 @@ pub fn build_project() -> miette::Result<()> {
 
                 // Guardian Validation (A11y & Spec)
                 let guardian_issues = ncc::guardian::Guardian::new().validate(&raw_nodes);
-                if guardian_issues.iter().any(|i| matches!(i, ncc::guardian::GuardianRule::Security { .. } | ncc::guardian::GuardianRule::Quality { .. })) {
+                if guardian_issues.iter().any(|v| v.is_error()) {
                       let mut error_msg = "Guardian Validation Failed:\n".to_string();
-                      for issue in guardian_issues {
-                           error_msg.push_str(&format!("- {}\n", issue));
+                      for issue in &guardian_issues {
+                           error_msg.push_str(&format!("  - [{}] {}\n", issue.code(), issue));
                       }
                       return Err(miette::miette!("{}", error_msg));
                 }

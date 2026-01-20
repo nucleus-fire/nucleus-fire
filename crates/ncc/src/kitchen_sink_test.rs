@@ -43,13 +43,7 @@ fn test_kitchen_sink_compilation() {
     let issues = guardian.validate(&nodes);
 
     // Fail only if we have actual Errors (High Severity)
-    if issues.iter().any(|i| {
-        matches!(
-            i,
-            crate::guardian::GuardianRule::Security { .. }
-                | crate::guardian::GuardianRule::Quality { .. }
-        )
-    }) {
+    if issues.iter().any(|v| v.is_error()) {
         panic!(
             "Guardian validation failed with critical errors: {:?}",
             issues
