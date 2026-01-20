@@ -55,7 +55,9 @@ impl GuardianViolation {
             category: RuleCategory::Security,
             message: message.into(),
             span: None,
-            help: Some("Ensure you are not exposing the application to XSS or Injection attacks.".into()),
+            help: Some(
+                "Ensure you are not exposing the application to XSS or Injection attacks.".into(),
+            ),
         }
     }
 
@@ -119,7 +121,9 @@ impl Diagnostic for GuardianViolation {
     }
 
     fn help<'a>(&'a self) -> Option<Box<dyn fmt::Display + 'a>> {
-        self.help.as_ref().map(|h| Box::new(h.as_str()) as Box<dyn fmt::Display>)
+        self.help
+            .as_ref()
+            .map(|h| Box::new(h.as_str()) as Box<dyn fmt::Display>)
     }
 
     fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
@@ -254,7 +258,9 @@ mod tests {
         })];
         let guardian = Guardian::new();
         let issues = guardian.validate(&nodes);
-        assert!(issues.iter().any(|i| i.category == RuleCategory::Performance));
+        assert!(issues
+            .iter()
+            .any(|i| i.category == RuleCategory::Performance));
     }
 
     #[test]

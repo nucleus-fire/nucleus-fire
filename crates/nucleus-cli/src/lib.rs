@@ -154,10 +154,7 @@ pub enum BrowserCommands {
 pub async fn run_cli() -> miette::Result<()> {
     // Install miette hook for nice errors
     miette::set_hook(Box::new(|_| {
-        Box::new(
-            miette::MietteHandlerOpts::new()
-                .build(),
-        )
+        Box::new(miette::MietteHandlerOpts::new().build())
     }))
     .ok();
 
