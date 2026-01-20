@@ -18,10 +18,83 @@
 //! ```
 
 use crate::photon::db::{db, DatabaseType, QueryValue};
+use serde::Serialize;
 use sqlx::{FromRow, Row};
 use std::fmt::Write;
 use std::future::Future;
 use std::pin::Pin;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PAGINATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Paginated result containing data and pagination metadata
+///
+/// Returned by the `Builder::paginate()` method.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// let result = User::query()
+///     .paginate::<User>(1, 20)
+///     .await?;
+///
+/// println!("Showing page {} of {}", result.page, result.total_pages);
+/// println!("Total records: {}", result.total);
+/// ```
+#[derive(Debug, Clone, Serialize)]
+pub struct Paginated<T> {
+    /// The data for the current page
+    pub data: Vec<T>,
+    /// Current page number (1-indexed)
+    pub page: i64,
+    /// Items per page
+    pub per_page: i64,
+    /// Total number of items across all pages
+    pub total: i64,
+    /// Total number of pages
+    pub total_pages: i64,
+}
+
+impl<T> Paginated<T> {
+    /// Check if there is a next page
+    pub fn has_next_page(&self) -> bool {
+        self.page < self.total_pages
+    }
+
+    /// Check if there is a previous page
+    pub fn has_previous_page(&self) -> bool {
+        self.page > 1
+    }
+
+    /// Check if this is the first page
+    pub fn is_first_page(&self) -> bool {
+        self.page == 1
+    }
+
+    /// Check if this is the last page
+    pub fn is_last_page(&self) -> bool {
+        self.page >= self.total_pages
+    }
+
+    /// Get the next page number (or None if on last page)
+    pub fn next_page(&self) -> Option<i64> {
+        if self.has_next_page() {
+            Some(self.page + 1)
+        } else {
+            None
+        }
+    }
+
+    /// Get the previous page number (or None if on first page)
+    pub fn previous_page(&self) -> Option<i64> {
+        if self.has_previous_page() {
+            Some(self.page - 1)
+        } else {
+            None
+        }
+    }
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // OPERATORS
@@ -687,6 +760,93 @@ impl<'a> Builder<'a> {
         let count = self.limit(1).count().await?;
         Ok(count > 0)
     }
+
+    /// Paginate results with a single call
+    ///
+    /// Returns both the data and pagination metadata in one operation.
+    /// Executes two queries: one for count, one for data.
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// let result = User::query()
+    ///     .filter_op("status", Op::Eq, "active")
+    ///     .order_by("created_at", "DESC")
+    ///     .paginate::<User>(1, 20)
+    ///     .await?;
+    ///
+    /// println!("Page {} of {}", result.page, result.total_pages);
+    /// for user in result.data {
+    ///     println!("{}", user.name);
+    /// }
+    /// ```
+    pub async fn paginate<T>(self, page: i64, per_page: i64) -> Result<Paginated<T>, sqlx::Error>
+    where
+        T: for<'r> FromRow<'r, sqlx::sqlite::SqliteRow> + Send + Unpin,
+    {
+        let per_page = per_page.clamp(1, 100); // Enforce limits
+        let page = page.max(1);
+        let offset = (page - 1) * per_page;
+
+        // Clone the wheres and joins for count query
+        let count_builder = Builder {
+            table: self.table,
+            select: vec!["COUNT(*) as count".to_string()],
+            wheres: self.wheres.iter().map(|w| WhereClause {
+                column: w.column.clone(),
+                operator: w.operator,
+                value: w.value.clone(),
+                conjunction: w.conjunction,
+            }).collect(),
+            joins: self.joins.iter().map(|j| JoinClause {
+                table: j.table.clone(),
+                on_left: j.on_left.clone(),
+                on_right: j.on_right.clone(),
+                join_type: j.join_type,
+            }).collect(),
+            order_by: vec![],
+            limit: None,
+            offset: None,
+            operation: Operation::Select,
+            values: vec![],
+            includes: vec![],
+        };
+
+        let pool = db();
+
+        // Get total count
+        let (count_sql, count_values) = count_builder.to_sql(pool.db_type());
+        let total: i64 = if let Some(sqlite_pool) = pool.as_sqlite() {
+            let mut query = sqlx::query(&count_sql);
+            for val in count_values {
+                query = match val {
+                    QueryValue::Text(v) => query.bind(v),
+                    QueryValue::Int(v) => query.bind(v),
+                    QueryValue::Float(v) => query.bind(v),
+                    QueryValue::Bool(v) => query.bind(v),
+                    QueryValue::Null => query.bind(Option::<String>::None),
+                    QueryValue::Bytes(v) => query.bind(v),
+                };
+            }
+            let row = query.fetch_one(sqlite_pool).await?;
+            row.get::<i64, _>("count")
+        } else {
+            return Err(sqlx::Error::Configuration("Unsupported database type".into()));
+        };
+
+        let total_pages = ((total as f64) / (per_page as f64)).ceil() as i64;
+
+        // Get paginated data
+        let data = self.limit(per_page).offset(offset).all::<T>().await?;
+
+        Ok(Paginated {
+            data,
+            page,
+            per_page,
+            total,
+            total_pages,
+        })
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1134,4 +1294,120 @@ mod tests {
         assert!(sql.contains("UPDATE users SET"));
         assert_eq!(bindings.len(), 3); // 2 values + 1 where
     }
+
+    #[test]
+    fn test_paginated_has_next_page() {
+        let paginated: Paginated<i32> = Paginated {
+            data: vec![1, 2, 3],
+            page: 1,
+            per_page: 10,
+            total: 25,
+            total_pages: 3,
+        };
+        assert!(paginated.has_next_page());
+
+        let last_page: Paginated<i32> = Paginated {
+            data: vec![],
+            page: 3,
+            per_page: 10,
+            total: 25,
+            total_pages: 3,
+        };
+        assert!(!last_page.has_next_page());
+    }
+
+    #[test]
+    fn test_paginated_has_previous_page() {
+        let first_page: Paginated<i32> = Paginated {
+            data: vec![1, 2, 3],
+            page: 1,
+            per_page: 10,
+            total: 25,
+            total_pages: 3,
+        };
+        assert!(!first_page.has_previous_page());
+
+        let second_page: Paginated<i32> = Paginated {
+            data: vec![],
+            page: 2,
+            per_page: 10,
+            total: 25,
+            total_pages: 3,
+        };
+        assert!(second_page.has_previous_page());
+    }
+
+    #[test]
+    fn test_paginated_is_first_last() {
+        let first: Paginated<i32> = Paginated {
+            data: vec![],
+            page: 1,
+            per_page: 10,
+            total: 25,
+            total_pages: 3,
+        };
+        assert!(first.is_first_page());
+        assert!(!first.is_last_page());
+
+        let last: Paginated<i32> = Paginated {
+            data: vec![],
+            page: 3,
+            per_page: 10,
+            total: 25,
+            total_pages: 3,
+        };
+        assert!(!last.is_first_page());
+        assert!(last.is_last_page());
+    }
+
+    #[test]
+    fn test_paginated_next_previous_page() {
+        let middle: Paginated<i32> = Paginated {
+            data: vec![],
+            page: 2,
+            per_page: 10,
+            total: 30,
+            total_pages: 3,
+        };
+        assert_eq!(middle.next_page(), Some(3));
+        assert_eq!(middle.previous_page(), Some(1));
+
+        let first: Paginated<i32> = Paginated {
+            data: vec![],
+            page: 1,
+            per_page: 10,
+            total: 30,
+            total_pages: 3,
+        };
+        assert_eq!(first.previous_page(), None);
+        assert_eq!(first.next_page(), Some(2));
+
+        let last: Paginated<i32> = Paginated {
+            data: vec![],
+            page: 3,
+            per_page: 10,
+            total: 30,
+            total_pages: 3,
+        };
+        assert_eq!(last.next_page(), None);
+        assert_eq!(last.previous_page(), Some(2));
+    }
+
+    #[test]
+    fn test_paginated_serialization() {
+        let paginated: Paginated<String> = Paginated {
+            data: vec!["item1".to_string(), "item2".to_string()],
+            page: 1,
+            per_page: 10,
+            total: 2,
+            total_pages: 1,
+        };
+        let json = serde_json::to_string(&paginated).unwrap();
+        assert!(json.contains("\"data\""));
+        assert!(json.contains("\"page\":1"));
+        assert!(json.contains("\"per_page\":10"));
+        assert!(json.contains("\"total\":2"));
+        assert!(json.contains("\"total_pages\":1"));
+    }
 }
+

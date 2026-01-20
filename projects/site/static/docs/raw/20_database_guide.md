@@ -194,6 +194,33 @@ let users = User::query()
     .await?;
 ```
 
+### Single-Call Pagination
+
+Use `paginate()` to get data and total count in one call:
+
+```rust
+use nucleus_std::photon::Paginated;
+
+// Get page 1 with 20 items per page
+let result: Paginated<User> = User::query()
+    .filter_op("status", Op::Eq, "active")
+    .order_by("created_at", "DESC")
+    .paginate::<User>(1, 20)
+    .await?;
+
+println!("Page {} of {}", result.page, result.total_pages);
+println!("Total records: {}", result.total);
+
+// Helper methods
+if result.has_next_page() {
+    println!("Next page: {}", result.next_page().unwrap());
+}
+
+for user in result.data {
+    println!("{}", user.name);
+}
+```
+
 ### Count & Exists
 
 ```rust

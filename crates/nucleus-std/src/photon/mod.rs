@@ -44,7 +44,7 @@ pub use db::{db, init_db, is_db_initialized, DatabasePool, DatabaseType, QueryVa
 pub use migrations::{
     create_migration, migration_status, rollback, run_migrations, MigrationError, MigrationInfo,
 };
-pub use query::{transaction_mysql, transaction_postgres, transaction_sqlite, Builder, Model, Op};
+pub use query::{transaction_mysql, transaction_postgres, transaction_sqlite, Builder, Model, Op, Paginated};
 pub use relations::{BelongsTo, HasMany, HasOne};
 
 // Re-export macro
