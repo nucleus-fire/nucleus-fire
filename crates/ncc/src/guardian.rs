@@ -1,9 +1,12 @@
+//! Guardian Linter - Validates NCL code for quality, security, accessibility, and performance.
+#![allow(unused_assignments)]
+#![allow(clippy::useless_format)]
+
 use crate::ast::Node;
 use miette::{Diagnostic, SourceSpan};
 use thiserror::Error;
 
 #[derive(Error, Diagnostic, Debug, Clone)]
-#[allow(unused_assignments)]
 pub enum GuardianRule {
     #[error("Accessibility: {message}")]
     #[diagnostic(code(guardian::a11y), severity(Warning))]
@@ -80,7 +83,7 @@ impl Guardian {
                     // A11y: Images must have alt
                     if el.tag_name == "img" && !el.attributes.iter().any(|(k, _)| k == "alt") {
                         violations.push(GuardianRule::A11y {
-                            message: format!("<img> tag missing 'alt' attribute."),
+                            message: "<img> tag missing 'alt' attribute.".to_string(),
                             span: None,
                         });
                     }
@@ -99,13 +102,13 @@ impl Guardian {
                         });
                         if !has_label {
                             violations.push(GuardianRule::A11y {
-                                message: format!("<input> missing accessible label (aria-label, id, placeholder, etc)."),
+                                message: "<input> missing accessible label (aria-label, id, placeholder, etc).".to_string(),
                                 span: None,
                             });
                         }
                     }
 
-                    // Perc: Large Inline Styles
+                    // Perf: Large Inline Styles
                     if let Some((_, style)) = el.attributes.iter().find(|(k, _)| k == "style") {
                         if style.len() > 150 {
                             violations.push(GuardianRule::Performance {
